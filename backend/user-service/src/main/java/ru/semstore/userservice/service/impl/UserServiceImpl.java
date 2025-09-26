@@ -54,7 +54,7 @@ public class UserServiceImpl implements UserService {
                 return jwtService.generateAuthToken(user.getEmail());
             }
         }
-        throw new AuthException("Authentication exception");
+        throw new AuthException("Authorization exception");
     }
 
     @Transactional(readOnly = true)
