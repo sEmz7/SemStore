@@ -11,6 +11,7 @@ import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
 import ru.semstore.userservice.dto.user.UserDto;
 import ru.semstore.userservice.exception.AuthException;
+import ru.semstore.userservice.exception.ConflictException;
 import ru.semstore.userservice.exception.NotFoundException;
 import ru.semstore.userservice.exception.UserInputException;
 import ru.semstore.userservice.mapper.UserMapper;
@@ -36,7 +37,7 @@ public class UserServiceImpl implements UserService {
     public UserDto create(UserCreateDto dto) {
         if (userRepository.existsByEmail(dto.email())) {
             log.warn("Email={} already exists", dto.email());
-            throw new UserInputException("User with email=" + dto.email() + " already exists.");
+            throw new ConflictException("User with email=" + dto.email() + " already exists.");
         }
         User user = userMapper.toEntity(dto, passwordEncoder);
         user = userRepository.save(user);
@@ -53,8 +54,9 @@ public class UserServiceImpl implements UserService {
             if (passwordEncoder.matches(dto.password(), user.getPassword())) {
                 return jwtService.generateAuthToken(user.getEmail());
             }
+            throw new AuthException("Invalid password");
         }
-        throw new AuthException("Authorization exception");
+        throw new NotFoundException("User with email=" + dto.email() + " not found");
     }
 
     @Transactional(readOnly = true)

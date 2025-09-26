@@ -21,14 +21,24 @@ import ru.semstore.userservice.security.jwt.JwtFilter;
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
 
+    private static final String[] WHITELIST = {
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/webjars/**",
+            "/swagger-resources/**",
+            "/api/v1/auth/**"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/auth/register", "auth/login", "auth/refresh").permitAll()
-                                .requestMatchers("/**").authenticated())
+                        auth.requestMatchers("/auth/register", "/auth/login", "/auth/refresh").permitAll()
+                                .requestMatchers(WHITELIST).permitAll()
+                                .anyRequest().authenticated())
                 .sessionManagement(session
                         -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

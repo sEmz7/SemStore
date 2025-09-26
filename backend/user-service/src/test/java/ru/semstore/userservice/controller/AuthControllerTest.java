@@ -105,7 +105,7 @@ class AuthControllerTest {
 
     @Test
     @Sql(scripts = {"/data/cleanUp.sql", "/data/insert.sql"})
-    @DisplayName("Удачное обновление refresh токена")
+    @DisplayName("Удачное обновление токена")
     void refreshTokenTest() throws Exception {
         UserCredentialsDto credentialsDto = new UserCredentialsDto("test@example.com", "password");
 

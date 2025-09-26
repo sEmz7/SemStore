@@ -1,5 +1,6 @@
 package ru.semstore.userservice.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +12,7 @@ import ru.semstore.userservice.service.UserService;
 
 import java.util.UUID;
 
+@Tag(name = "Пользователи", description = "API для операций с пользователями")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")

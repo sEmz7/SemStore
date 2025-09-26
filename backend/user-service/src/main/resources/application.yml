@@ -18,3 +18,6 @@ spring:
       mode: always
 server:
   port: 8080
+
+springdoc:
+  override-with-generic-response: false
