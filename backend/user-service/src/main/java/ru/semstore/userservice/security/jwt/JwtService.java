@@ -16,7 +16,7 @@ import java.util.Date;
 @Component
 @Slf4j
 public class JwtService {
-    private String jwtSecret;
+    private final String jwtSecret;
 
     public JwtService(@Value("${JWT_SECRET}") String jwtSecret) {
         this.jwtSecret = jwtSecret;

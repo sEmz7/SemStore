@@ -1,4 +1,17 @@
 services:
+  user-service:
+    container_name: user-service
+    build: ./user-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service-db
+    env_file:
+      - .env
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
   user-service-db:
     image: postgres:16.1
     env_file:

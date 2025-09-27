@@ -13,7 +13,6 @@ import ru.semstore.userservice.dto.user.UserDto;
 import ru.semstore.userservice.exception.AuthException;
 import ru.semstore.userservice.exception.ConflictException;
 import ru.semstore.userservice.exception.NotFoundException;
-import ru.semstore.userservice.exception.UserInputException;
 import ru.semstore.userservice.mapper.UserMapper;
 import ru.semstore.userservice.model.User;
 import ru.semstore.userservice.repository.UserRepository;
