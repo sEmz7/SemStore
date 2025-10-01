@@ -1,4 +1,9 @@
-FROM openjdk:21-jdk
-COPY target/*.jar /app/user-service.jar
+FROM maven:3.9.6-eclipse-temurin-21 AS builder
 WORKDIR /app
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar user-service.jar"]
+COPY . /app/
+RUN mvn clean package -pl user-service -am -DskipTests
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/user-service/target/*.jar app.jar
+ENTRYPOINT ["java", "-jar", "app.jar"]
