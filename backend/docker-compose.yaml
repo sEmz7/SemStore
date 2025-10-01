@@ -1,0 +1,27 @@
+services:
+  user-service:
+    container_name: user-service
+    build: ./user-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service-db
+    env_file:
+      - .env
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+  user-service-db:
+    image: postgres:16.1
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./volumes/postgres/user-service-db:/var/lib/postgresql/data/
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
