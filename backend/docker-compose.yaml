@@ -7,7 +7,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - user-service-db
+      user-service-db:
+          condition: service_healthy
     env_file:
       - .env
     environment:
