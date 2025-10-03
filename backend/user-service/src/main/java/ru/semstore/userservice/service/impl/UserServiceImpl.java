@@ -51,7 +51,7 @@ public class UserServiceImpl implements UserService {
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             if (passwordEncoder.matches(dto.password(), user.getPassword())) {
-                return jwtService.generateAuthToken(user.getEmail());
+                return jwtService.generateAuthToken(user);
             }
             throw new AuthException("Invalid password");
         }
@@ -65,7 +65,7 @@ public class UserServiceImpl implements UserService {
         if (refreshToken != null && jwtService.validateJwtToken(refreshToken)) {
             User user = userRepository.findByEmail(jwtService.getEmailFromToken(refreshToken))
                     .orElseThrow(() -> new NotFoundException("User with not found"));
-            return jwtService.refreshBaseToken(user.getEmail(), refreshToken);
+            return jwtService.refreshBaseToken(user, refreshToken);
         }
         throw new AuthException("Invalid refresh token");
     }

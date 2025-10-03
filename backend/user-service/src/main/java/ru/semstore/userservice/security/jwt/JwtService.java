@@ -1,14 +1,15 @@
 package ru.semstore.userservice.security.jwt;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
+import ru.semstore.userservice.model.User;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -22,37 +23,39 @@ public class JwtService {
         this.jwtSecret = jwtSecret;
     }
 
-    public JwtAuthDto generateAuthToken(String email) {
+    public JwtAuthDto generateAuthToken(User user) {
         JwtAuthDto jwtDto = new JwtAuthDto();
-        jwtDto.setToken(generateJwtToken(email));
-        jwtDto.setRefreshToken(generateRefreshToken(email));
+        jwtDto.setToken(generateJwtToken(user));
+        jwtDto.setRefreshToken(generateRefreshToken(user));
         return jwtDto;
     }
 
-    public JwtAuthDto refreshBaseToken(String email, String refreshToken) {
+    public JwtAuthDto refreshBaseToken(User user, String refreshToken) {
         JwtAuthDto jwtDto = new JwtAuthDto();
-        jwtDto.setToken(generateJwtToken(email));
+        jwtDto.setToken(generateJwtToken(user));
         jwtDto.setRefreshToken(refreshToken);
         return jwtDto;
     }
 
     public SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    private String generateJwtToken(String email) {
+    private String generateJwtToken(User user) {
         Date date = Date.from(LocalDateTime.now().plusMinutes(30).atZone(ZoneId.systemDefault()).toInstant());
         return Jwts.builder()
-                .subject(email)
+                .subject(user.getEmail())
+                .claim("id", user.getId())
                 .expiration(date)
                 .signWith(getSignInKey())
                 .compact();
     }
-    private String generateRefreshToken(String email) {
+
+    private String generateRefreshToken(User user) {
         Date date = Date.from(LocalDateTime.now().plusDays(15).atZone(ZoneId.systemDefault()).toInstant());
         return Jwts.builder()
-                .subject(email)
+                .subject(user.getEmail())
+                .claim("id", user.getId())
                 .expiration(date)
                 .signWith(getSignInKey())
                 .compact();
@@ -75,15 +78,15 @@ public class JwtService {
                     .parseSignedClaims(token)
                     .getPayload();
             return true;
-        }catch (ExpiredJwtException expEx){
+        } catch (ExpiredJwtException expEx) {
             log.warn("Expired JwtException", expEx);
-        }catch (UnsupportedJwtException expEx){
+        } catch (UnsupportedJwtException expEx) {
             log.warn("Unsupported JwtException", expEx);
-        }catch (MalformedJwtException expEx){
+        } catch (MalformedJwtException expEx) {
             log.warn("Malformed JwtException", expEx);
-        }catch (SecurityException expEx){
+        } catch (SecurityException expEx) {
             log.warn("Security Exception", expEx);
-        }catch (Exception expEx){
+        } catch (Exception expEx) {
             log.warn("Invalid token", expEx);
         }
         return false;
