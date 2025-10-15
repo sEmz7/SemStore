@@ -54,8 +54,11 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    public AddressDto update(AddressUpdateDto dto, UUID addressId) {
+    public AddressDto update(AddressUpdateDto dto, UUID addressId, UUID currentUserId) {
         Address address = findAddressByIdOrThrow(addressId);
+        if (!address.getUser().getId().equals(currentUserId)) {
+            throw new ConflictException("Only owner can change their addresses");
+        }
         addressMapper.updateFromDto(dto, address);
         addressRepository.save(address);
         log.debug("User updated address. userId={}, addressId={}", address.getUser().getId(), address.getId());
@@ -71,8 +74,11 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    public void delete(UUID addressId) {
-        findAddressByIdOrThrow(addressId);
+    public void delete(UUID addressId, UUID currentUserId) {
+        Address address = findAddressByIdOrThrow(addressId);
+        if (!address.getUser().getId().equals(currentUserId)) {
+            throw new ConflictException("Only owner can delete their addresses");
+        }
         addressRepository.deleteById(addressId);
         log.debug("Deleted address with id={}", addressId);
     }

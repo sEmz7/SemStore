@@ -13,9 +13,9 @@ public interface AddressService {
 
     List<AddressDto> getUserAddresses(UUID userId);
 
-    AddressDto update(AddressUpdateDto dto, UUID addressId);
+    AddressDto update(AddressUpdateDto dto, UUID addressId, UUID currentUserId);
 
     AddressDto getById(UUID addressId);
 
-    void delete(UUID addressId);
+    void delete(UUID addressId, UUID currentUserId);
 }
