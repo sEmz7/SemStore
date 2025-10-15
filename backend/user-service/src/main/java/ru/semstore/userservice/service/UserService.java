@@ -2,6 +2,7 @@ package ru.semstore.userservice.service;
 
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
 import ru.semstore.userservice.dto.jwt.RefreshTokenDto;
+import ru.semstore.userservice.dto.user.ChangePasswordDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
 import ru.semstore.userservice.dto.user.UserDto;
 import ru.semstore.userservice.dto.user.UserCreateDto;
@@ -17,4 +18,6 @@ public interface UserService {
     JwtAuthDto refreshToken(RefreshTokenDto refreshTokenDto);
 
     UserDto getById(UUID userId);
+
+    void changePassword(UUID userId, ChangePasswordDto dto);
 }

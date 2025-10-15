@@ -29,3 +29,9 @@ eureka:
     hostname: localhost
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+    ru.semstore: DEBUG
