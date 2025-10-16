@@ -8,7 +8,7 @@ import ru.semstore.userservice.model.Address;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = UserMapper.class)
+@Mapper(componentModel = "spring", uses = UserMapper.class, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface AddressMapper {
 
     @Mapping(target = "user", ignore = true)
