@@ -3,6 +3,8 @@ server:
 spring:
   application:
     name: gateway
+  config:
+    import: "optional:file:.env[.properties]"
   cloud:
     gateway:
       routes:
@@ -14,7 +16,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-server:8761/eureka/
   instance:
     hostname: localhost
     prefer-ip-address: true
