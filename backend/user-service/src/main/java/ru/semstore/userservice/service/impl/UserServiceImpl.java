@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
 import ru.semstore.userservice.dto.jwt.RefreshTokenDto;
+import ru.semstore.userservice.dto.user.ChangePasswordDto;
 import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
 import ru.semstore.userservice.dto.user.UserDto;
@@ -51,7 +52,7 @@ public class UserServiceImpl implements UserService {
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             if (passwordEncoder.matches(dto.password(), user.getPassword())) {
-                return jwtService.generateAuthToken(user.getEmail());
+                return jwtService.generateAuthToken(user);
             }
             throw new AuthException("Invalid password");
         }
@@ -65,7 +66,7 @@ public class UserServiceImpl implements UserService {
         if (refreshToken != null && jwtService.validateJwtToken(refreshToken)) {
             User user = userRepository.findByEmail(jwtService.getEmailFromToken(refreshToken))
                     .orElseThrow(() -> new NotFoundException("User with not found"));
-            return jwtService.refreshBaseToken(user.getEmail(), refreshToken);
+            return jwtService.refreshBaseToken(user, refreshToken);
         }
         throw new AuthException("Invalid refresh token");
     }
@@ -75,5 +76,21 @@ public class UserServiceImpl implements UserService {
     public UserDto getById(UUID userId) {
         return userMapper.toDto(userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found")));
+    }
+
+    @Override
+    public void changePassword(UUID userId, ChangePasswordDto dto) {
+        User user = userRepository.findById(userId).orElseThrow(() -> {
+            log.warn("User with id={} not found", userId);
+            return new NotFoundException("User not found");
+        });
+        if (!passwordEncoder.matches(dto.oldPassword(), user.getPassword())) {
+            throw new ConflictException("Old password is not correct");
+        }
+        if (passwordEncoder.matches(dto.newPassword(), user.getPassword())) {
+            throw new ConflictException("New password must be different from the old one");
+        }
+        user.setPassword(passwordEncoder.encode(dto.newPassword()));
+        log.debug("User with id={} changed password", userId);
     }
 }

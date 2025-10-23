@@ -1,16 +1,22 @@
 package ru.semstore.userservice.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ru.semstore.userservice.dto.user.ChangePasswordDto;
 import ru.semstore.userservice.dto.user.UserDto;
+import ru.semstore.userservice.exception.ErrorResponse;
+import ru.semstore.userservice.security.CustomUserDetails;
 import ru.semstore.userservice.service.UserService;
-
-import java.util.UUID;
 
 @Tag(name = "Пользователи", description = "API для операций с пользователями")
 @RestController
@@ -20,8 +26,86 @@ import java.util.UUID;
 public class UserController {
     private final UserService userService;
 
-    @GetMapping("/{userId}")
-    public UserDto getUserById(@PathVariable("userId") UUID userId) {
-        return userService.getById(userId);
+    @Operation(
+            summary = "Получение данных текущего пользователя",
+            description = "Возвращает данные пользователя"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Данные пользователя возвращены",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = UserDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Пользователь не аутентифицирован",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Пользователь не найден",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    @GetMapping
+    public UserDto getCurrentUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return userService.getById(userDetails.user().getId());
+    }
+
+    @Operation(
+            summary = "Изменение пароля",
+            description = "Позволяет пользователю изменить свой пароль"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Пароль успешно изменен"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Невалидные данные запроса",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Пользователь не аутентифицирован",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Пользователь не найден",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Старый пароль неверен или новый пароль совпадает со старым",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    @PatchMapping("/password")
+    public void changePassword(@AuthenticationPrincipal CustomUserDetails userDetails,
+                               @Valid @RequestBody ChangePasswordDto dto) {
+        userService.changePassword(userDetails.user().getId(), dto);
     }
 }
