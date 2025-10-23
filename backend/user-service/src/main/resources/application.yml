@@ -1,8 +1,6 @@
 spring:
   application:
     name: user-service
-  config:
-    import: "optional:file:.env[.properties]"
   datasource:
     url: ${DATABASE_URL}
     username: ${POSTGRES_USER}

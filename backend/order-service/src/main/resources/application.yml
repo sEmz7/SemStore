@@ -3,8 +3,6 @@ server:
 spring:
   application:
     name: order-service
-  config:
-    import: "optional:file:.env[.properties]"
   datasource:
     url: ${DATABASE_ORDER_SERVICE_URL}
     username: ${POSTGRES_USER}

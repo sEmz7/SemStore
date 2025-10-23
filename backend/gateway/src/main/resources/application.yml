@@ -3,8 +3,6 @@ server:
 spring:
   application:
     name: gateway
-  config:
-    import: "optional:file:.env[.properties]"A
   cloud:
     gateway:
       routes:
