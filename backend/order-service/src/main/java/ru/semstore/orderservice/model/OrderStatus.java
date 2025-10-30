@@ -1,5 +1,5 @@
 package ru.semstore.orderservice.model;
 
 public enum OrderStatus {
-    CREATED, PENDING, CANCELED, ORDERED
+    CREATED, PENDING, CANCELED, ORDERED, PAID
 }

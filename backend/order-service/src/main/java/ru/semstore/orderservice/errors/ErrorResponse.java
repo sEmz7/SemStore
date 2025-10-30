@@ -1,4 +1,4 @@
-package ru.semstore.orderservice.exception;
+package ru.semstore.orderservice.errors;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;

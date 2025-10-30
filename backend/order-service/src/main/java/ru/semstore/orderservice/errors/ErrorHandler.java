@@ -1,10 +1,12 @@
-package ru.semstore.orderservice.exception;
+package ru.semstore.orderservice.errors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.semstore.orderservice.errors.exceptions.ConflictException;
+import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
 
 @RestControllerAdvice
 public class ErrorHandler {
@@ -12,6 +14,18 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleMethodArgumentNotValidException(final MethodArgumentNotValidException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleOrderNotFoundException(final OrderNotFoundException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleConflictException(final ConflictException e) {
         return new ErrorResponse(e.getMessage());
     }
 }
