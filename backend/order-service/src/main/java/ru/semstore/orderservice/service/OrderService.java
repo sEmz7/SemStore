@@ -10,4 +10,6 @@ public interface OrderService {
     OrderDto create(OrderCreateDto createDto, UUID userId);
 
     OrderDto update(OrderUpdateDto updateDto, UUID orderId);
+
+    void delete(UUID orderId, UUID userId);
 }

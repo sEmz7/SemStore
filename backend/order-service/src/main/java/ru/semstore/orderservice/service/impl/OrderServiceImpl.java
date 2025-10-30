@@ -43,10 +43,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDto update(OrderUpdateDto updateDto, UUID orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> {
-            log.warn("Order not found. orderId={}", orderId);
-            return new OrderNotFoundException("Order not found. orderId=" + orderId);
-        });
+        Order order = findOrderByIdOrThrow(orderId);
         if (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.ORDERED) {
             log.warn("Order status is {}, address cannot be changed. orderId={}", order.getStatus(), orderId);
             throw new ConflictException("Order status is " + order.getStatus() +
@@ -59,5 +56,27 @@ public class OrderServiceImpl implements OrderService {
 
         kafka.sendOrderToCheck(order);
         return orderMapper.toDto(order);
+    }
+
+    @Override
+    public void delete(UUID orderId, UUID userId) {
+        Order order = findOrderByIdOrThrow(orderId);
+        if (!order.getUserId().equals(userId)) {
+            log.warn("Only order owner can delete order. orderId={}", orderId);
+            throw new ConflictException("Only order owner can delete order. orderId=" + orderId);
+        }
+        if (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.ORDERED) {
+            log.warn("Order cannot be deleted. orderId={}", orderId);
+            throw new ConflictException("Order cannot be deleted. orderId=" + orderId);
+        }
+        orderRepository.deleteById(orderId);
+        log.debug("Order deleted. orderId={}", orderId);
+    }
+
+    private Order findOrderByIdOrThrow(UUID orderId) {
+        return orderRepository.findById(orderId).orElseThrow(() -> {
+            log.warn("Order not found. orderId={}", orderId);
+            return new OrderNotFoundException("Order not found. orderId=" + orderId);
+        });
     }
 }
