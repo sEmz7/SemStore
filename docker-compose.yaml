@@ -36,6 +36,8 @@ services:
         condition: service_healthy
       discovery-server:
         condition: service_started
+      kafka:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -74,6 +76,8 @@ services:
       user-service:
         condition: service_started
       order-service-db:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     env_file:
       - .env
@@ -115,12 +119,18 @@ services:
     container_name: kafka
     ports:
       - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z localhost 9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       - zookeeper

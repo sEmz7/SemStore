@@ -18,5 +18,15 @@ spring:
   sql:
     init:
       mode: never
+  kafka:
+    bootstrap-servers: dummy:9092
+    listener:
+      auto-startup: false
+
+eureka:
+  client:
+    enabled: false
+  instance:
+    prefer-ip-address: false
 
 JWT_SECRET: 13wsy34ui96yoSmxVAb9+Eg6O+aYmNKuP8oEzzA+kpoF+I3g10lkMJF4BWjfN/Vw

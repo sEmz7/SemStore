@@ -1,4 +1,4 @@
-package ru.semstore.orderservice.dto.eventDto;
+package ru.semstore.common.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,7 +11,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class OrderCreatedEvent {
 
-    private UUID id;
+    private UUID orderId;
     private UUID userId;
     private UUID addressId;
 }

@@ -5,9 +5,11 @@ COPY backend/order-service/pom.xml ./order-service/
 COPY backend/discovery-server/pom.xml ./discovery-server/
 COPY backend/gateway/pom.xml ./gateway/
 COPY backend/user-service/pom.xml ./user-service/
+COPY backend/common-dtos/pom.xml ./common-dtos/
 RUN mvn dependency:go-offline -B
 COPY backend/order-service/src ./order-service/src/
-RUN mvn package -pl order-service -DskipTests
+COPY backend/common-dtos/src ./common-dtos/src/
+RUN mvn package -pl order-service -am -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
