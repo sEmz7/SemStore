@@ -1,9 +1,7 @@
 package ru.semstore.gateway.filter;
 
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -66,9 +64,7 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
                                     HttpStatus.SERVICE_UNAVAILABLE, "User service unreachable"))
                     .map(user -> {
                         ServerHttpRequest.Builder builder = exchange.getRequest().mutate();
-                        builder.headers(http -> {
-                            http.remove("X-User-Id");
-                        });
+                        builder.headers(http -> http.remove("X-User-Id"));
                         builder.header("X-User-Id", String.valueOf(user.getId()));
                         return exchange.mutate().request(builder.build()).build();
                     })
