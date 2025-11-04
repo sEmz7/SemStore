@@ -35,11 +35,23 @@ server:
 
 springdoc:
   override-with-generic-response: false
+
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_URL}
   instance:
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
     hostname: localhost
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

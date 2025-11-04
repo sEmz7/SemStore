@@ -10,9 +10,18 @@ spring:
           uri: lb://USER-SERVICE
           predicates:
             - Path=/users/**, /auth/**
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/orders/**
+          filters:
+            - AuthFilter
+      default-filters:
+        - RemoveRequestHeader=X-User-Id
 
 eureka:
   client:
+    registryFetchIntervalSeconds: 3
     service-url:
       defaultZone: http://discovery-server:8761/eureka/
   instance:

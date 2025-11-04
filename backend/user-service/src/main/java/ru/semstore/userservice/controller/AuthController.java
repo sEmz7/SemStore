@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
@@ -130,5 +131,10 @@ public class AuthController {
     @PostMapping("/refresh")
     public JwtAuthDto refresh(@Valid @RequestBody RefreshTokenDto dto) {
         return userService.refreshToken(dto);
+    }
+
+    @PostMapping("/validateToken")
+    public UserDto validateToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+        return userService.validateToken(authHeader);
     }
 }

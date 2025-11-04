@@ -7,3 +7,15 @@ eureka:
   client:
     register-with-eureka: false
     fetch-registry: false
+  server:
+    response-cache-update-interval-ms: 1000
+    eviction-interval-timer-in-ms: 1000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

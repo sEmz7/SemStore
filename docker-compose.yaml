@@ -6,6 +6,11 @@ services:
       dockerfile: backend/discovery-server/Dockerfile
     ports:
       - "8761:8761"
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8761/actuator/health" ]
+      interval: 3s
+      timeout: 2s
+      retries: 20
 
   gateway:
     container_name: gateway
@@ -16,11 +21,11 @@ services:
       - "8080:8080"
     depends_on:
       discovery-server:
-        condition: service_started
+        condition: service_healthy
       user-service:
-        condition: service_started
+        condition: service_healthy
       order-service:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
 
@@ -35,7 +40,7 @@ services:
       user-service-db:
         condition: service_healthy
       discovery-server:
-        condition: service_started
+        condition: service_healthy
       kafka:
         condition: service_healthy
     env_file:
@@ -44,6 +49,11 @@ services:
       - SPRING_DATASOURCE_URL=${DATABASE_URL}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8081/actuator/health" ]
+      interval: 3s
+      timeout: 2s
+      retries: 20
 
   user-service-db:
     image: postgres:16.1
@@ -72,9 +82,9 @@ services:
       - "8082:8082"
     depends_on:
       discovery-server:
-        condition: service_started
+        condition: service_healthy
       user-service:
-        condition: service_started
+        condition: service_healthy
       order-service-db:
         condition: service_healthy
       kafka:
@@ -85,6 +95,11 @@ services:
       - SPRING_DATASOURCE_URL=${DATABASE_ORDER_SERVICE_URL}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8082/actuator/health" ]
+      interval: 3s
+      timeout: 2s
+      retries: 20
 
   order-service-db:
     container_name: order-service-db
