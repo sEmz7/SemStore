@@ -9,7 +9,6 @@ eureka:
     fetch-registry: false
   server:
     response-cache-update-interval-ms: 1000
-    eviction-interval-timer-in-ms: 1000
 
 management:
   endpoints:
