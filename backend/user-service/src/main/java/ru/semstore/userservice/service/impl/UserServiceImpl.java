@@ -93,4 +93,23 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
         log.debug("User with id={} changed password", userId);
     }
+
+    @Transactional(readOnly = true)
+    @Override
+    public UserDto validateToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new AuthException("Invalid token");
+        }
+        String token = authHeader.substring(7).trim();
+        boolean validated = jwtService.validateJwtToken(token);
+        if (!validated) {
+            throw new AuthException("Invalid token");
+        }
+        String email = jwtService.getEmailFromToken(token);
+        User user = userRepository.findByEmail(email).orElseThrow(() -> {
+            log.warn("User not found by email={}", email);
+            return new NotFoundException("User not found. userEmail" + email);
+        });
+        return userMapper.toDto(user);
+    }
 }

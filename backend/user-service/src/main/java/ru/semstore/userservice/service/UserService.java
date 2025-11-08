@@ -20,4 +20,6 @@ public interface UserService {
     UserDto getById(UUID userId);
 
     void changePassword(UUID userId, ChangePasswordDto dto);
+
+    UserDto validateToken(String authHeader);
 }

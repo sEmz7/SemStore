@@ -79,15 +79,15 @@ public class JwtService {
                     .getPayload();
             return true;
         } catch (ExpiredJwtException expEx) {
-            log.warn("Expired JwtException", expEx);
+            log.warn("Expired JwtException: {}", expEx.getMessage());
         } catch (UnsupportedJwtException expEx) {
-            log.warn("Unsupported JwtException", expEx);
+            log.warn("Unsupported JwtException: {}", expEx.getMessage());
         } catch (MalformedJwtException expEx) {
-            log.warn("Malformed JwtException", expEx);
+            log.warn("Malformed JwtException: {}", expEx.getMessage());
         } catch (SecurityException expEx) {
-            log.warn("Security Exception", expEx);
+            log.warn("Security Exception: {}", expEx.getMessage());
         } catch (Exception expEx) {
-            log.warn("Invalid token", expEx);
+            log.warn("Invalid token: {}", expEx.getMessage());
         }
         return false;
     }

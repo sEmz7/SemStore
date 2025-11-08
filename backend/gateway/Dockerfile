@@ -6,6 +6,7 @@ COPY backend/gateway/pom.xml ./gateway/
 COPY backend/discovery-server/pom.xml ./discovery-server/
 COPY backend/user-service/pom.xml ./user-service/
 COPY backend/order-service/pom.xml ./order-service/
+COPY backend/common-dtos/pom.xml ./common-dtos/
 RUN mvn dependency:go-offline -B
 COPY backend/gateway/src ./gateway/src/
 RUN mvn package -pl gateway -DskipTests
