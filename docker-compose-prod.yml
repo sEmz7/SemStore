@@ -2,6 +2,7 @@ services:
   discovery-server:
     container_name: discovery-server
     image: ${DOCKERHUB_USERNAME}/discovery-server:latest
+    restart: unless-stopped
     ports:
       - "8761:8761"
     healthcheck:
@@ -13,6 +14,7 @@ services:
   gateway:
     container_name: gateway
     image: ${DOCKERHUB_USERNAME}/gateway:latest
+    restart: unless-stopped
     ports:
       - "8080:8080"
     depends_on:
@@ -28,6 +30,7 @@ services:
   user-service:
     container_name: user-service
     image: ${DOCKERHUB_USERNAME}/user-service:latest
+    restart: unless-stopped
     ports:
       - "8081:8081"
     depends_on:
@@ -51,6 +54,7 @@ services:
 
   user-service-db:
     image: postgres:16.1
+    restart: unless-stopped
     env_file:
       - .env
     ports:
@@ -70,6 +74,7 @@ services:
   order-service:
     container_name: order-service
     image: ${DOCKERHUB_USERNAME}/order-service:latest
+    restart: unless-stopped
     ports:
       - "8082:8082"
     depends_on:
@@ -96,6 +101,7 @@ services:
   order-service-db:
     container_name: order-service-db
     image: postgres:16.1
+    restart: unless-stopped
     env_file:
       - .env
     ports:
@@ -115,6 +121,7 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
+    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -124,6 +131,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
+    restart: unless-stopped
     ports:
       - "9092:9092"
       - "29092:29092"
