@@ -78,7 +78,7 @@ jobs:
           username: ${{ secrets.SSH_LOGIN }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            cd /semstore
-            git pull
+            cd SemStore
+            git pull origin develop
             docker compose -f docker-compose-prod.yml pull
             docker compose -f docker-compose-prod.yml up -d
