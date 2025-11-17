@@ -1,4 +1,4 @@
-package ru.semstore.userservice;
+package ru.semstore.orderservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -6,7 +6,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class UserServiceApplicationTests {
+class OrderServiceApplicationTests {
 
     @Test
     void contextLoads() {

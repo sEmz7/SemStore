@@ -1,0 +1,2 @@
+INSERT INTO orders (id, user_id, address_id, status, created_date)
+VALUES ('08acd0a9-b1f8-40ab-a69a-efec2ab7fda6', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', 'PENDING', NOW());

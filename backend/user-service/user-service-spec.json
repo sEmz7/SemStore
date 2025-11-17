@@ -1,0 +1,855 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8081",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Пользователи",
+      "description": "API для операций с пользователями"
+    },
+    {
+      "name": "Адреса",
+      "description": "API для операций с адресами"
+    },
+    {
+      "name": "Аутентификация",
+      "description": "API для регистрации, авторизации и обновления токенов пользователей"
+    }
+  ],
+  "paths": {
+    "/users/address": {
+      "get": {
+        "tags": [
+          "Адреса"
+        ],
+        "summary": "Получение всех адресов пользователя",
+        "description": "Возвращает данные обо всех адресах пользователя",
+        "operationId": "getUserAddresses",
+        "responses": {
+          "404": {
+            "description": "Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Адреса возвращены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AddressDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Адреса"
+        ],
+        "summary": "Создание нового адреса",
+        "description": "Создает новый адрес и возвращает его данные",
+        "operationId": "createAddress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddressCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Невалидные данные запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь имеет максимальное количество адресов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Адрес успешно создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Аутентификация"
+        ],
+        "summary": "Регистрация нового пользователя",
+        "description": "Создает нового пользователя и возвращает его данные",
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Неверные входные данные",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь с таким email уже существует",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Пользователь успешно зарегистрирован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": [
+          "Аутентификация"
+        ],
+        "summary": "Обновление токена доступа",
+        "description": "Обновление JWT токена доступа с использованием refresh token",
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Токен успешно обновлен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JwtAuthDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неверный или просроченный refresh token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Аутентификация"
+        ],
+        "summary": "Авторизация",
+        "description": "Аутентификация пользователя и получение JWT токенов",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCredentialsDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Успешная авторизация",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JwtAuthDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка входных данных",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неверный пароль",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/password": {
+      "patch": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Изменение пароля",
+        "description": "Позволяет пользователю изменить свой пароль",
+        "operationId": "changePassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Пароль успешно изменен"
+          },
+          "400": {
+            "description": "Невалидные данные запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Старый пароль неверен или новый пароль совпадает со старым",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Пользователь не аутентифицирован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/address/{addressId}": {
+      "get": {
+        "tags": [
+          "Адреса"
+        ],
+        "summary": "Получение адреса по ID",
+        "description": "Возвращает данные конкретного адреса по его идентификатору",
+        "operationId": "getAddressById",
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Адрес не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Адрес возвращен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Адреса"
+        ],
+        "summary": "Удаление адреса",
+        "description": "Удаляет адрес по его идентификатору",
+        "operationId": "deleteAddressById",
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Адрес не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Адрес успешно удален"
+          },
+          "409": {
+            "description": "Попытка обновления чужого адреса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Адреса"
+        ],
+        "summary": "Обновление адреса",
+        "description": "Обновляет данные существующего адреса",
+        "operationId": "updateAddress",
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddressUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Невалидные данные запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Адрес не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Адрес успешно обновлен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Попытка обновления чужого адреса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Получение данных текущего пользователя",
+        "description": "Возвращает данные пользователя",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "404": {
+            "description": "Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Данные пользователя возвращены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Пользователь не аутентифицирован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddressCreateDto": {
+        "required": [
+          "building",
+          "city",
+          "firstname",
+          "lastname",
+          "patronymic",
+          "phone",
+          "postalCode",
+          "street"
+        ],
+        "type": "object",
+        "properties": {
+          "firstname": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Имя",
+            "example": "Иван"
+          },
+          "lastname": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Фамилия",
+            "example": "Иванов"
+          },
+          "patronymic": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Отчество",
+            "example": "Иванович"
+          },
+          "phone": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "description": "Телефон",
+            "example": "+7 (999) 123-45-67"
+          },
+          "city": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Город",
+            "example": "Москва"
+          },
+          "street": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Улица",
+            "example": "Тверская"
+          },
+          "building": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Строение",
+            "example": "5к1"
+          },
+          "postalCode": {
+            "type": "integer",
+            "description": "Почтовый индекс",
+            "format": "int32",
+            "example": 125009
+          }
+        },
+        "description": "DTO для создания адреса"
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Текст ошибки",
+            "example": "error message"
+          }
+        },
+        "description": "Error response"
+      },
+      "AddressDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID адреса",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
+          },
+          "firstname": {
+            "type": "string",
+            "description": "Имя",
+            "example": "Иван"
+          },
+          "lastname": {
+            "type": "string",
+            "description": "Фамилия",
+            "example": "Иванов"
+          },
+          "patronymic": {
+            "type": "string",
+            "description": "Отчество",
+            "example": "Иванович"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Телефон",
+            "example": "+7 (999) 123-45-67"
+          },
+          "city": {
+            "type": "string",
+            "description": "Город",
+            "example": "Москва"
+          },
+          "street": {
+            "type": "string",
+            "description": "Улица",
+            "example": "Тверская"
+          },
+          "building": {
+            "type": "string",
+            "description": "Строение",
+            "example": "5к1"
+          },
+          "postalCode": {
+            "type": "integer",
+            "description": "Почтовый индекс",
+            "format": "int32",
+            "example": 125009
+          }
+        },
+        "description": "DTO адреса"
+      },
+      "UserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID пользователя",
+            "format": "uuid",
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email пользователя",
+            "example": "example@test.com"
+          }
+        },
+        "description": "DTO для просмотра данных пользователя",
+        "example": "e9312918-a9b3-4eaa-9bb1-f97b88b58572"
+      },
+      "UserCreateDto": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email пользователя",
+            "example": "example@test.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "Пароль пользователя",
+            "example": "password"
+          }
+        },
+        "description": "Данные пользователя для регистрации"
+      },
+      "RefreshTokenDto": {
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "refresh token"
+          }
+        },
+        "description": "DTO для передачи токена обновления"
+      },
+      "JwtAuthDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Токен доступа",
+            "example": "jwt token"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Токен обновления",
+            "example": "refresh token"
+          }
+        },
+        "description": "DTO для передачи токенов"
+      },
+      "UserCredentialsDto": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email пользователя",
+            "example": "example@test.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "Пароль пользователя",
+            "example": "password"
+          }
+        },
+        "description": "Данные пользователя для авторизации"
+      },
+      "ChangePasswordDto": {
+        "required": [
+          "newPassword",
+          "oldPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "oldPassword": {
+            "type": "string",
+            "description": "Старый пароль",
+            "example": "oldPassword123"
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "Новый пароль",
+            "example": "newPassword456"
+          }
+        },
+        "description": "DTO для изменения пароля"
+      },
+      "AddressUpdateDto": {
+        "type": "object",
+        "properties": {
+          "firstname": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Имя",
+            "example": "Иван"
+          },
+          "lastname": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Фамилия",
+            "example": "Иванов"
+          },
+          "patronymic": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Отчество",
+            "example": "Иванович"
+          },
+          "phone": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "description": "Телефон",
+            "example": "+7 (999) 123-45-67"
+          },
+          "city": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Город",
+            "example": "Москва"
+          },
+          "street": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Улица",
+            "example": "Тверская"
+          },
+          "building": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Строение",
+            "example": "5к1"
+          },
+          "postalCode": {
+            "type": "integer",
+            "description": "Почтовый индекс",
+            "format": "int32",
+            "example": 125009
+          }
+        },
+        "description": "DTO для обновления адреса"
+      }
+    }
+  }
+}
