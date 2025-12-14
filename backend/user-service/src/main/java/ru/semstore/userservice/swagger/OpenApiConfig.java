@@ -1,4 +1,4 @@
-package ru.semstore.orderservice.swagger;
+package ru.semstore.userservice.swagger;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
@@ -6,12 +6,10 @@ import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
 @OpenAPIDefinition(
-        info = @Info(title = "Order service OpenAPI"),
-        servers = @Server(url = "http://localhost:8080", description = "Order service")
+        info = @Info(title = "User service OpenAPI"),
+        servers = @Server(url = "http://localhost:8081", description = "User service")
 )
 @SecurityScheme(
         name = "bearerAuth",
@@ -21,4 +19,5 @@ import org.springframework.context.annotation.Configuration;
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER
 )
-public class OpenApiSecurityConfig {}
+public class OpenApiConfig {
+}

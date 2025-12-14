@@ -5,6 +5,19 @@ spring:
     name: gateway
   cloud:
     gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:8081"
+              - "http://localhost:8082"
+              - "http://localhost:3000"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            exposedHeaders:
+              - "Authorization"
+            allowCredentials: true
       routes:
         - id: user-service
           uri: lb://USER-SERVICE
