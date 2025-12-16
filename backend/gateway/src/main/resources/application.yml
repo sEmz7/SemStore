@@ -29,6 +29,18 @@ spring:
             - Path=/orders/**
           filters:
             - AuthFilter
+        - id: user-service-swagger-redirect
+          uri: no://op
+          predicates:
+            - Path=/user-service/swagger
+          filters:
+            - RedirectTo=302,http://localhost:8081/swagger-ui/index.html
+        - id: order-service-swagger-redirect
+          uri: no://op
+          predicates:
+            - Path=/order-service/swagger
+          filters:
+            - RedirectTo=302,http://localhost:8082/swagger-ui/index.html
       default-filters:
         - RemoveRequestHeader=X-User-Id
 
