@@ -39,8 +39,8 @@ public class AddressController {
             @ApiResponse(responseCode = "201", description = "(CREATED) Адрес успешно создан", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = AddressDto.class))),
-            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса", content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен", content = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -89,8 +89,8 @@ public class AddressController {
             @ApiResponse(responseCode = "200", description = "(OK) Адрес успешно обновлен", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = AddressDto.class))),
-            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса", content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен", content = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,

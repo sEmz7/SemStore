@@ -33,8 +33,8 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "(OK) Данные пользователя возвращены", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = UserDto.class))),
-            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса", content = @Content(
-                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен", content = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,

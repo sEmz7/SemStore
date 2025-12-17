@@ -35,8 +35,8 @@ public class AuthController {
             @ApiResponse(responseCode = "201", description = "(CREATED) Пользователь успешно зарегистрирован",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = UserDto.class))),
-            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Неверные входные данные", content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Неверные входные данные",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "(CONFLICT) Пользователь с таким email уже существует",
                     content = @Content(
