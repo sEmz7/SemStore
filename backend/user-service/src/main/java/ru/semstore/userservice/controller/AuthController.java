@@ -29,35 +29,19 @@ import ru.semstore.userservice.service.UserService;
 public class AuthController {
     private final UserService userService;
 
-    @Operation(
-            summary = "Регистрация нового пользователя",
-            description = "Создает нового пользователя и возвращает его данные"
-    )
+    @Operation(summary = "Регистрация нового пользователя",
+            description = "Создает нового пользователя и возвращает его данные")
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Пользователь успешно зарегистрирован",
+            @ApiResponse(responseCode = "201", description = "(CREATED) Пользователь успешно зарегистрирован",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = UserDto.class))),
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Неверные входные данные", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "(CONFLICT) Пользователь с таким email уже существует",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = UserDto.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Неверные входные данные",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Пользователь с таким email уже существует",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            )
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -65,68 +49,36 @@ public class AuthController {
         return userService.create(dto);
     }
 
-    @Operation(summary = "Авторизация",
-    description = "Аутентификация пользователя и получение JWT токенов")
+    @Operation(summary = "Авторизация", description = "Аутентификация пользователя и получение JWT токенов")
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Успешная авторизация",
-                    content = @Content(
+            @ApiResponse(responseCode = "200", description = "(OK) Успешная авторизация", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = JwtAuthDto.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Ошибка входных данных",
-                    content = @Content(
+                            schema = @Schema(implementation = JwtAuthDto.class))),
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Ошибка входных данных", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Неверный пароль",
-                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Неверный пароль", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Пользователь не найден",
-                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "(NOT FOUND) Пользователь не найден", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            )
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/login")
     public JwtAuthDto login(@Valid @RequestBody UserCredentialsDto dto) {
         return userService.logIn(dto);
     }
 
-    @Operation(
-            summary = "Обновление токена доступа",
-            description = "Обновление JWT токена доступа с использованием refresh token"
-    )
+    @Operation(summary = "Обновление токена доступа",
+            description = "Обновление JWT токена доступа с использованием refresh token")
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Токен успешно обновлен",
+            @ApiResponse(responseCode = "200", description = "(OK) Токен успешно обновлен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = JwtAuthDto.class))),
+            @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Неверный или просроченный refresh token",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = JwtAuthDto.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Неверный или просроченный refresh token",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            )
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/refresh")
     public JwtAuthDto refresh(@Valid @RequestBody RefreshTokenDto dto) {

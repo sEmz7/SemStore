@@ -34,43 +34,27 @@ import java.util.UUID;
 public class AddressController {
     private final AddressService addressService;
 
-    @Operation(
-            summary = "Создание нового адреса",
-            description = "Создает новый адрес и возвращает его данные"
-    )
+    @Operation(summary = "Создание нового адреса", description = "Создает новый адрес и возвращает его данные")
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Адрес успешно создан",
-                    content = @Content(
+            @ApiResponse(responseCode = "201", description = "(CREATED) Адрес успешно создан", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AddressDto.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Невалидные данные запроса",
-                    content = @Content(
+                            schema = @Schema(implementation = AddressDto.class))),
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Пользователь не найден",
-                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен", content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "(NOT FOUND) Пользователь не найден", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Пользователь имеет максимальное количество адресов",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            )
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409",
+                    description = "(CONFLICT) Пользователь имеет максимальное количество адресов",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -79,70 +63,48 @@ public class AddressController {
         return addressService.create(dto, userDetails.user().getId());
     }
 
-    @Operation(
-            summary = "Получение всех адресов пользователя",
-            description = "Возвращает данные обо всех адресах пользователя"
-    )
+    @Operation(summary = "Получение всех адресов пользователя",
+            description = "Возвращает данные обо всех адресах пользователя")
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Адреса возвращены",
-                    content = @Content(
+            @ApiResponse(responseCode = "200", description = "(OK) Адреса возвращены", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            array = @ArraySchema(schema = @Schema(implementation = AddressDto.class))
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Пользователь не найден",
-                    content = @Content(
+                            array = @ArraySchema(schema = @Schema(implementation = AddressDto.class)))),
+            @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен", content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "(NOT FOUND) Пользователь не найден", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            )
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping
     public List<AddressDto> getUserAddresses(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return addressService.getUserAddresses(userDetails.user().getId());
     }
 
-    @Operation(
-            summary = "Обновление адреса",
-            description = "Обновляет данные существующего адреса"
-    )
+    @Operation(summary = "Обновление адреса", description = "Обновляет данные существующего адреса")
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Адрес успешно обновлен",
-                    content = @Content(
+            @ApiResponse(responseCode = "200", description = "(OK) Адрес успешно обновлен", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AddressDto.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Невалидные данные запроса",
-                    content = @Content(
+                            schema = @Schema(implementation = AddressDto.class))),
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Адрес не найден",
-                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен", content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "(NOT FOUND) Адрес не найден", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Попытка обновления чужого адреса",
-                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409",
+                    description = "(CONFLICT) Попытка обновления чужого адреса", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                            )
-            )
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PatchMapping("/{addressId}")
     public AddressDto updateAddress(@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -151,58 +113,43 @@ public class AddressController {
         return addressService.update(dto, addressId, userDetails.user().getId());
     }
 
-    @Operation(
-            summary = "Получение адреса по ID",
-            description = "Возвращает данные конкретного адреса по его идентификатору"
-    )
+    @Operation(summary = "Получение адреса по ID",
+            description = "Возвращает данные конкретного адреса по его идентификатору")
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Адрес возвращен",
-                    content = @Content(
+            @ApiResponse(responseCode = "200", description = "(OK) Адрес возвращен", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AddressDto.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Адрес не найден",
-                    content = @Content(
+                            schema = @Schema(implementation = AddressDto.class))),
+            @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен", content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "(NOT FOUND) Адрес не найден", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            )
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/{addressId}")
     public AddressDto getAddressById(@PathVariable("addressId") UUID addressId) {
         return addressService.getById(addressId);
     }
 
-    @Operation(
-            summary = "Удаление адреса",
-            description = "Удаляет адрес по его идентификатору"
-    )
+    @Operation(summary = "Удаление адреса", description = "Удаляет адрес по его идентификатору")
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "204",
-                    description = "Адрес успешно удален"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Адрес не найден",
-                    content = @Content(
+            @ApiResponse(responseCode = "204", description = "(NO CONTENT) Адрес успешно удален"),
+            @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен", content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "(NOT FOUND) Адрес не найден", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Попытка обновления чужого адреса",
-                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409",
+                    description = "(CONFLICT) Попытка обновления чужого адреса", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )
-            )
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/{addressId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
