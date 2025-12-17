@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
-import ru.semstore.orderservice.model.OrderItem;
 import ru.semstore.orderservice.model.OrderStatus;
 
 import java.time.LocalDateTime;
