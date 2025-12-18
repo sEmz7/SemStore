@@ -21,6 +21,18 @@ import ru.semstore.userservice.dto.user.UserDto;
 import ru.semstore.userservice.exception.ErrorResponse;
 import ru.semstore.userservice.service.UserService;
 
+/**
+ * REST-контроллер для аутентификации пользователей.
+ *
+ * <p>Предоставляет API для:
+ * <ul>
+ *   <li>регистрации новых пользователей</li>
+ *   <li>авторизации и получения JWT токенов</li>
+ *   <li>обновления access token по refresh token</li>
+ *   <li>валидации JWT токена</li>
+ * </ul>
+ */
+
 @Tag(name = "Аутентификация", description = "API для регистрации, авторизации и обновления токенов пользователей")
 @RestController
 @RequiredArgsConstructor
@@ -28,6 +40,13 @@ import ru.semstore.userservice.service.UserService;
 @Validated
 public class AuthController {
     private final UserService userService;
+
+    /**
+     * Регистрирует нового пользователя.
+     *
+     * @param dto данные для регистрации пользователя
+     * @return зарегистрированный пользователь
+     */
 
     @Operation(summary = "Регистрация нового пользователя",
             description = "Создает нового пользователя и возвращает его данные")
@@ -49,6 +68,13 @@ public class AuthController {
         return userService.create(dto);
     }
 
+    /**
+     * Аутентифицирует пользователя и возвращает JWT токены.
+     *
+     * @param dto учетные данные пользователя
+     * @return access и refresh JWT токены
+     */
+
     @Operation(summary = "Авторизация", description = "Аутентификация пользователя и получение JWT токенов")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "(OK) Успешная авторизация", content = @Content(
@@ -69,6 +95,13 @@ public class AuthController {
         return userService.logIn(dto);
     }
 
+    /**
+     * Обновляет JWT токены с использованием refresh token.
+     *
+     * @param dto refresh token
+     * @return новые access и refresh токены
+     */
+
     @Operation(summary = "Обновление токена доступа",
             description = "Обновление JWT токена доступа с использованием refresh token")
     @ApiResponses({
@@ -84,6 +117,13 @@ public class AuthController {
     public JwtAuthDto refresh(@Valid @RequestBody RefreshTokenDto dto) {
         return userService.refreshToken(dto);
     }
+
+    /**
+     * Проверяет валидность JWT токена и возвращает данные пользователя.
+     *
+     * @param authHeader HTTP заголовок Authorization с JWT токеном
+     * @return данные пользователя, извлечённые из токена
+     */
 
     @PostMapping("/validateToken")
     public UserDto validateToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {

@@ -25,6 +25,12 @@ import ru.semstore.userservice.service.AddressService;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * REST-контроллер для управления адресами пользователя.
+ *
+ * <p>Предоставляет защищённые эндпоинты для создания, получения,
+ * обновления и удаления адресов текущего пользователя.</p>
+ */
 @Tag(name = "Адреса", description = "API для операций с адресами")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -34,6 +40,13 @@ import java.util.UUID;
 public class AddressController {
     private final AddressService addressService;
 
+    /**
+     * Создаёт новый адрес для текущего пользователя.
+     *
+     * @param dto данные для создания адреса
+     * @param userDetails данные текущего пользователя из security context
+     * @return созданный адрес
+     */
     @Operation(summary = "Создание нового адреса", description = "Создает новый адрес и возвращает его данные")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "(CREATED) Адрес успешно создан", content = @Content(
@@ -63,6 +76,12 @@ public class AddressController {
         return addressService.create(dto, userDetails.user().getId());
     }
 
+    /**
+     * Возвращает список всех адресов текущего пользователя.
+     *
+     * @param userDetails данные текущего пользователя из security context
+     * @return список адресов пользователя
+     */
     @Operation(summary = "Получение всех адресов пользователя",
             description = "Возвращает данные обо всех адресах пользователя")
     @ApiResponses({
@@ -84,6 +103,14 @@ public class AddressController {
         return addressService.getUserAddresses(userDetails.user().getId());
     }
 
+    /**
+     * Обновляет существующий адрес пользователя.
+     *
+     * @param userDetails данные текущего пользователя из security context
+     * @param dto данные для обновления адреса
+     * @param addressId идентификатор адреса
+     * @return обновлённый адрес
+     */
     @Operation(summary = "Обновление адреса", description = "Обновляет данные существующего адреса")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "(OK) Адрес успешно обновлен", content = @Content(
@@ -113,6 +140,12 @@ public class AddressController {
         return addressService.update(dto, addressId, userDetails.user().getId());
     }
 
+    /**
+     * Возвращает адрес по его идентификатору.
+     *
+     * @param addressId идентификатор адреса
+     * @return адрес
+     */
     @Operation(summary = "Получение адреса по ID",
             description = "Возвращает данные конкретного адреса по его идентификатору")
     @ApiResponses({
@@ -134,6 +167,12 @@ public class AddressController {
         return addressService.getById(addressId);
     }
 
+    /**
+     * Удаляет адрес пользователя по идентификатору.
+     *
+     * @param userDetails данные текущего пользователя из security context
+     * @param addressId идентификатор адреса
+     */
     @Operation(summary = "Удаление адреса", description = "Удаляет адрес по его идентификатору")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "(NO CONTENT) Адрес успешно удален"),
