@@ -1,6 +1,5 @@
 package ru.semstore.userservice.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,7 +12,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.semstore.userservice.dto.address.AddressCreateDto;
-import ru.semstore.userservice.dto.address.AddressDto;
 import ru.semstore.userservice.dto.address.AddressUpdateDto;
 import ru.semstore.userservice.model.Address;
 import ru.semstore.userservice.model.User;
