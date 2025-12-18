@@ -1,12 +1,12 @@
 package ru.semstore.orderservice.service;
 
-import ru.semstore.orderservice.dto.OrderCreateDto;
-import ru.semstore.orderservice.dto.OrderDto;
-import ru.semstore.orderservice.dto.OrderUpdateDto;
+import ru.semstore.orderservice.dto.order.OrderCreateDto;
+import ru.semstore.orderservice.dto.order.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderUpdateDto;
+import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.model.OrderStatus;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 public interface OrderService {
@@ -18,6 +18,6 @@ public interface OrderService {
 
     OrderDto getById(UUID orderId, UUID userId);
 
-    List<OrderDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
-                          LocalDateTime rangeEnd);
+    PageResponse<OrderDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
+                                  LocalDateTime rangeEnd);
 }

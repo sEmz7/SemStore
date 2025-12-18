@@ -13,5 +13,5 @@ CREATE TABLE IF NOT EXISTS user_address(
   city varchar(100) NOT NULL,
   street varchar(100) NOT NULL,
   building varchar(100) NOT NULL,
-  postal_code int NOT NULL
+  postal_code varchar(100) NOT NULL
 );

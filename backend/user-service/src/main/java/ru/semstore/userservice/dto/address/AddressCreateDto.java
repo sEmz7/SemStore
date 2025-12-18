@@ -51,5 +51,5 @@ public class AddressCreateDto {
 
     @Schema(description = "Почтовый индекс", example = "125009", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull
-    private Integer postalCode;
+    private String postalCode;
 }
