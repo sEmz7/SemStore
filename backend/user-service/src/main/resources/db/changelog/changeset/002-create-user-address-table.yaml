@@ -1,0 +1,76 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-user-address-table
+      author: semyon
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: user_address
+      changes:
+        - createTable:
+            tableName: user_address
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: firstname
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lastname
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: patronymic
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: city
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: street
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: building
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: postal_code
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: user_address
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_user_address_user_id
+        - createIndex:
+            tableName: user_address
+            indexName: idx_user_address_user_id
+            columns:
+              - column:
+                  name: user_id

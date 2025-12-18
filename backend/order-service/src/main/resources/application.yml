@@ -16,6 +16,8 @@ spring:
   sql:
     init:
       mode: always
+  liquibase:
+    enabled: true
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     producer:
