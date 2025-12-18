@@ -30,6 +30,6 @@ public class OrderItem {
     @Column(name = "size", nullable = false, length = 30)
     private String size;
 
-    @Column(name = "configuration", nullable = false, length = 255)
+    @Column(name = "configuration", nullable = false)
     private String configuration;
 }
