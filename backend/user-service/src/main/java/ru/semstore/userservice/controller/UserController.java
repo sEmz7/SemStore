@@ -19,6 +19,9 @@ import ru.semstore.userservice.exception.ErrorResponse;
 import ru.semstore.userservice.security.CustomUserDetails;
 import ru.semstore.userservice.service.UserService;
 
+/**
+ * REST-контроллер для работы с данными пользователя.
+ */
 @Tag(name = "Пользователи", description = "API для операций с пользователями")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -27,6 +30,13 @@ import ru.semstore.userservice.service.UserService;
 @Validated
 public class UserController {
     private final UserService userService;
+
+    /**
+     * Возвращает данные текущего аутентифицированного пользователя.
+     *
+     * @param userDetails данные пользователя из security context
+     * @return данные текущего пользователя
+     */
 
     @Operation(summary = "Получение данных текущего пользователя", description = "Возвращает данные пользователя")
     @ApiResponses({
@@ -51,6 +61,12 @@ public class UserController {
         return userService.getById(userDetails.user().getId());
     }
 
+    /**
+     * Изменяет пароль текущего пользователя.
+     *
+     * @param userDetails данные текущего пользователя из security context
+     * @param dto данные для смены пароля
+     */
     @Operation(summary = "Изменение пароля", description = "Позволяет пользователю изменить свой пароль")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "(OK) Пароль успешно изменен"),
