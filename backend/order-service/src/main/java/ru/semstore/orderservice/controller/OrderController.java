@@ -45,18 +45,24 @@ public class OrderController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
             summary = "Создать заказ",
-            description = "Создаёт новый заказ со статусом PENDING и отправляет событие в Kafka для проверки.",
+            description = "Создаёт новый заказ со статусом PENDING и отправляет событие в user service для проверки.",
             responses = {
-                    @ApiResponse(responseCode = "201", description = "Заказ создан",
+                    @ApiResponse(responseCode = "201", description = "(CREATED) Заказ создан",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = OrderDto.class))),
-                    @ApiResponse(responseCode = "400", description = "Невалидные данные запроса"),
-                    @ApiResponse(responseCode = "401", description = "Пользователь не аутентифицирован",
+                    @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = ErrorResponse.class))),
-                    @ApiResponse(responseCode = "409", description = "Конфликт бизнес-логики")
-            }
-    )
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "(CONFLICT) Конфликт бизнес-логики",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
+            })
     public OrderDto create(@Valid @RequestBody OrderCreateDto dto,
                            @Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId) {
         return orderService.create(dto, userId);
@@ -67,12 +73,25 @@ public class OrderController {
             summary = "Обновить заказ",
             description = "Обновляет адрес заказа. Недоступно, если заказ в статусах PAID/ORDERED.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Заказ обновлён",
+                    @ApiResponse(responseCode = "200", description = "(OK) Заказ обновлён",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = OrderDto.class))),
-                    @ApiResponse(responseCode = "400", description = "Невалидные данные запроса"),
-                    @ApiResponse(responseCode = "404", description = "Заказ не найден"),
-                    @ApiResponse(responseCode = "409", description = "Адрес менять нельзя для текущего статуса")
+                    @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "404", description = "(NOT FOUND) Заказ не найден", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409",
+                            description = "(CONFLICT) Адрес менять нельзя для текущего статуса", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     public OrderDto update(@Valid @RequestBody OrderUpdateDto dto, @PathVariable("orderId") UUID orderId) {
@@ -83,12 +102,22 @@ public class OrderController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
             summary = "Удалить заказ",
-            description = "Удаляет заказ владельца. Недоступно для статусов PAID/ORDERED.",
+            description = "Удаляет заказ. Недоступно для статусов PAID/ORDERED.",
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Удалено"),
-                    @ApiResponse(responseCode = "404", description = "Заказ не найден"),
-                    @ApiResponse(responseCode = "409", description = "Удаление запрещено по статусу или" +
-                            " удалить может только владелец")
+                    @ApiResponse(responseCode = "204", description = "(NO CONTENT) Заказ удален"),
+                    @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "404", description = "(NOT FOUND) Заказ не найден", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409",
+                            description = "(CONFLICT) Удаление запрещено по статусу", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
             }
     )
     public void delete(@PathVariable("orderId") UUID orderId,
@@ -99,13 +128,23 @@ public class OrderController {
     @GetMapping("/{orderId}")
     @Operation(
             summary = "Получить заказ по id",
-            description = "Возвращает заказ, если запрашивающий — его владелец.",
+            description = "Возвращает заказ",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "OK",
+                    @ApiResponse(responseCode = "200", description = "(OK) Заказ получен",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = OrderDto.class))),
-                    @ApiResponse(responseCode = "404", description = "Заказ не найден"),
-                    @ApiResponse(responseCode = "409", description = "Доступ только владельцу")
+                    @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "404", description = "(NOT FOUND) Заказ не найден", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "(CONFLICT) Доступ только владельцу",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
             }
     )
     public OrderDto getById(@PathVariable("orderId") UUID orderId,
@@ -118,10 +157,18 @@ public class OrderController {
             summary = "Получить список заказов пользователя",
             description = "Постраничная выборка заказов пользователя с фильтрами по статусу и диапазону дат.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "OK",
+                    @ApiResponse(responseCode = "200", description = "(OK) Заказы получены",
                             content = @Content(mediaType = "application/json",
                                     array = @ArraySchema(schema = @Schema(implementation = OrderDto.class)))),
-                    @ApiResponse(responseCode = "400", description = "Неверные параметры запроса")
+                    @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Неверные параметры запроса",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
             }
     )
     @Parameters({
