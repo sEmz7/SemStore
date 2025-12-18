@@ -65,7 +65,7 @@ public class AddressControllerTests {
     void positiveCreateAddress() throws Exception {
         AddressCreateDto createDto = new AddressCreateDto(
                 "Иван", "Иванов", "Иванович", "+7 (999) 123-45-67", "Москва",
-                "Тверская", "15", 125009
+                "Тверская", "15", "125009"
         );
 
         mvc.perform(post("/users/address")

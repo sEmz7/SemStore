@@ -41,5 +41,5 @@ public class AddressDto {
     private String building;
 
     @Schema(description = "Почтовый индекс", example = "125009")
-    private Integer postalCode;
+    private String postalCode;
 }
