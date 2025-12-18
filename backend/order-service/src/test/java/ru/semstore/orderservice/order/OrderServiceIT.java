@@ -8,9 +8,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
-import ru.semstore.orderservice.dto.OrderCreateDto;
-import ru.semstore.orderservice.dto.OrderDto;
-import ru.semstore.orderservice.dto.OrderUpdateDto;
+import ru.semstore.orderservice.dto.order.OrderCreateDto;
+import ru.semstore.orderservice.dto.order.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderUpdateDto;
 import ru.semstore.orderservice.kafka.producer.KafkaProducer;
 import ru.semstore.orderservice.model.Order;
 import ru.semstore.orderservice.model.OrderStatus;
@@ -104,7 +104,7 @@ public class OrderServiceIT {
     @Sql({"/data/cleanUp.sql", "/data/insertAll.sql"})
     void getAll_ShouldReturn() {
         List<OrderDto> orderDtos = orderService
-                .getAll(userId, 0, 10, OrderStatus.PENDING, null, null);
+                .getAll(userId, 0, 10, OrderStatus.PENDING, null, null).content();
 
         assertNotNull(orderDtos);
         assertEquals(10, orderDtos.size());

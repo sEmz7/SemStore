@@ -2,14 +2,16 @@ package ru.semstore.orderservice.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.semstore.orderservice.dto.OrderCreateDto;
-import ru.semstore.orderservice.dto.OrderDto;
-import ru.semstore.orderservice.dto.OrderUpdateDto;
+import ru.semstore.orderservice.dto.order.OrderCreateDto;
+import ru.semstore.orderservice.dto.order.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderUpdateDto;
+import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
 import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
 import ru.semstore.orderservice.kafka.producer.KafkaProducer;
@@ -20,7 +22,6 @@ import ru.semstore.orderservice.repository.OrderRepository;
 import ru.semstore.orderservice.service.OrderService;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -90,11 +91,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<OrderDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
-                                 LocalDateTime rangeEnd) {
+    public PageResponse<OrderDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
+                                         LocalDateTime rangeEnd) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdDate").descending());
-        List<Order> orders = orderRepository.findAllBySort(pageable, userId, status, rangeStart, rangeEnd).getContent();
-        return orderMapper.listToDto(orders);
+        Page<Order> ordersPage = orderRepository.findAllBySort(pageable, userId, status, rangeStart, rangeEnd);
+        return PageResponse.from(ordersPage.map(orderMapper::toDto));
     }
 
     private Order findOrderByIdOrThrow(UUID orderId) {

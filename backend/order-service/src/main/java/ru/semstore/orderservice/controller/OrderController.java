@@ -19,15 +19,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.semstore.orderservice.dto.OrderCreateDto;
-import ru.semstore.orderservice.dto.OrderDto;
-import ru.semstore.orderservice.dto.OrderUpdateDto;
+import ru.semstore.orderservice.dto.order.OrderCreateDto;
+import ru.semstore.orderservice.dto.order.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderUpdateDto;
+import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.errors.ErrorResponse;
 import ru.semstore.orderservice.model.OrderStatus;
 import ru.semstore.orderservice.service.OrderService;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Заказы", description = "Управление заказами пользователя")
@@ -154,7 +154,7 @@ public class OrderController {
 
     @GetMapping
     @Operation(
-            summary = "Получить список заказов пользователя",
+            summary = "Получить страницы с заказами пользователя",
             description = "Постраничная выборка заказов пользователя с фильтрами по статусу и диапазону дат.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "(OK) Заказы получены",
@@ -187,13 +187,13 @@ public class OrderController {
                             example = "2025-12-31 23:59:59"),
                     examples = @ExampleObject(value = "2025-12-31 23:59:59"))
     })
-    public List<OrderDto> getAllOrders(@Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId,
-                                       @PositiveOrZero @RequestParam(defaultValue = "0") int page,
-                                       @Positive @RequestParam(defaultValue = "10") int size,
-                                       @RequestParam(required = false) OrderStatus status,
-                                       @RequestParam(required = false)
+    public PageResponse<OrderDto> getAllOrders(@Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId,
+                                               @PositiveOrZero @RequestParam(defaultValue = "0") int page,
+                                               @Positive @RequestParam(defaultValue = "10") int size,
+                                               @RequestParam(required = false) OrderStatus status,
+                                               @RequestParam(required = false)
                                            @DateTimeFormat(pattern = DATE_PATTERN) LocalDateTime rangeStart,
-                                       @RequestParam(required = false)
+                                               @RequestParam(required = false)
                                            @DateTimeFormat(pattern = DATE_PATTERN) LocalDateTime rangeEnd) {
         return orderService.getAll(userId, page, size, status, rangeStart, rangeEnd);
     }

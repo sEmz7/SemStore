@@ -3,8 +3,8 @@ package ru.semstore.orderservice.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
-import ru.semstore.orderservice.dto.OrderCreateDto;
-import ru.semstore.orderservice.dto.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderCreateDto;
+import ru.semstore.orderservice.dto.order.OrderDto;
 import ru.semstore.orderservice.model.Order;
 
 import java.util.List;

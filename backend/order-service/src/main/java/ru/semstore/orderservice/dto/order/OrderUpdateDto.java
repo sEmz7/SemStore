@@ -1,4 +1,4 @@
-package ru.semstore.orderservice.dto;
+package ru.semstore.orderservice.dto.order;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;

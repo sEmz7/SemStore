@@ -10,9 +10,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import ru.semstore.orderservice.dto.OrderCreateDto;
-import ru.semstore.orderservice.dto.OrderDto;
-import ru.semstore.orderservice.dto.OrderUpdateDto;
+import ru.semstore.orderservice.dto.order.OrderCreateDto;
+import ru.semstore.orderservice.dto.order.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderUpdateDto;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
 import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
 import ru.semstore.orderservice.kafka.producer.KafkaProducer;
@@ -203,10 +203,11 @@ public class OrderServiceTest {
                 any(Pageable.class), eq(userId), eq(OrderStatus.PENDING), isNull(), isNull()
         )).thenReturn(new PageImpl<>(List.of(order)));
 
-        when(orderMapper.listToDto(anyList())).thenReturn(List.of(orderDto));
+        when(orderMapper.toDto(any())).thenReturn(orderDto);
 
         List<OrderDto> result =
-                orderService.getAll(userId, 0, 10, OrderStatus.PENDING, null, null);
+                orderService.getAll(userId, 0, 10, OrderStatus.PENDING, null, null)
+                        .content();
 
         assertNotNull(result);
         assertEquals(1, result.size());
