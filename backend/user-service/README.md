@@ -34,6 +34,7 @@
 - **Lombok**
 - **Docker**
 - **Maven**
+- **Liquibase**
 
 ---
 
