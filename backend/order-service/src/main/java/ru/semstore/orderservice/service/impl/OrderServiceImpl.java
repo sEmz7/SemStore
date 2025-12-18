@@ -24,6 +24,9 @@ import ru.semstore.orderservice.service.OrderService;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Реализация сервиса заказов {@link OrderService}.
+ */
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -33,6 +36,16 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final KafkaProducer kafka;
 
+    /**
+     * Создаёт новый заказ пользователя.
+     *
+     * <p>Устанавливает владельца, статус {@link OrderStatus#PENDING} и дату создания.
+     * После сохранения отправляет заказ на проверку в user service через Kafka.</p>
+     *
+     * @param createDto данные для создания заказа
+     * @param userId    идентификатор владельца заказа
+     * @return созданный заказ
+     */
     @Override
     public OrderDto create(OrderCreateDto createDto, UUID userId) {
         Order order = orderMapper.toEntity(createDto);
@@ -46,6 +59,20 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDto(savedOrder);
     }
 
+    /**
+     * Обновляет заказ.
+     *
+     * <p>Обновление запрещено для заказов в статусах
+     * {@link OrderStatus#PAID} и {@link OrderStatus#ORDERED}.
+     * После обновления заказ переводится в статус {@link OrderStatus#PENDING}
+     * и отправляется на повторную проверку.</p>
+     *
+     * @param updateDto данные для обновления заказа
+     * @param orderId   идентификатор заказа
+     * @return обновлённый заказ
+     * @throws OrderNotFoundException если заказ не найден
+     * @throws ConflictException      если обновление запрещено по статусу
+     */
     @Override
     public OrderDto update(OrderUpdateDto updateDto, UUID orderId) {
         Order order = findOrderByIdOrThrow(orderId);
@@ -63,6 +90,17 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDto(order);
     }
 
+    /**
+     * Удаляет заказ пользователя.
+     *
+     * <p>Удаление доступно только владельцу заказа и запрещено
+     * для статусов {@link OrderStatus#PAID} и {@link OrderStatus#ORDERED}.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @param userId  идентификатор владельца заказа
+     * @throws OrderNotFoundException если заказ не найден
+     * @throws ConflictException      если пользователь не владелец или удаление запрещено
+     */
     @Override
     public void delete(UUID orderId, UUID userId) {
         Order order = findOrderByIdOrThrow(orderId);
@@ -78,6 +116,17 @@ public class OrderServiceImpl implements OrderService {
         log.debug("Order deleted. orderId={}", orderId);
     }
 
+    /**
+     * Возвращает заказ по идентификатору.
+     *
+     * <p>Доступ разрешён только владельцу заказа.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @param userId  идентификатор владельца заказа
+     * @return заказ
+     * @throws OrderNotFoundException если заказ не найден
+     * @throws ConflictException      если пользователь не владелец заказа
+     */
     @Transactional(readOnly = true)
     @Override
     public OrderDto getById(UUID orderId, UUID userId) {
@@ -89,6 +138,20 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDto(order);
     }
 
+    /**
+     * Возвращает постраничную выборку заказов пользователя.
+     *
+     * <p>Поддерживает фильтрацию по статусу и диапазону дат.
+     * Сортировка выполняется по дате создания по убыванию.</p>
+     *
+     * @param userId     идентификатор владельца заказов
+     * @param page       номер страницы
+     * @param size       размер страницы
+     * @param status     фильтр по статусу (может быть {@code null})
+     * @param rangeStart начало диапазона дат (может быть {@code null})
+     * @param rangeEnd   конец диапазона дат (может быть {@code null})
+     * @return страница заказов пользователя
+     */
     @Transactional(readOnly = true)
     @Override
     public PageResponse<OrderDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
@@ -98,6 +161,13 @@ public class OrderServiceImpl implements OrderService {
         return PageResponse.from(ordersPage.map(orderMapper::toDto));
     }
 
+    /**
+     * Возвращает заказ по идентификатору или выбрасывает исключение.
+     *
+     * @param orderId идентификатор заказа
+     * @return заказ
+     * @throws OrderNotFoundException если заказ не найден
+     */
     private Order findOrderByIdOrThrow(UUID orderId) {
         return orderRepository.findById(orderId).orElseThrow(() -> {
             log.warn("Order not found. orderId={}", orderId);

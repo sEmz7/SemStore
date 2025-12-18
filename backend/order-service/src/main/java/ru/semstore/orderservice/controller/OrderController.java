@@ -30,6 +30,21 @@ import ru.semstore.orderservice.service.OrderService;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * REST-контроллер для управления заказами пользователя.
+ *
+ * <p>Контроллер предоставляет API для:
+ * <ul>
+ *     <li>создания заказов</li>
+ *     <li>обновления и удаления заказов</li>
+ *     <li>получения одного заказа или списка заказов с фильтрацией</li>
+ * </ul>
+ *
+ * <p>Идентификатор пользователя передаётся через HTTP-заголовок {@code X-User-Id},
+ * который устанавливается gateway-сервисом после валидации JWT.</p>
+ *
+ * <p>Все эндпоинты защищены и требуют валидного JWT-токена.</p>
+ */
 @Tag(name = "Заказы", description = "Управление заказами пользователя")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -37,10 +52,25 @@ import java.util.UUID;
 @Validated
 @RequiredArgsConstructor
 public class OrderController {
+
     private final OrderService orderService;
+
+    /** HTTP-заголовок с идентификатором пользователя */
     private final String USER_ID_HEADER = "X-User-Id";
+
+    /** Формат даты и времени для фильтрации заказов */
     private final String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
+    /**
+     * Создаёт новый заказ пользователя.
+     *
+     * <p>Заказ создаётся в статусе {@link OrderStatus#PENDING}.
+     * После создания инициируется проверка пользователя через user-service.</p>
+     *
+     * @param dto    DTO с данными для создания заказа
+     * @param userId идентификатор пользователя из заголовка {@code X-User-Id}
+     * @return созданный заказ
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
@@ -68,6 +98,16 @@ public class OrderController {
         return orderService.create(dto, userId);
     }
 
+    /**
+     * Обновляет данные заказа.
+     *
+     * <p>Разрешено только для заказов в статусах,
+     * допускающих изменение адреса доставки.</p>
+     *
+     * @param dto     DTO с обновляемыми данными заказа
+     * @param orderId идентификатор заказа
+     * @return обновлённый заказ
+     */
     @PatchMapping("/{orderId}")
     @Operation(
             summary = "Обновить заказ",
@@ -98,6 +138,15 @@ public class OrderController {
         return orderService.update(dto, orderId);
     }
 
+    /**
+     * Удаляет заказ пользователя.
+     *
+     * <p>Удаление запрещено для заказов в статусах
+     * {@link OrderStatus#PAID} и {@link OrderStatus#ORDERED}.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
+     */
     @DeleteMapping("/{orderId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
@@ -125,6 +174,13 @@ public class OrderController {
         orderService.delete(orderId, userId);
     }
 
+    /**
+     * Возвращает заказ по идентификатору.
+     *
+     * @param orderId идентификатор заказа
+     * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
+     * @return заказ пользователя
+     */
     @GetMapping("/{orderId}")
     @Operation(
             summary = "Получить заказ по id",
@@ -152,6 +208,23 @@ public class OrderController {
         return orderService.getById(orderId, userId);
     }
 
+    /**
+     * Возвращает постраничный список заказов пользователя.
+     *
+     * <p>Поддерживается фильтрация по:
+     * <ul>
+     *     <li>статусу заказа</li>
+     *     <li>диапазону дат создания</li>
+     * </ul>
+     *
+     * @param userId     идентификатор пользователя из заголовка {@code X-User-Id}
+     * @param page       номер страницы (начиная с 0)
+     * @param size       размер страницы
+     * @param status     фильтр по статусу заказа (необязательный)
+     * @param rangeStart начало диапазона дат создания (необязательный)
+     * @param rangeEnd   конец диапазона дат создания (необязательный)
+     * @return страница заказов пользователя
+     */
     @GetMapping
     @Operation(
             summary = "Получить страницы с заказами пользователя",
