@@ -3,6 +3,7 @@ package ru.semstore.orderservice.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -52,4 +53,10 @@ public class OrderItem {
      */
     @Column(name = "configuration", nullable = false)
     private String configuration;
+
+    /**
+     * Цена товара.
+     */
+    @Column(name = "price", precision = 9, scale = 2)
+    private BigDecimal price;
 }

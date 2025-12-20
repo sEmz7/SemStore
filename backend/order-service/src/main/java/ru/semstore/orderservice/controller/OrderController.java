@@ -20,7 +20,8 @@ import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.semstore.orderservice.dto.order.OrderCreateDto;
-import ru.semstore.orderservice.dto.order.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderFullDto;
+import ru.semstore.orderservice.dto.order.OrderShortDto;
 import ru.semstore.orderservice.dto.order.OrderUpdateDto;
 import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.errors.ErrorResponse;
@@ -79,7 +80,7 @@ public class OrderController {
             responses = {
                     @ApiResponse(responseCode = "201", description = "(CREATED) Заказ создан",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = OrderDto.class))),
+                                    schema = @Schema(implementation = OrderShortDto.class))),
                     @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class))),
@@ -93,8 +94,8 @@ public class OrderController {
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public OrderDto create(@Valid @RequestBody OrderCreateDto dto,
-                           @Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId) {
+    public OrderShortDto create(@Valid @RequestBody OrderCreateDto dto,
+                                @Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId) {
         return orderService.create(dto, userId);
     }
 
@@ -115,7 +116,7 @@ public class OrderController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "(OK) Заказ обновлён",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = OrderDto.class))),
+                                    schema = @Schema(implementation = OrderShortDto.class))),
                     @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class))),
@@ -134,7 +135,7 @@ public class OrderController {
                             schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
-    public OrderDto update(@Valid @RequestBody OrderUpdateDto dto, @PathVariable("orderId") UUID orderId) {
+    public OrderShortDto update(@Valid @RequestBody OrderUpdateDto dto, @PathVariable("orderId") UUID orderId) {
         return orderService.update(dto, orderId);
     }
 
@@ -188,7 +189,7 @@ public class OrderController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "(OK) Заказ получен",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = OrderDto.class))),
+                                    schema = @Schema(implementation = OrderShortDto.class))),
                     @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = ErrorResponse.class))),
@@ -203,8 +204,8 @@ public class OrderController {
                             schema = @Schema(implementation = ErrorResponse.class))),
             }
     )
-    public OrderDto getById(@PathVariable("orderId") UUID orderId,
-                            @Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId) {
+    public OrderFullDto getById(@PathVariable("orderId") UUID orderId,
+                                @Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId) {
         return orderService.getById(orderId, userId);
     }
 
@@ -232,7 +233,7 @@ public class OrderController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "(OK) Заказы получены",
                             content = @Content(mediaType = "application/json",
-                                    array = @ArraySchema(schema = @Schema(implementation = OrderDto.class)))),
+                                    array = @ArraySchema(schema = @Schema(implementation = OrderShortDto.class)))),
                     @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Неверные параметры запроса",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class))),
@@ -260,13 +261,13 @@ public class OrderController {
                             example = "2025-12-31 23:59:59"),
                     examples = @ExampleObject(value = "2025-12-31 23:59:59"))
     })
-    public PageResponse<OrderDto> getAllOrders(@Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId,
-                                               @PositiveOrZero @RequestParam(defaultValue = "0") int page,
-                                               @Positive @RequestParam(defaultValue = "10") int size,
-                                               @RequestParam(required = false) OrderStatus status,
-                                               @RequestParam(required = false)
+    public PageResponse<OrderShortDto> getAllOrders(@Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId,
+                                                    @PositiveOrZero @RequestParam(defaultValue = "0") int page,
+                                                    @Positive @RequestParam(defaultValue = "10") int size,
+                                                    @RequestParam(required = false) OrderStatus status,
+                                                    @RequestParam(required = false)
                                            @DateTimeFormat(pattern = DATE_PATTERN) LocalDateTime rangeStart,
-                                               @RequestParam(required = false)
+                                                    @RequestParam(required = false)
                                            @DateTimeFormat(pattern = DATE_PATTERN) LocalDateTime rangeEnd) {
         return orderService.getAll(userId, page, size, status, rangeStart, rangeEnd);
     }

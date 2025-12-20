@@ -9,7 +9,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.semstore.orderservice.dto.order.OrderCreateDto;
-import ru.semstore.orderservice.dto.order.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderFullDto;
+import ru.semstore.orderservice.dto.order.OrderShortDto;
 import ru.semstore.orderservice.dto.order.OrderUpdateDto;
 import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
@@ -47,7 +48,7 @@ public class OrderServiceImpl implements OrderService {
      * @return созданный заказ
      */
     @Override
-    public OrderDto create(OrderCreateDto createDto, UUID userId) {
+    public OrderShortDto create(OrderCreateDto createDto, UUID userId) {
         Order order = orderMapper.toEntity(createDto);
         order.setUserId(userId);
         order.setStatus(OrderStatus.PENDING);
@@ -56,7 +57,7 @@ public class OrderServiceImpl implements OrderService {
         log.debug("Saved order with id={}", savedOrder.getId());
 
         kafka.sendOrderToCheck(savedOrder);
-        return orderMapper.toDto(savedOrder);
+        return orderMapper.toShortDto(savedOrder);
     }
 
     /**
@@ -74,7 +75,7 @@ public class OrderServiceImpl implements OrderService {
      * @throws ConflictException      если обновление запрещено по статусу
      */
     @Override
-    public OrderDto update(OrderUpdateDto updateDto, UUID orderId) {
+    public OrderShortDto update(OrderUpdateDto updateDto, UUID orderId) {
         Order order = findOrderByIdOrThrow(orderId);
         if (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.ORDERED) {
             log.warn("Order status is {}, address cannot be changed. orderId={}", order.getStatus(), orderId);
@@ -87,7 +88,7 @@ public class OrderServiceImpl implements OrderService {
         log.debug("Order updated. orderId={}", order.getId());
 
         kafka.sendOrderToCheck(order);
-        return orderMapper.toDto(order);
+        return orderMapper.toShortDto(order);
     }
 
     /**
@@ -129,13 +130,16 @@ public class OrderServiceImpl implements OrderService {
      */
     @Transactional(readOnly = true)
     @Override
-    public OrderDto getById(UUID orderId, UUID userId) {
-        Order order = findOrderByIdOrThrow(orderId);
+    public OrderFullDto getById(UUID orderId, UUID userId) {
+        Order order = orderRepository.findOrderByIdWithItems(orderId).orElseThrow(() -> {
+            log.warn("Order not found. orderId={}, userId={}", orderId, userId);
+            return new OrderNotFoundException("Order not found");
+        });
         if (!userId.equals(order.getUserId())) {
             log.warn("Only owner can get order info. orderId={}", orderId);
             throw new ConflictException("Only owner can get order info. orderId=" + orderId);
         }
-        return orderMapper.toDto(order);
+        return orderMapper.toFullDto(order);
     }
 
     /**
@@ -154,11 +158,11 @@ public class OrderServiceImpl implements OrderService {
      */
     @Transactional(readOnly = true)
     @Override
-    public PageResponse<OrderDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
-                                         LocalDateTime rangeEnd) {
+    public PageResponse<OrderShortDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
+                                              LocalDateTime rangeEnd) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdDate").descending());
         Page<Order> ordersPage = orderRepository.findAllBySort(pageable, userId, status, rangeStart, rangeEnd);
-        return PageResponse.from(ordersPage.map(orderMapper::toDto));
+        return PageResponse.from(ordersPage.map(orderMapper::toShortDto));
     }
 
     /**

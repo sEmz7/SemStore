@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -54,4 +56,7 @@ public class Order {
      */
     @Column(name = "created_date", nullable = false)
     private LocalDateTime createdDate;
+
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    private List<OrderItem> items = new ArrayList<>();
 }
