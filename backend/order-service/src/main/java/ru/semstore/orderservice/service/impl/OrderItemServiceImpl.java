@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.semstore.orderservice.dto.orderItem.OrderItemCreateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
+import ru.semstore.orderservice.errors.exceptions.ItemNotFoundException;
 import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
 import ru.semstore.orderservice.mapper.OrderItemMapper;
 import ru.semstore.orderservice.model.Order;
@@ -16,6 +17,7 @@ import ru.semstore.orderservice.repository.OrderItemRepository;
 import ru.semstore.orderservice.repository.OrderRepository;
 import ru.semstore.orderservice.service.OrderItemService;
 
+import java.util.EnumSet;
 import java.util.UUID;
 
 @Service
@@ -27,21 +29,16 @@ public class OrderItemServiceImpl implements OrderItemService {
     private final OrderRepository orderRepository;
     private final OrderItemMapper itemMapper;
 
+    private static final EnumSet<OrderStatus> NOT_MODIFIABLE_STATUSES =
+            EnumSet.of(OrderStatus.PAID, OrderStatus.ORDERED, OrderStatus.CANCELED);
+
     @Override
     public OrderItemDto addItem(UUID userId, UUID orderId, OrderItemCreateDto dto) {
         Order order = findOrderByIdOrThrow(orderId);
-        if (!order.getUserId().equals(userId)) {
-            log.warn("Only order owner can add items. orderId={}, userId={}", orderId, userId);
-            throw new ConflictException("Only order owner can add items");
-        }
-        if (order.getStatus().equals(OrderStatus.PAID) || order.getStatus().equals(OrderStatus.ORDERED)
-                || order.getStatus().equals(OrderStatus.CANCELED)) {
-            log.warn("The item cannot be added to the order due to its status. " +
-                    "orderId={}, orderStatus={}, userId={}", orderId, order.getStatus(), userId);
-            throw new ConflictException(
-                    "The item cannot be added to the order due to its status. orderStatus=" + order.getStatus()
-            );
-        }
+
+        validateOrderOwner(order, userId);
+        validateOrderIsModifiable(order, userId);
+
         OrderItem item = itemMapper.toEntity(dto);
         item.setOrder(order);
         OrderItem savedItem = itemRepository.save(item);
@@ -49,10 +46,52 @@ public class OrderItemServiceImpl implements OrderItemService {
         return itemMapper.toDto(savedItem);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public OrderItemDto getItemById(UUID userId, UUID orderId, UUID itemId) {
+        OrderItem item = itemRepository.findItemByIdWithOrder(itemId).orElseThrow(() -> {
+            log.warn("Item not found. userId={}, itemId={}, orderId={}", userId, itemId, orderId);
+            return new ItemNotFoundException("Item not found");
+        });
+
+        validateItemBelongsToOrder(item, orderId);
+        validateOrderOwner(item.getOrder(), userId);
+
+        return itemMapper.toDto(item);
+    }
+
     private Order findOrderByIdOrThrow(UUID orderId) {
         return orderRepository.findById(orderId).orElseThrow(()-> {
             log.warn("Order not found. orderId={}", orderId);
             return new OrderNotFoundException("Order not found. orderId=" + orderId);
         });
+    }
+
+    private void validateOrderOwner(Order order, UUID userId) {
+        if (!order.getUserId().equals(userId)) {
+            log.warn("Only order owner can access/modify items. orderId={}, userId={}",
+                    order.getId(), userId);
+            throw new ConflictException("Only order owner can get order info");
+        }
+    }
+
+    private void validateOrderIsModifiable(Order order, UUID userId) {
+        if (NOT_MODIFIABLE_STATUSES.contains(order.getStatus())) {
+            log.warn("The item cannot be added to the order due to its status. " +
+                            "orderId={}, orderStatus={}, userId={}",
+                    order.getId(), order.getStatus(), userId);
+            throw new ConflictException(
+                    "The item cannot be added to the order due to its status. orderStatus=" + order.getStatus()
+            );
+        }
+    }
+
+    private void validateItemBelongsToOrder(OrderItem item, UUID orderId) {
+        UUID actualOrderId = item.getOrder().getId();
+        if (!orderId.equals(actualOrderId)) {
+            log.warn("Item does not belong to this order. expectedOrderId={}, actualOrderId={}, itemId={}",
+                    orderId, actualOrderId, item.getId());
+            throw new ConflictException("Item does not belong to this order");
+        }
     }
 }

@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface OrderItemService {
 
     OrderItemDto addItem(UUID userId, UUID orderId, OrderItemCreateDto dto);
+
+    OrderItemDto getItemById(UUID userId, UUID orderId, UUID itemId);
 }

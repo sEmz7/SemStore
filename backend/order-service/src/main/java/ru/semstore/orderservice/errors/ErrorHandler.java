@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
+import ru.semstore.orderservice.errors.exceptions.ItemNotFoundException;
 import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
 
 @RestControllerAdvice
@@ -47,6 +48,12 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleHttpMessageNotReadableException(final HttpMessageNotReadableException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleItemNotFoundException(final ItemNotFoundException e) {
         return new ErrorResponse(e.getMessage());
     }
 }

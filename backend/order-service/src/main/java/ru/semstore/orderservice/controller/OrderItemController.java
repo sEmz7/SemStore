@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.semstore.orderservice.dto.orderItem.OrderItemCreateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
@@ -21,9 +22,17 @@ public class OrderItemController {
     private final OrderItemService itemService;
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public OrderItemDto create(@RequestHeader(USER_ID_HEADER) UUID userId,
                                @PathVariable("orderId") UUID orderId,
                                @Valid @RequestBody OrderItemCreateDto dto) {
         return itemService.addItem(userId, orderId, dto);
+    }
+
+    @GetMapping("/{itemId}")
+    public OrderItemDto getItemById(@RequestHeader(USER_ID_HEADER) UUID userId,
+                                    @PathVariable("orderId") UUID orderId,
+                                    @PathVariable("itemId") UUID itemId) {
+        return itemService.getItemById(userId, orderId, itemId);
     }
 }
