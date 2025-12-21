@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.semstore.orderservice.dto.orderItem.OrderItemCreateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
+import ru.semstore.orderservice.dto.orderItem.OrderItemUpdateDto;
 import ru.semstore.orderservice.service.OrderItemService;
 
 import java.util.UUID;
@@ -42,5 +43,13 @@ public class OrderItemController {
                        @PathVariable("orderId") UUID orderId,
                        @PathVariable("itemId") UUID itemId) {
         itemService.delete(userId, orderId, itemId);
+    }
+
+    @PatchMapping("/{itemId}")
+    public OrderItemDto update(@RequestHeader(USER_ID_HEADER) UUID userId,
+                               @PathVariable("orderId") UUID orderId,
+                               @PathVariable("itemId") UUID itemId,
+                               @Valid @RequestBody OrderItemUpdateDto dto) {
+        return itemService.update(userId, orderId, itemId, dto);
     }
 }

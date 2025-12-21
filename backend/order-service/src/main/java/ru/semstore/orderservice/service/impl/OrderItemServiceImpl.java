@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.semstore.orderservice.dto.orderItem.OrderItemCreateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
+import ru.semstore.orderservice.dto.orderItem.OrderItemUpdateDto;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
 import ru.semstore.orderservice.errors.exceptions.ItemNotFoundException;
 import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
@@ -69,6 +70,21 @@ public class OrderItemServiceImpl implements OrderItemService {
         log.debug("Item deleted. userId={}, orderId={}, itemId={}", userId, orderId, itemId);
     }
 
+    @Override
+    public OrderItemDto update(UUID userId, UUID orderId, UUID itemId, OrderItemUpdateDto dto) {
+        OrderItem item = findItemByIdWithOrderOrThrow(itemId);
+
+        validateItemBelongsToOrder(item, orderId);
+        validateOrderOwner(item.getOrder(), userId);
+        validateOrderIsModifiable(item.getOrder(), userId);
+
+        itemMapper.update(item, dto);
+
+        itemRepository.save(item);
+        log.debug("Item updated. userId={}, orderId={}, itemId={}", userId, orderId, itemId);
+        return itemMapper.toDto(item);
+    }
+
     private OrderItem findItemByIdWithOrderOrThrow(UUID itemId) {
         return itemRepository.findItemByIdWithOrder(itemId).orElseThrow(() -> {
             log.warn("Item not found. itemId={}", itemId);
@@ -93,11 +109,10 @@ public class OrderItemServiceImpl implements OrderItemService {
 
     private void validateOrderIsModifiable(Order order, UUID userId) {
         if (NOT_MODIFIABLE_STATUSES.contains(order.getStatus())) {
-            log.warn("The item cannot be added to the order due to its status. " +
-                            "orderId={}, orderStatus={}, userId={}",
+            log.warn("The order cannot be modified due to its status. orderId={}, orderStatus={}, userId={}",
                     order.getId(), order.getStatus(), userId);
             throw new ConflictException(
-                    "The item cannot be added to the order due to its status. orderStatus=" + order.getStatus()
+                    "The order cannot be modified due to its status. orderStatus=" + order.getStatus()
             );
         }
     }
