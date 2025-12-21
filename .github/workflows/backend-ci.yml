@@ -79,6 +79,6 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
             cd SemStore
+            docker compose -f docker-compose-prod.yml down -v
             docker compose -f docker-compose-prod.yml pull
-            docker compose down -v
             docker compose -f docker-compose-prod.yml up -d --build
