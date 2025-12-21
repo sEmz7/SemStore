@@ -20,6 +20,12 @@ import ru.semstore.orderservice.service.OrderItemService;
 
 import java.util.UUID;
 
+/**
+ * Контроллер для управления товарами внутри заказа пользователя.
+ * Позволяет добавлять, получать, обновлять и удалять позиции заказа.
+ * <p>
+ * Все методы требуют авторизации и идентификации пользователя через заголовок {@code X-User-Id}.
+ */
 @Tag(name = "Товары заказа", description = "Управление товарами в заказе для пользователя")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -29,6 +35,14 @@ public class OrderItemController {
     private final String USER_ID_HEADER = "X-User-Id";
     private final OrderItemService itemService;
 
+    /**
+     * Создаёт новый товар и добавляет его в указанный заказ пользователя.
+     *
+     * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
+     * @param orderId идентификатор заказа, к которому добавляется товар
+     * @param dto     данные создаваемого товара
+     * @return созданный товар
+     */
     @Operation(
             summary = "Добавить товар в заказ",
             description = "Создает товар и прикрепляет его к заказу",
@@ -58,6 +72,14 @@ public class OrderItemController {
         return itemService.addItem(userId, orderId, dto);
     }
 
+    /**
+     * Возвращает товар из заказа по его идентификатору.
+     *
+     * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор товара в заказе
+     * @return найденный товар
+     */
     @Operation(
             summary = "Получить товар по ID",
             description = "Возвращает товар в заказе по ID",
@@ -86,6 +108,13 @@ public class OrderItemController {
         return itemService.getItemById(userId, orderId, itemId);
     }
 
+    /**
+     * Удаляет товар из заказа по его идентификатору.
+     *
+     * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор удаляемого товара
+     */
     @Operation(
             summary = "Удалить товар по ID",
             description = "Удаляет товар в заказе по ID",
@@ -113,6 +142,16 @@ public class OrderItemController {
         itemService.delete(userId, orderId, itemId);
     }
 
+    /**
+     * Обновляет данные товара в заказе по его идентификатору.
+     * Частичное обновление — изменяются только переданные поля.
+     *
+     * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор обновляемого товара
+     * @param dto     данные для обновления товара
+     * @return обновлённый товар
+     */
     @Operation(
             summary = "Обновить товар по ID",
             description = "Обновляет данные в товаре заказа по ID",
