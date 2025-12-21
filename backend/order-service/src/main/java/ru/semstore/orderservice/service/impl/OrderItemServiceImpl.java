@@ -49,15 +49,31 @@ public class OrderItemServiceImpl implements OrderItemService {
     @Transactional(readOnly = true)
     @Override
     public OrderItemDto getItemById(UUID userId, UUID orderId, UUID itemId) {
-        OrderItem item = itemRepository.findItemByIdWithOrder(itemId).orElseThrow(() -> {
-            log.warn("Item not found. userId={}, itemId={}, orderId={}", userId, itemId, orderId);
-            return new ItemNotFoundException("Item not found");
-        });
+        OrderItem item = findItemByIdWithOrderOrThrow(itemId);
 
         validateItemBelongsToOrder(item, orderId);
         validateOrderOwner(item.getOrder(), userId);
 
         return itemMapper.toDto(item);
+    }
+
+    @Override
+    public void delete(UUID userId, UUID orderId, UUID itemId) {
+        OrderItem item = findItemByIdWithOrderOrThrow(itemId);
+
+        validateItemBelongsToOrder(item, orderId);
+        validateOrderOwner(item.getOrder(), userId);
+        validateOrderIsModifiable(item.getOrder(), userId);
+
+        itemRepository.deleteById(itemId);
+        log.debug("Item deleted. userId={}, orderId={}, itemId={}", userId, orderId, itemId);
+    }
+
+    private OrderItem findItemByIdWithOrderOrThrow(UUID itemId) {
+        return itemRepository.findItemByIdWithOrder(itemId).orElseThrow(() -> {
+            log.warn("Item not found. itemId={}", itemId);
+            return new ItemNotFoundException("Item not found");
+        });
     }
 
     private Order findOrderByIdOrThrow(UUID orderId) {

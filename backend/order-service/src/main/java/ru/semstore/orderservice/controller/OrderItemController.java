@@ -35,4 +35,12 @@ public class OrderItemController {
                                     @PathVariable("itemId") UUID itemId) {
         return itemService.getItemById(userId, orderId, itemId);
     }
+
+    @DeleteMapping("/{itemId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@RequestHeader(USER_ID_HEADER) UUID userId,
+                       @PathVariable("orderId") UUID orderId,
+                       @PathVariable("itemId") UUID itemId) {
+        itemService.delete(userId, orderId, itemId);
+    }
 }
