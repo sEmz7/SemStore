@@ -23,6 +23,12 @@ import ru.semstore.userservice.service.UserService;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Реализация сервиса пользователей.
+ *
+ * <p>Отвечает за регистрацию, аутентификацию,
+ * работу с JWT токенами и изменение данных пользователя.</p>
+ */
 @Transactional
 @Service
 @RequiredArgsConstructor
@@ -33,6 +39,13 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
+    /**
+     * Регистрирует нового пользователя.
+     *
+     * @param dto данные для создания пользователя
+     * @return созданный пользователь
+     * @throws ConflictException если пользователь с таким email уже существует
+     */
     @Override
     public UserDto create(UserCreateDto dto) {
         if (userRepository.existsByEmail(dto.email())) {
@@ -45,6 +58,14 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDto(user);
     }
 
+    /**
+     * Аутентифицирует пользователя по email и паролю.
+     *
+     * @param dto учетные данные пользователя
+     * @return JWT токены
+     * @throws NotFoundException если пользователь не найден
+     * @throws AuthException если пароль неверный
+     */
     @Transactional(readOnly = true)
     @Override
     public JwtAuthDto logIn(UserCredentialsDto dto) {
@@ -59,6 +80,14 @@ public class UserServiceImpl implements UserService {
         throw new NotFoundException("User with email=" + dto.email() + " not found");
     }
 
+    /**
+     * Обновляет JWT токены по refresh token.
+     *
+     * @param refreshTokenDto refresh token
+     * @return новые JWT токены
+     * @throws AuthException если refresh token невалиден
+     * @throws NotFoundException если пользователь не найден
+     */
     @Transactional(readOnly = true)
     @Override
     public JwtAuthDto refreshToken(RefreshTokenDto refreshTokenDto) {
@@ -71,6 +100,13 @@ public class UserServiceImpl implements UserService {
         throw new AuthException("Invalid refresh token");
     }
 
+    /**
+     * Возвращает пользователя по идентификатору.
+     *
+     * @param userId идентификатор пользователя
+     * @return пользователь
+     * @throws NotFoundException если пользователь не найден
+     */
     @Transactional(readOnly = true)
     @Override
     public UserDto getById(UUID userId) {
@@ -78,6 +114,15 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new NotFoundException("User not found")));
     }
 
+    /**
+     * Изменяет пароль пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @param dto данные для смены пароля
+     * @throws NotFoundException если пользователь не найден
+     * @throws ConflictException если старый пароль неверен
+     *                          или новый пароль совпадает со старым
+     */
     @Override
     public void changePassword(UUID userId, ChangePasswordDto dto) {
         User user = userRepository.findById(userId).orElseThrow(() -> {
@@ -94,6 +139,14 @@ public class UserServiceImpl implements UserService {
         log.debug("User with id={} changed password", userId);
     }
 
+    /**
+     * Проверяет валидность JWT токена и возвращает пользователя.
+     *
+     * @param authHeader HTTP заголовок Authorization
+     * @return пользователь
+     * @throws AuthException если токен невалиден
+     * @throws NotFoundException если пользователь не найден
+     */
     @Transactional(readOnly = true)
     @Override
     public UserDto validateToken(String authHeader) {

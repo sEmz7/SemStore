@@ -5,6 +5,19 @@ spring:
     name: gateway
   cloud:
     gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:8081"
+              - "http://localhost:8082"
+              - "http://localhost:3000"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            exposedHeaders:
+              - "Authorization"
+            allowCredentials: true
       routes:
         - id: user-service
           uri: lb://USER-SERVICE
@@ -16,6 +29,18 @@ spring:
             - Path=/orders/**
           filters:
             - AuthFilter
+        - id: user-service-swagger-redirect
+          uri: no://op
+          predicates:
+            - Path=/user-service/swagger
+          filters:
+            - RedirectTo=302,http://localhost:8081/swagger-ui/index.html
+        - id: order-service-swagger-redirect
+          uri: no://op
+          predicates:
+            - Path=/order-service/swagger
+          filters:
+            - RedirectTo=302,http://localhost:8082/swagger-ui/index.html
       default-filters:
         - RemoveRequestHeader=X-User-Id
 

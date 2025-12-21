@@ -1,23 +1,66 @@
 package ru.semstore.orderservice.service;
 
-import ru.semstore.orderservice.dto.OrderCreateDto;
-import ru.semstore.orderservice.dto.OrderDto;
-import ru.semstore.orderservice.dto.OrderUpdateDto;
+import ru.semstore.orderservice.dto.order.OrderCreateDto;
+import ru.semstore.orderservice.dto.order.OrderFullDto;
+import ru.semstore.orderservice.dto.order.OrderShortDto;
+import ru.semstore.orderservice.dto.order.OrderUpdateDto;
+import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.model.OrderStatus;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
+/**
+ * Сервис для управления заказами пользователя.
+ */
 public interface OrderService {
-    OrderDto create(OrderCreateDto createDto, UUID userId);
+    /**
+     * Создаёт новый заказ для пользователя.
+     *
+     * @param createDto данные для создания заказа
+     * @param userId    идентификатор владельца заказа
+     * @return созданный заказ
+     */
+    OrderShortDto create(OrderCreateDto createDto, UUID userId);
 
-    OrderDto update(OrderUpdateDto updateDto, UUID orderId);
+    /**
+     * Обновляет заказ по идентификатору.
+     *
+     * @param updateDto данные для обновления заказа
+     * @param orderId   идентификатор заказа
+     * @return обновлённый заказ
+     */
+    OrderShortDto update(OrderUpdateDto updateDto, UUID orderId);
 
+
+    /**
+     * Удаляет заказ пользователя.
+     *
+     * @param orderId идентификатор заказа
+     * @param userId  идентификатор пользователя (владельца), выполняющего удаление
+     */
     void delete(UUID orderId, UUID userId);
 
-    OrderDto getById(UUID orderId, UUID userId);
+    /**
+     * Возвращает заказ по идентификатору.
+     *
+     * @param orderId идентификатор заказа
+     * @param userId  идентификатор пользователя (владельца)
+     * @return заказ
+     */
+    OrderFullDto getById(UUID orderId, UUID userId);
 
-    List<OrderDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
-                          LocalDateTime rangeEnd);
+    /**
+     * Возвращает постраничную выборку заказов пользователя с фильтрами.
+     *
+     * @param userId     идентификатор пользователя (владельца)
+     * @param page       номер страницы (0...N)
+     * @param size       размер страницы
+     * @param status     фильтр по статусу (может быть {@code null})
+     * @param rangeStart начало диапазона дат создания (может быть {@code null})
+     * @param rangeEnd   конец диапазона дат создания (может быть {@code null})
+     * @return страница заказов пользователя
+     */
+    PageResponse<OrderShortDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
+                                       LocalDateTime rangeEnd);
 }

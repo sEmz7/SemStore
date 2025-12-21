@@ -10,9 +10,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import ru.semstore.orderservice.dto.OrderCreateDto;
-import ru.semstore.orderservice.dto.OrderDto;
-import ru.semstore.orderservice.dto.OrderUpdateDto;
+import ru.semstore.orderservice.dto.order.OrderCreateDto;
+import ru.semstore.orderservice.dto.order.OrderFullDto;
+import ru.semstore.orderservice.dto.order.OrderShortDto;
+import ru.semstore.orderservice.dto.order.OrderUpdateDto;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
 import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
 import ru.semstore.orderservice.kafka.producer.KafkaProducer;
@@ -23,6 +24,7 @@ import ru.semstore.orderservice.repository.OrderRepository;
 import ru.semstore.orderservice.service.impl.OrderServiceImpl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,7 +52,8 @@ public class OrderServiceTest {
     private UUID orderId;
     private UUID addressId;
     private Order order;
-    private OrderDto orderDto;
+    private OrderShortDto orderDto;
+    private OrderFullDto orderFullDto;
 
     @BeforeEach
     void setUp() {
@@ -63,8 +66,10 @@ public class OrderServiceTest {
         order.setAddressId(addressId);
         order.setStatus(OrderStatus.PENDING);
         order.setCreatedDate(LocalDateTime.now());
+        order.setItems(new ArrayList<>());
 
-        orderDto = new OrderDto(orderId, userId, addressId, OrderStatus.PENDING, null, null);
+        orderDto = new OrderShortDto(orderId, userId, addressId, OrderStatus.PENDING, null);
+        orderFullDto = new OrderFullDto(orderId, userId, addressId, OrderStatus.PENDING, null, null);
     }
 
     @Test
@@ -73,9 +78,9 @@ public class OrderServiceTest {
         OrderCreateDto dto = new OrderCreateDto(addressId);
         when(orderMapper.toEntity(dto)).thenReturn(order);
         when(orderRepository.save(order)).thenReturn(order);
-        when(orderMapper.toDto(order)).thenReturn(orderDto);
+        when(orderMapper.toShortDto(order)).thenReturn(orderDto);
 
-        OrderDto result = orderService.create(dto, userId);
+        OrderShortDto result = orderService.create(dto, userId);
 
         assertNotNull(result);
         assertEquals(result.getId(), orderId);
@@ -89,9 +94,9 @@ public class OrderServiceTest {
         OrderUpdateDto dto = new OrderUpdateDto(addressId);
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
-        when(orderMapper.toDto(order)).thenReturn(orderDto);
+        when(orderMapper.toShortDto(order)).thenReturn(orderDto);
 
-        OrderDto result = orderService.update(dto, orderId);
+        OrderShortDto result = orderService.update(dto, orderId);
 
         assertNotNull(result);
         assertEquals(orderId, result.getId());
@@ -166,34 +171,34 @@ public class OrderServiceTest {
     @Test
     @DisplayName("Получение заказа по ID")
     void getById_ShouldReturnOrder() {
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(orderMapper.toDto(order)).thenReturn(orderDto);
+        when(orderRepository.findOrderByIdWithItems(orderId)).thenReturn(Optional.of(order));
+        when(orderMapper.toFullDto(order)).thenReturn(orderFullDto);
 
-        OrderDto result = orderService.getById(orderId, userId);
+        OrderFullDto result = orderService.getById(orderId, userId);
 
         assertNotNull(result);
-        assertEquals(orderId, result.getId());
-        verify(orderRepository, times(1)).findById(orderId);
+        assertEquals(orderId, result.id());
+        verify(orderRepository, times(1)).findOrderByIdWithItems(orderId);
     }
 
     @Test
     @DisplayName("Получение заказа по ID не владельцем")
     void getById_ShouldThrow_WhenUserNotOwner() {
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findOrderByIdWithItems(orderId)).thenReturn(Optional.of(order));
 
         assertThrows(ConflictException.class, () -> orderService.getById(orderId, UUID.randomUUID()));
 
-        verify(orderRepository, times(1)).findById(orderId);
+        verify(orderRepository, times(1)).findOrderByIdWithItems(orderId);
     }
 
     @Test
     @DisplayName("Получение несуществующего заказа по ID ")
     void getById_ShouldThrow_WhenOrderNotCreated() {
-        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+        when(orderRepository.findOrderByIdWithItems(orderId)).thenReturn(Optional.empty());
 
         assertThrows(OrderNotFoundException.class, () -> orderService.getById(orderId, userId));
 
-        verify(orderRepository, times(1)).findById(orderId);
+        verify(orderRepository, times(1)).findOrderByIdWithItems(orderId);
     }
 
     @Test
@@ -203,10 +208,11 @@ public class OrderServiceTest {
                 any(Pageable.class), eq(userId), eq(OrderStatus.PENDING), isNull(), isNull()
         )).thenReturn(new PageImpl<>(List.of(order)));
 
-        when(orderMapper.listToDto(anyList())).thenReturn(List.of(orderDto));
+        when(orderMapper.toShortDto(any())).thenReturn(orderDto);
 
-        List<OrderDto> result =
-                orderService.getAll(userId, 0, 10, OrderStatus.PENDING, null, null);
+        List<OrderShortDto> result =
+                orderService.getAll(userId, 0, 10, OrderStatus.PENDING, null, null)
+                        .content();
 
         assertNotNull(result);
         assertEquals(1, result.size());

@@ -3,17 +3,16 @@ package ru.semstore.orderservice.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
-import ru.semstore.orderservice.dto.OrderCreateDto;
-import ru.semstore.orderservice.dto.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderCreateDto;
+import ru.semstore.orderservice.dto.order.OrderFullDto;
+import ru.semstore.orderservice.dto.order.OrderShortDto;
 import ru.semstore.orderservice.model.Order;
 
-import java.util.List;
-
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = OrderItemMapper.class)
 public interface OrderMapper {
     Order toEntity(OrderCreateDto dto);
 
-    OrderDto toDto(Order entity);
+    OrderShortDto toShortDto(Order entity);
 
-    List<OrderDto> listToDto(List<Order> entities);
+    OrderFullDto toFullDto(Order entity);
 }

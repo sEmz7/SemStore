@@ -19,6 +19,12 @@ import ru.semstore.userservice.service.AddressService;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Реализация сервиса управления адресами пользователя.
+ *
+ * <p>Содержит бизнес-логику проверки владельца адреса
+ * и ограничения на максимальное количество адресов.</p>
+ */
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -30,6 +36,15 @@ public class AddressServiceImpl implements AddressService {
 
     private final byte MAX_USER_ADDRESSES_COUNT = 10;
 
+    /**
+     * Создаёт новый адрес для пользователя.
+     *
+     * @param dto    данные для создания адреса
+     * @param userId идентификатор пользователя
+     * @return созданный адрес
+     * @throws NotFoundException если пользователь не найден
+     * @throws ConflictException если превышено максимальное количество адресов
+     */
     @Override
     public AddressDto create(AddressCreateDto dto, UUID userId) {
         User user = findUserByIdOrThrow(userId);
@@ -44,6 +59,13 @@ public class AddressServiceImpl implements AddressService {
         return addressMapper.toDto(savedAddress);
     }
 
+    /**
+     * Возвращает список адресов пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @return список адресов
+     * @throws NotFoundException если пользователь не найден
+     */
     @Transactional(readOnly = true)
     @Override
     public List<AddressDto> getUserAddresses(UUID userId) {
@@ -53,6 +75,16 @@ public class AddressServiceImpl implements AddressService {
         return addressMapper.listToDto(userAddresses);
     }
 
+    /**
+     * Обновляет существующий адрес пользователя.
+     *
+     * @param dto            данные для обновления адреса
+     * @param addressId      идентификатор адреса
+     * @param currentUserId  идентификатор текущего пользователя
+     * @return обновлённый адрес
+     * @throws NotFoundException если адрес не найден
+     * @throws ConflictException если пользователь не является владельцем адреса
+     */
     @Override
     public AddressDto update(AddressUpdateDto dto, UUID addressId, UUID currentUserId) {
         Address address = findAddressByIdOrThrow(addressId);
@@ -65,6 +97,13 @@ public class AddressServiceImpl implements AddressService {
         return addressMapper.toDto(address);
     }
 
+    /**
+     * Возвращает адрес по идентификатору.
+     *
+     * @param addressId идентификатор адреса
+     * @return адрес
+     * @throws NotFoundException если адрес не найден
+     */
     @Transactional(readOnly = true)
     @Override
     public AddressDto getById(UUID addressId) {
@@ -73,6 +112,14 @@ public class AddressServiceImpl implements AddressService {
         return addressMapper.toDto(address);
     }
 
+    /**
+     * Удаляет адрес пользователя.
+     *
+     * @param addressId     идентификатор адреса
+     * @param currentUserId идентификатор текущего пользователя
+     * @throws NotFoundException если адрес не найден
+     * @throws ConflictException если пользователь не является владельцем адреса
+     */
     @Override
     public void delete(UUID addressId, UUID currentUserId) {
         Address address = findAddressByIdOrThrow(addressId);
