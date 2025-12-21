@@ -9,7 +9,7 @@ import ru.semstore.orderservice.model.OrderStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Schema(description = "DTO для просмотра заказа")
+@Schema(description = "DTO для неполного просмотра заказа")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

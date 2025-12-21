@@ -189,7 +189,7 @@ public class OrderController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "(OK) Заказ получен",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = OrderShortDto.class))),
+                                    schema = @Schema(implementation = OrderFullDto.class))),
                     @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = ErrorResponse.class))),

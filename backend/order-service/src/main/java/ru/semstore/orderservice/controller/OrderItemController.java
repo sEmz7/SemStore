@@ -1,18 +1,31 @@
 package ru.semstore.orderservice.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import ru.semstore.orderservice.dto.orderItem.OrderItemCreateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemUpdateDto;
+import ru.semstore.orderservice.errors.ErrorResponse;
 import ru.semstore.orderservice.service.OrderItemService;
 
 import java.util.UUID;
 
+/**
+ * Контроллер для управления товарами внутри заказа пользователя.
+ * Позволяет добавлять, получать, обновлять и удалять позиции заказа.
+ * <p>
+ * Все методы требуют авторизации и идентификации пользователя через заголовок {@code X-User-Id}.
+ */
 @Tag(name = "Товары заказа", description = "Управление товарами в заказе для пользователя")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -22,31 +35,146 @@ public class OrderItemController {
     private final String USER_ID_HEADER = "X-User-Id";
     private final OrderItemService itemService;
 
+    /**
+     * Создаёт новый товар и добавляет его в указанный заказ пользователя.
+     *
+     * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
+     * @param orderId идентификатор заказа, к которому добавляется товар
+     * @param dto     данные создаваемого товара
+     * @return созданный товар
+     */
+    @Operation(
+            summary = "Добавить товар в заказ",
+            description = "Создает товар и прикрепляет его к заказу",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "(CREATED) Товар добавлен",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = OrderItemDto.class))),
+                    @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "(CONFLICT) Конфликт бизнес-логики",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderItemDto create(@RequestHeader(USER_ID_HEADER) UUID userId,
+    public OrderItemDto create(@Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId,
                                @PathVariable("orderId") UUID orderId,
                                @Valid @RequestBody OrderItemCreateDto dto) {
         return itemService.addItem(userId, orderId, dto);
     }
 
+    /**
+     * Возвращает товар из заказа по его идентификатору.
+     *
+     * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор товара в заказе
+     * @return найденный товар
+     */
+    @Operation(
+            summary = "Получить товар по ID",
+            description = "Возвращает товар в заказе по ID",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "(OK) Товар возвращен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = OrderItemDto.class))),
+                    @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "(CONFLICT) Конфликт бизнес-логики",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
     @GetMapping("/{itemId}")
-    public OrderItemDto getItemById(@RequestHeader(USER_ID_HEADER) UUID userId,
+    public OrderItemDto getItemById(@Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId,
                                     @PathVariable("orderId") UUID orderId,
                                     @PathVariable("itemId") UUID itemId) {
         return itemService.getItemById(userId, orderId, itemId);
     }
 
+    /**
+     * Удаляет товар из заказа по его идентификатору.
+     *
+     * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор удаляемого товара
+     */
+    @Operation(
+            summary = "Удалить товар по ID",
+            description = "Удаляет товар в заказе по ID",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "(NO CONTENT) Товар удален"),
+                    @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "(CONFLICT) Конфликт бизнес-логики",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
     @DeleteMapping("/{itemId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@RequestHeader(USER_ID_HEADER) UUID userId,
+    public void delete(@Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId,
                        @PathVariable("orderId") UUID orderId,
                        @PathVariable("itemId") UUID itemId) {
         itemService.delete(userId, orderId, itemId);
     }
 
+    /**
+     * Обновляет данные товара в заказе по его идентификатору.
+     * Частичное обновление — изменяются только переданные поля.
+     *
+     * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор обновляемого товара
+     * @param dto     данные для обновления товара
+     * @return обновлённый товар
+     */
+    @Operation(
+            summary = "Обновить товар по ID",
+            description = "Обновляет данные в товаре заказа по ID",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "(OK) Товар обновлен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = OrderItemDto.class))),
+                    @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Невалидные данные запроса",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "(CONFLICT) Конфликт бизнес-логики",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
     @PatchMapping("/{itemId}")
-    public OrderItemDto update(@RequestHeader(USER_ID_HEADER) UUID userId,
+    public OrderItemDto update(@Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId,
                                @PathVariable("orderId") UUID orderId,
                                @PathVariable("itemId") UUID itemId,
                                @Valid @RequestBody OrderItemUpdateDto dto) {

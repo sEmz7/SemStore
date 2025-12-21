@@ -21,6 +21,9 @@ import ru.semstore.orderservice.service.OrderItemService;
 import java.util.EnumSet;
 import java.util.UUID;
 
+/**
+ * Реализация сервиса управления товарами внутри заказа {@link OrderItemService}.
+ */
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -30,9 +33,27 @@ public class OrderItemServiceImpl implements OrderItemService {
     private final OrderRepository orderRepository;
     private final OrderItemMapper itemMapper;
 
+    /**
+     * Набор статусов заказа, при которых изменение его содержимого запрещено.
+     */
     private static final EnumSet<OrderStatus> NOT_MODIFIABLE_STATUSES =
             EnumSet.of(OrderStatus.PAID, OrderStatus.ORDERED, OrderStatus.CANCELED);
 
+    /**
+     * Добавляет новый товар в заказ пользователя.
+     *
+     * <p>Проверяет существование заказа, принадлежность заказа пользователю
+     * и возможность изменения заказа по его статусу. В случае успеха
+     * сохраняет товар и возвращает сохранённую сущность.</p>
+     *
+     * @param userId  идентификатор пользователя (владельца заказа)
+     * @param orderId идентификатор заказа, в который добавляется товар
+     * @param dto     данные создаваемого товара
+     * @return созданный товар
+     * @throws OrderNotFoundException если заказ не найден
+     * @throws ConflictException      если пользователь не владелец заказа
+     *                                или заказ нельзя изменять по статусу
+     */
     @Override
     public OrderItemDto addItem(UUID userId, UUID orderId, OrderItemCreateDto dto) {
         Order order = findOrderByIdOrThrow(orderId);
@@ -47,6 +68,20 @@ public class OrderItemServiceImpl implements OrderItemService {
         return itemMapper.toDto(savedItem);
     }
 
+    /**
+     * Возвращает товар заказа по идентификатору.
+     *
+     * <p>Загружает товар вместе с заказом, проверяет принадлежность товара
+     * указанному заказу и принадлежность заказа пользователю.</p>
+     *
+     * @param userId  идентификатор пользователя (владельца заказа)
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор товара в заказе
+     * @return товар заказа
+     * @throws ItemNotFoundException если товар не найден
+     * @throws ConflictException     если товар не принадлежит указанному заказу
+     *                               или пользователь не владелец заказа
+     */
     @Transactional(readOnly = true)
     @Override
     public OrderItemDto getItemById(UUID userId, UUID orderId, UUID itemId) {
@@ -58,6 +93,21 @@ public class OrderItemServiceImpl implements OrderItemService {
         return itemMapper.toDto(item);
     }
 
+    /**
+     * Удаляет товар из заказа.
+     *
+     * <p>Загружает товар вместе с заказом, проверяет принадлежность товара
+     * заказу, принадлежность заказа пользователю и возможность изменения
+     * заказа по его статусу. В случае успеха удаляет товар.</p>
+     *
+     * @param userId  идентификатор пользователя (владельца заказа)
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор удаляемого товара
+     * @throws ItemNotFoundException если товар не найден
+     * @throws ConflictException     если товар не принадлежит заказу,
+     *                               пользователь не владелец заказа
+     *                               или заказ нельзя изменять по статусу
+     */
     @Override
     public void delete(UUID userId, UUID orderId, UUID itemId) {
         OrderItem item = findItemByIdWithOrderOrThrow(itemId);
@@ -70,6 +120,24 @@ public class OrderItemServiceImpl implements OrderItemService {
         log.debug("Item deleted. userId={}, orderId={}, itemId={}", userId, orderId, itemId);
     }
 
+    /**
+     * Обновляет данные товара в заказе.
+     *
+     * <p>Загружает товар вместе с заказом, проверяет принадлежность товара
+     * заказу, принадлежность заказа пользователю и возможность изменения
+     * заказа по его статусу. После успешной проверки применяет изменения
+     * и сохраняет товар.</p>
+     *
+     * @param userId  идентификатор пользователя (владельца заказа)
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор товара
+     * @param dto     данные для обновления товара
+     * @return обновлённый товар
+     * @throws ItemNotFoundException если товар не найден
+     * @throws ConflictException     если товар не принадлежит заказу,
+     *                               пользователь не владелец заказа
+     *                               или заказ нельзя изменять по статусу
+     */
     @Override
     public OrderItemDto update(UUID userId, UUID orderId, UUID itemId, OrderItemUpdateDto dto) {
         OrderItem item = findItemByIdWithOrderOrThrow(itemId);
@@ -85,6 +153,14 @@ public class OrderItemServiceImpl implements OrderItemService {
         return itemMapper.toDto(item);
     }
 
+    /**
+     * Возвращает товар по идентификатору вместе с его заказом
+     * или выбрасывает исключение, если товар не найден.
+     *
+     * @param itemId идентификатор товара
+     * @return товар с загруженным заказом
+     * @throws ItemNotFoundException если товар не найден
+     */
     private OrderItem findItemByIdWithOrderOrThrow(UUID itemId) {
         return itemRepository.findItemByIdWithOrder(itemId).orElseThrow(() -> {
             log.warn("Item not found. itemId={}", itemId);
@@ -92,6 +168,14 @@ public class OrderItemServiceImpl implements OrderItemService {
         });
     }
 
+    /**
+     * Возвращает заказ по идентификатору или выбрасывает исключение,
+     * если заказ не найден.
+     *
+     * @param orderId идентификатор заказа
+     * @return заказ
+     * @throws OrderNotFoundException если заказ не найден
+     */
     private Order findOrderByIdOrThrow(UUID orderId) {
         return orderRepository.findById(orderId).orElseThrow(()-> {
             log.warn("Order not found. orderId={}", orderId);
@@ -99,6 +183,13 @@ public class OrderItemServiceImpl implements OrderItemService {
         });
     }
 
+    /**
+     * Проверяет, что заказ принадлежит указанному пользователю.
+     *
+     * @param order  заказ
+     * @param userId идентификатор пользователя
+     * @throws ConflictException если заказ принадлежит другому пользователю
+     */
     private void validateOrderOwner(Order order, UUID userId) {
         if (!order.getUserId().equals(userId)) {
             log.warn("Only order owner can access/modify items. orderId={}, userId={}",
@@ -107,6 +198,13 @@ public class OrderItemServiceImpl implements OrderItemService {
         }
     }
 
+    /**
+     * Проверяет, что заказ можно изменять в текущем статусе.
+     *
+     * @param order  заказ
+     * @param userId идентификатор пользователя (для логирования)
+     * @throws ConflictException если статус заказа не допускает изменений
+     */
     private void validateOrderIsModifiable(Order order, UUID userId) {
         if (NOT_MODIFIABLE_STATUSES.contains(order.getStatus())) {
             log.warn("The order cannot be modified due to its status. orderId={}, orderStatus={}, userId={}",
@@ -117,6 +215,13 @@ public class OrderItemServiceImpl implements OrderItemService {
         }
     }
 
+    /**
+     * Проверяет, что товар принадлежит указанному заказу.
+     *
+     * @param item    товар
+     * @param orderId ожидаемый идентификатор заказа
+     * @throws ConflictException если товар привязан к другому заказу
+     */
     private void validateItemBelongsToOrder(OrderItem item, UUID orderId) {
         UUID actualOrderId = item.getOrder().getId();
         if (!orderId.equals(actualOrderId)) {

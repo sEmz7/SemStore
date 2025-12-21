@@ -8,7 +8,7 @@ import ru.semstore.orderservice.dto.order.OrderFullDto;
 import ru.semstore.orderservice.dto.order.OrderShortDto;
 import ru.semstore.orderservice.model.Order;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = OrderItemMapper.class)
 public interface OrderMapper {
     Order toEntity(OrderCreateDto dto);
 
