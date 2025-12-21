@@ -35,6 +35,11 @@ databaseChangeLog:
               - column:
                   name: configuration
                   type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: NUMERIC(9,2)
         - addForeignKeyConstraint:
             baseTableName: order_items
             baseColumnNames: order_id

@@ -9,7 +9,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import ru.semstore.orderservice.dto.order.OrderCreateDto;
-import ru.semstore.orderservice.dto.order.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderFullDto;
+import ru.semstore.orderservice.dto.order.OrderShortDto;
 import ru.semstore.orderservice.dto.order.OrderUpdateDto;
 import ru.semstore.orderservice.kafka.producer.KafkaProducer;
 import ru.semstore.orderservice.model.Order;
@@ -93,17 +94,17 @@ public class OrderServiceIT {
     @DisplayName("Получение заказа по ID")
     @Sql({"/data/cleanUp.sql", "/data/insert.sql"})
     void getById_ShouldReturn() {
-        OrderDto orderDto = orderService.getById(orderId, userId);
+        OrderFullDto orderDto = orderService.getById(orderId, userId);
 
         assertNotNull(orderDto);
-        assertEquals(orderId, orderDto.getId());
+        assertEquals(orderId, orderDto.id());
     }
 
     @Test
     @DisplayName("Получение всех заказов пользователя")
     @Sql({"/data/cleanUp.sql", "/data/insertAll.sql"})
     void getAll_ShouldReturn() {
-        List<OrderDto> orderDtos = orderService
+        List<OrderShortDto> orderDtos = orderService
                 .getAll(userId, 0, 10, OrderStatus.PENDING, null, null).content();
 
         assertNotNull(orderDtos);

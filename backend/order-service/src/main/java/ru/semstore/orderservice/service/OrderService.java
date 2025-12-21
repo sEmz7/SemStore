@@ -1,7 +1,8 @@
 package ru.semstore.orderservice.service;
 
 import ru.semstore.orderservice.dto.order.OrderCreateDto;
-import ru.semstore.orderservice.dto.order.OrderDto;
+import ru.semstore.orderservice.dto.order.OrderFullDto;
+import ru.semstore.orderservice.dto.order.OrderShortDto;
 import ru.semstore.orderservice.dto.order.OrderUpdateDto;
 import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.model.OrderStatus;
@@ -20,7 +21,7 @@ public interface OrderService {
      * @param userId    идентификатор владельца заказа
      * @return созданный заказ
      */
-    OrderDto create(OrderCreateDto createDto, UUID userId);
+    OrderShortDto create(OrderCreateDto createDto, UUID userId);
 
     /**
      * Обновляет заказ по идентификатору.
@@ -29,7 +30,7 @@ public interface OrderService {
      * @param orderId   идентификатор заказа
      * @return обновлённый заказ
      */
-    OrderDto update(OrderUpdateDto updateDto, UUID orderId);
+    OrderShortDto update(OrderUpdateDto updateDto, UUID orderId);
 
 
     /**
@@ -47,7 +48,7 @@ public interface OrderService {
      * @param userId  идентификатор пользователя (владельца)
      * @return заказ
      */
-    OrderDto getById(UUID orderId, UUID userId);
+    OrderFullDto getById(UUID orderId, UUID userId);
 
     /**
      * Возвращает постраничную выборку заказов пользователя с фильтрами.
@@ -60,6 +61,6 @@ public interface OrderService {
      * @param rangeEnd   конец диапазона дат создания (может быть {@code null})
      * @return страница заказов пользователя
      */
-    PageResponse<OrderDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
-                                  LocalDateTime rangeEnd);
+    PageResponse<OrderShortDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
+                                       LocalDateTime rangeEnd);
 }

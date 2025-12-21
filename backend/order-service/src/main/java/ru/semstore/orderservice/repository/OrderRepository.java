@@ -9,6 +9,7 @@ import ru.semstore.orderservice.model.Order;
 import ru.semstore.orderservice.model.OrderStatus;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
@@ -23,4 +24,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                               @Param("status") OrderStatus status,
                               @Param("rangeStart") LocalDateTime rangeStart,
                               @Param("rangeEnd") LocalDateTime rangeEnd);
+
+    @Query("SELECT o FROM Order o " +
+            "LEFT JOIN FETCH o.items " +
+            "WHERE o.id = :id")
+    Optional<Order> findOrderByIdWithItems(UUID id);
 }
