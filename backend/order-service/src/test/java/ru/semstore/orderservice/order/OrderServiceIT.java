@@ -37,6 +37,7 @@ public class OrderServiceIT {
     private KafkaProducer kafka;
 
     private UUID userId;
+    private final String name = "name";
     private UUID addressId;
     private UUID orderId;
 
@@ -51,7 +52,7 @@ public class OrderServiceIT {
     @DisplayName("Создание заказа")
     @Sql("/data/cleanUp.sql")
     void create_ShouldSave() {
-        OrderCreateDto dto = new OrderCreateDto(addressId);
+        OrderCreateDto dto = new OrderCreateDto(name, addressId);
 
         orderService.create(dto, userId);
 
@@ -67,7 +68,7 @@ public class OrderServiceIT {
     @DisplayName("Обновление заказа")
     @Sql({"/data/cleanUp.sql", "/data/insert.sql"})
     void update_ShouldUpdate() {
-        OrderUpdateDto dto = new OrderUpdateDto(UUID.fromString("08acd0a9-b1f8-40ab-a69a-efec2ab7fda6"));
+        OrderUpdateDto dto = new OrderUpdateDto(name, UUID.fromString("08acd0a9-b1f8-40ab-a69a-efec2ab7fda6"));
 
         orderService.update(dto, orderId);
 

@@ -13,6 +13,8 @@ public record OrderFullDto(
         @Schema(description = "ID заказа", example = "5526ff00-fe2c-4191-9d35-6d5acf537869")
         UUID id,
 
+        String name,
+
         @Schema(description = "ID пользователя", example = "5526ff00-fe2c-4191-9d35-6d5acf537869")
         UUID userId,
 

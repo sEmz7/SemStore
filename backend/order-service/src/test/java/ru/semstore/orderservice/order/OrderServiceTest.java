@@ -49,6 +49,7 @@ public class OrderServiceTest {
     private OrderServiceImpl orderService;
 
     private UUID userId;
+    private final String name = "name";
     private UUID orderId;
     private UUID addressId;
     private Order order;
@@ -68,14 +69,14 @@ public class OrderServiceTest {
         order.setCreatedDate(LocalDateTime.now());
         order.setItems(new ArrayList<>());
 
-        orderDto = new OrderShortDto(orderId, userId, addressId, OrderStatus.PENDING, null);
-        orderFullDto = new OrderFullDto(orderId, userId, addressId, OrderStatus.PENDING, null, null);
+        orderDto = new OrderShortDto(orderId, name, userId, addressId, OrderStatus.PENDING, null);
+        orderFullDto = new OrderFullDto(orderId, name, userId, addressId, OrderStatus.PENDING, null, null);
     }
 
     @Test
     @DisplayName("Создание заказа")
     void create_ShouldSave() {
-        OrderCreateDto dto = new OrderCreateDto(addressId);
+        OrderCreateDto dto = new OrderCreateDto(name, addressId);
         when(orderMapper.toEntity(dto)).thenReturn(order);
         when(orderRepository.save(order)).thenReturn(order);
         when(orderMapper.toShortDto(order)).thenReturn(orderDto);
@@ -91,7 +92,7 @@ public class OrderServiceTest {
     @Test
     @DisplayName("Обновление заказа")
     void update_ShouldUpdateOrder() {
-        OrderUpdateDto dto = new OrderUpdateDto(addressId);
+        OrderUpdateDto dto = new OrderUpdateDto(name, addressId);
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(order)).thenReturn(order);
         when(orderMapper.toShortDto(order)).thenReturn(orderDto);
@@ -107,7 +108,7 @@ public class OrderServiceTest {
     @Test
     @DisplayName("Обновление заказа со статусом PAID")
     void update_ShouldThrow_WhenStatusPaid() {
-        OrderUpdateDto dto = new OrderUpdateDto(addressId);
+        OrderUpdateDto dto = new OrderUpdateDto(name, addressId);
         order.setStatus(OrderStatus.PAID);
         when(orderRepository.findById(any())).thenReturn(Optional.of(order));
 
@@ -118,7 +119,7 @@ public class OrderServiceTest {
     @Test
     @DisplayName("Обновление заказа со статусом ORDERED")
     void update_ShouldThrow_WhenStatusOrdered() {
-        OrderUpdateDto dto = new OrderUpdateDto(addressId);
+        OrderUpdateDto dto = new OrderUpdateDto(name, addressId);
         order.setStatus(OrderStatus.ORDERED);
         when(orderRepository.findById(any())).thenReturn(Optional.of(order));
 
