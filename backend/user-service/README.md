@@ -27,6 +27,7 @@
 - **Spring Boot**
 - **Spring Web**
 - **Spring Security (JWT)**
+- **Kafka**
 - **Spring Data JPA (Hibernate)**
 - **PostgreSQL**
 - **Jakarta Validation**
