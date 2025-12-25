@@ -8,6 +8,7 @@ import java.util.UUID;
 
 @Schema(description = "DTO для создания заказ")
 public record OrderCreateDto(
+        @Schema(description = "Название заказа", example = "my order", minLength = 2, maxLength = 255)
         @NotNull
         @Size(min = 2, max = 255)
         String name,

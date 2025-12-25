@@ -17,6 +17,7 @@ public class OrderShortDto {
     @Schema(description = "ID заказа", example = "5526ff00-fe2c-4191-9d35-6d5acf537869")
     private UUID id;
 
+    @Schema(description = "Название заказа", example = "my order", minLength = 2, maxLength = 255)
     private String name;
 
     @Schema(description = "ID пользователя", example = "5526ff00-fe2c-4191-9d35-6d5acf537869")
