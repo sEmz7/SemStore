@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 
 @OpenAPIDefinition(
         info = @Info(title = "User service OpenAPI"),
-        servers = @Server(url = "http://localhost:8080", description = "User service")
+        servers = @Server(url = "http://155.212.191.7:8080", description = "User service")
 )
 @SecurityScheme(
         name = "bearerAuth",
