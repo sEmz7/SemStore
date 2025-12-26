@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/changeset/001-create-order-table.yaml
   - include:
       file: db/changelog/changeset/002-create-order-item-table.yaml
+  - include:
+      file: db/changelog/changeset/003-add-order-name.yaml

@@ -82,7 +82,7 @@ public class OrderServiceImpl implements OrderService {
             throw new ConflictException("Order status is " + order.getStatus() +
                     ", address cannot be changed. orderId=" + orderId);
         }
-        order.setAddressId(updateDto.addressId());
+        orderMapper.update(order, updateDto);
         order.setStatus(OrderStatus.PENDING);
         orderRepository.save(order);
         log.debug("Order updated. orderId={}", order.getId());

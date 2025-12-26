@@ -33,6 +33,12 @@ public class Order {
     private UUID id;
 
     /**
+     * Название заказа.
+     */
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    /**
      * Идентификатор владельца заказа.
      */
     @Column(name = "user_id", nullable = false)
