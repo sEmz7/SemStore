@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(
         info = @Info(title = "Order service OpenAPI"),
-        servers = @Server(url = "http://155.212.191.7:8080", description = "Order service")
+        servers = @Server(url = "${GATEWAY_ORIGIN}", description = "Order service")
 )
 @SecurityScheme(
         name = "bearerAuth",

@@ -10,14 +10,10 @@ spring:
         corsConfigurations:
           '[/**]':
             allowedOrigins:
-              - "http://155.212.191.7:8080"
-              - "http://155.212.191.7:8081"
-              - "http://155.212.191.7:8082"
-              - "http://155.212.191.7:3000"
-              - "http://localhost:8080"
-              - "http://localhost:8081"
-              - "http://localhost:8082"
-              - "http://localhost:3000"
+              - "${GATEWAY_ORIGIN}"
+              - "${USER_SWAGGER_ORIGIN}"
+              - "${ORDERS_SWAGGER_ORIGIN}"
+              - "${FRONTEND_ORIGIN}"
             allowedMethods: "*"
             allowedHeaders: "*"
             exposedHeaders:
@@ -39,13 +35,13 @@ spring:
           predicates:
             - Path=/user-service/swagger
           filters:
-            - RedirectTo=302,http://localhost:8081/swagger-ui/index.html
+            - RedirectTo=302,${USER_SWAGGER_ORIGIN}/swagger-ui/index.html
         - id: order-service-swagger-redirect
           uri: no://op
           predicates:
             - Path=/order-service/swagger
           filters:
-            - RedirectTo=302,http://localhost:8082/swagger-ui/index.html
+            - RedirectTo=302,${ORDERS_SWAGGER_ORIGIN}/swagger-ui/index.html
       default-filters:
         - RemoveRequestHeader=X-User-Id
 
