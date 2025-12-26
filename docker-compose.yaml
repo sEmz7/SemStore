@@ -28,6 +28,11 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    environment:
+      - GATEWAY_ORIGIN=http://localhost:8080
+      - USER_SWAGGER_ORIGIN=http://localhost:8081
+      - ORDERS_SWAGGER_ORIGIN=http://localhost:8082
+      - FRONTEND_ORIGIN=http://localhost:3000
 
   user-service:
     container_name: user-service
@@ -49,6 +54,7 @@ services:
       - SPRING_DATASOURCE_URL=${DATABASE_URL}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - GATEWAY_ORIGIN=http://localhost:8080
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:8081/actuator/health" ]
       interval: 3s
@@ -95,6 +101,7 @@ services:
       - SPRING_DATASOURCE_URL=${DATABASE_ORDER_SERVICE_URL}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - GATEWAY_ORIGIN=http://localhost:8080
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:8082/actuator/health" ]
       interval: 3s
