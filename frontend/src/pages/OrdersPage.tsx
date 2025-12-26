@@ -8,6 +8,7 @@ export function OrdersPage() {
   const [orders, setOrders] = useState<OrderDto[]>([]);
   const [addresses, setAddresses] = useState<AddressDto[]>([]);
   const [addressId, setAddressId] = useState("");
+  const [orderName, setOrderName] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -17,6 +18,8 @@ export function OrdersPage() {
       const data: any = await listOrders(0, 20);
       const content = Array.isArray(data) ? data : data?.content ?? [];
       setOrders(content);
+    } catch (e: any) {
+      setErr(e?.response?.data?.message ?? "Failed to load orders");
     } finally {
       setLoading(false);
     }
@@ -29,6 +32,7 @@ export function OrdersPage() {
       if (a[0]) setAddressId(a[0].id);
       await reload();
     })().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -56,10 +60,22 @@ export function OrdersPage() {
         </div>
       )}
 
-      <div className="rounded-2xl border bg-white p-4
-                      dark:bg-slate-950 dark:border-slate-800">
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-          <div className="flex-1">
+      <div className="rounded-2xl border bg-white p-4 dark:bg-slate-950 dark:border-slate-800">
+        <div className="grid gap-3 sm:grid-cols-3 sm:items-end">
+          <div className="sm:col-span-1">
+            <div className="text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
+              Name
+            </div>
+            <input
+              value={orderName}
+              onChange={(e) => setOrderName(e.target.value)}
+              placeholder="My first order"
+              className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
+                         dark:bg-slate-950 dark:border-slate-800 dark:focus:ring-slate-800"
+            />
+          </div>
+
+          <div className="sm:col-span-1">
             <div className="text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
               Address
             </div>
@@ -77,27 +93,29 @@ export function OrdersPage() {
             </select>
           </div>
 
-          <button
-            disabled={!addressId}
-            onClick={async () => {
-              setErr(null);
-              try {
-                await createOrder({ addressId } as any);
-                await reload();
-              } catch (e: any) {
-                setErr(e?.response?.data?.message ?? "Create order failed");
-              }
-            }}
-            className="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition
-                       dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
-          >
-            Create order
-          </button>
+          <div className="sm:col-span-1 flex justify-end">
+            <button
+              disabled={!addressId || !orderName.trim()}
+              onClick={async () => {
+                setErr(null);
+                try {
+                  await createOrder({ addressId, name: orderName.trim() });
+                  setOrderName("");
+                  await reload();
+                } catch (e: any) {
+                  setErr(e?.response?.data?.message ?? "Create order failed");
+                }
+              }}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition
+                         dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+            >
+              Create order
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-white overflow-hidden
-                      dark:bg-slate-950 dark:border-slate-800">
+      <div className="rounded-2xl border bg-white overflow-hidden dark:bg-slate-950 dark:border-slate-800">
         <div className="px-4 py-3 border-b flex items-center justify-between dark:border-slate-800">
           <div className="text-sm font-semibold">Recent</div>
           <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -112,17 +130,21 @@ export function OrdersPage() {
         ) : (
           <ul className="divide-y dark:divide-slate-800">
             {orders.map((o) => (
-              <li key={o.id} className="p-4 hover:bg-slate-50 transition dark:hover:bg-slate-900/40">
+              <li
+                key={o.id}
+                className="p-4 hover:bg-slate-50 transition dark:hover:bg-slate-900/40"
+              >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="min-w-0">
                     <Link
                       to={`/orders/${o.id}`}
-                      className="font-medium text-slate-900 hover:underline break-all dark:text-slate-50"
+                      className="font-medium text-slate-900 hover:underline break-words dark:text-slate-50"
                     >
-                      {o.id}
+                      {o.name || o.id}
                     </Link>
-                    <div className="text-xs text-slate-500 mt-1 dark:text-slate-400">
-                      {o.createdDate}
+                    <div className="text-xs text-slate-500 mt-1 dark:text-slate-400 break-all">
+                      id: {o.id}
+                      {o.createdDate ? ` • ${o.createdDate}` : ""}
                     </div>
                   </div>
 

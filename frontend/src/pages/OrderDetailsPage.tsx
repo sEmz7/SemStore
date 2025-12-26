@@ -58,6 +58,8 @@ export function OrderDetailsPage() {
 
   if (!id) return null;
 
+  const title = order?.name?.trim() ? order!.name : id;
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -67,12 +69,16 @@ export function OrderDetailsPage() {
               Orders
             </Link>{" "}
             <span className="mx-1">/</span>
-            <span className="break-all">{id}</span>
+            <span className="break-words">{title}</span>
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-semibold break-all">{id}</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold break-words">{title}</h1>
             {order?.status && <StatusBadge status={order.status} />}
+          </div>
+
+          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400 break-all">
+            id: {id}
           </div>
 
           {order?.createdDate && (
@@ -168,9 +174,7 @@ export function OrderDetailsPage() {
       <div className="rounded-3xl border bg-white overflow-hidden dark:bg-slate-950 dark:border-slate-800">
         <div className="px-6 py-4 border-b flex items-center justify-between dark:border-slate-800">
           <div className="text-sm font-semibold">Items</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">
-            {items.length} items
-          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{items.length} items</div>
         </div>
 
         {items.length === 0 ? (
@@ -185,7 +189,12 @@ export function OrderDetailsPage() {
                   <div className="min-w-0">
                     <div className="text-sm font-semibold break-all">{it.id}</div>
                     <div className="mt-1 text-sm text-slate-700 dark:text-slate-200 break-all">
-                      <a className="underline underline-offset-4 hover:opacity-80" href={it.link} target="_blank" rel="noreferrer">
+                      <a
+                        className="underline underline-offset-4 hover:opacity-80"
+                        href={it.link}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         {it.link}
                       </a>
                     </div>
