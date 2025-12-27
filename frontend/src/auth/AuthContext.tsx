@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { getMe, login as apiLogin } from "../api/auth";
 import { tokenStorage } from "../api/tokenStorage";
 import type { UserDto } from "../api/types";
@@ -58,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     })();
-
   }, []);
 
   const value = useMemo(

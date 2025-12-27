@@ -1,13 +1,27 @@
-// src/api/http.ts
 import axios, { AxiosError } from "axios";
 import { tokenStorage } from "./tokenStorage";
 
-const userBaseURL = import.meta.env.VITE_USER_API_URL;   // "/api/users"
-const orderBaseURL = import.meta.env.VITE_ORDER_API_URL; // "/api/orders"
+const userBaseURL = import.meta.env.VITE_USER_API_URL ?? "/api/users";
+const orderBaseURL = import.meta.env.VITE_ORDER_API_URL ?? "/api/orders";
+const authBaseURL = import.meta.env.VITE_AUTH_API_URL ?? "/api";
 
 export const userApi = axios.create({ baseURL: userBaseURL });
 export const orderApi = axios.create({ baseURL: orderBaseURL });
+export const authApi = axios.create({ baseURL: authBaseURL });
 
+const refreshApi = axios.create({ baseURL: authBaseURL });
+
+const NO_BEARER_PATHS = new Set(["/auth/login", "/auth/register", "/auth/refresh"]);
+
+function normalizeUrl(u: string): string {
+  const q = u.indexOf("?");
+  return q === -1 ? u : u.slice(0, q);
+}
+
+function shouldSkipBearer(config: any): boolean {
+  const url = normalizeUrl(String(config?.url ?? ""));
+  return NO_BEARER_PATHS.has(url);
+}
 
 export function getUserIdFromAccessToken(): string | null {
   const token = tokenStorage.get()?.accessToken;
@@ -15,8 +29,9 @@ export function getUserIdFromAccessToken(): string | null {
 
   try {
     const payloadPart = token.split(".")[1];
+    let base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    while (base64.length % 4 !== 0) base64 += "=";
 
-    const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
     const json = atob(base64);
     const payload = JSON.parse(json);
     return payload?.id ?? null;
@@ -28,11 +43,10 @@ export function getUserIdFromAccessToken(): string | null {
 function attachAuth(config: any) {
   const tokens = tokenStorage.get();
 
-  if (tokens?.accessToken) {
+  if (tokens?.accessToken && !shouldSkipBearer(config)) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${tokens.accessToken}`;
   }
-
 
   if (config.baseURL === orderBaseURL) {
     const userId = getUserIdFromAccessToken();
@@ -45,8 +59,7 @@ function attachAuth(config: any) {
   return config;
 }
 
-userApi.interceptors.request.use(attachAuth);
-orderApi.interceptors.request.use(attachAuth);
+[userApi, orderApi, authApi].forEach((api) => api.interceptors.request.use(attachAuth));
 
 let isRefreshing = false;
 let pending: Array<(token: string | null) => void> = [];
@@ -60,22 +73,34 @@ async function refreshAccessToken(): Promise<string> {
   const tokens = tokenStorage.get();
   if (!tokens?.refreshToken) throw new Error("No refresh token");
 
-  const resp = await userApi.post("/auth/refresh", {
+  const resp = await refreshApi.post("/auth/refresh", {
     refreshToken: tokens.refreshToken,
   });
 
-  const { token, refreshToken } = resp.data as {
-    token: string;
-    refreshToken: string;
-  };
-
+  const { token, refreshToken } = resp.data as { token: string; refreshToken: string };
   tokenStorage.set({ accessToken: token, refreshToken });
   return token;
+}
+
+function pickInstance(cfg: any) {
+  if (cfg?.baseURL === orderBaseURL) return orderApi;
+  if (cfg?.baseURL === authBaseURL) return authApi;
+  return userApi;
+}
+
+function shouldHandle401(err: any): boolean {
+  const cfg = err?.config;
+  if (!cfg) return false;
+  if (shouldSkipBearer(cfg)) return false;
+  return err?.response?.status === 401;
 }
 
 async function handle401(error: AxiosError) {
   const original: any = error.config;
   if (!original || original._retry) throw error;
+
+  if (shouldSkipBearer(original)) throw error;
+
   original._retry = true;
 
   if (isRefreshing) {
@@ -86,14 +111,12 @@ async function handle401(error: AxiosError) {
         original.headers = original.headers ?? {};
         original.headers.Authorization = `Bearer ${token}`;
 
-
         if (original.baseURL === orderBaseURL) {
           const userId = getUserIdFromAccessToken();
           if (userId) original.headers["X-User-Id"] = userId;
         }
 
-        const instance = original.baseURL === orderBaseURL ? orderApi : userApi;
-        resolve(instance(original));
+        resolve(pickInstance(original)(original));
       });
     });
   }
@@ -111,8 +134,7 @@ async function handle401(error: AxiosError) {
       if (userId) original.headers["X-User-Id"] = userId;
     }
 
-    const instance = original.baseURL === orderBaseURL ? orderApi : userApi;
-    return instance(original);
+    return pickInstance(original)(original);
   } catch {
     tokenStorage.clear();
     notify(null);
@@ -122,18 +144,12 @@ async function handle401(error: AxiosError) {
   }
 }
 
-userApi.interceptors.response.use(
-  (r) => r,
-  async (err) => {
-    if (err?.response?.status === 401) return handle401(err);
-    throw err;
-  }
-);
-
-orderApi.interceptors.response.use(
-  (r) => r,
-  async (err) => {
-    if (err?.response?.status === 401) return handle401(err);
-    throw err;
-  }
-);
+[userApi, orderApi, authApi].forEach((api) => {
+  api.interceptors.response.use(
+    (r) => r,
+    async (err) => {
+      if (shouldHandle401(err)) return handle401(err);
+      throw err;
+    }
+  );
+});
