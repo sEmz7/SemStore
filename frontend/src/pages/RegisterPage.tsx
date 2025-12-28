@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "../api/auth";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 function Field({
   label,
@@ -35,9 +36,39 @@ function Field({
   );
 }
 
+function localizeApiErrorMessage(
+  msg: unknown,
+  t: TFunction,
+  emailFallback?: string
+): string | null {
+  if (typeof msg !== "string") return null;
+
+  // server returned i18n key like "errors.userAlreadyExists"
+  if (msg.startsWith("errors.")) {
+    if (msg === "errors.userAlreadyExists") {
+      return t(msg, { email: emailFallback });
+    }
+    return t(msg);
+  }
+
+  const m = msg.toLowerCase();
+
+  if (m.includes("already exists") || m.includes("already exist") || m.includes("exists")) {
+    const fromMsg =
+      msg.match(/email\s*=\s*([^\s,;]+)/i)?.[1] ??
+      msg.match(/email[:\s]+([^\s,;]+)/i)?.[1];
+
+    return t("errors.userAlreadyExists", { email: fromMsg ?? emailFallback });
+  }
+
+  if (/[а-яё]/i.test(msg)) return msg;
+
+  return msg || null;
+}
+
 export function RegisterPage() {
-  const { t } = useTranslation();
   const nav = useNavigate();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -88,7 +119,8 @@ export function RegisterPage() {
                 await register(email, password);
                 nav("/login", { replace: true });
               } catch (e: any) {
-                setErr(e?.response?.data?.message ?? "Register failed");
+                const msg = e?.response?.data?.message ?? e?.message;
+                setErr(localizeApiErrorMessage(msg, t, email) ?? t("errors.authUnknown"));
               } finally {
                 setLoading(false);
               }
@@ -112,10 +144,8 @@ export function RegisterPage() {
           </div>
         </div>
       </div>
-
-      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-        {t("auth.passwordValidationNote")}
-      </p>
     </div>
   );
 }
+
+export default RegisterPage;

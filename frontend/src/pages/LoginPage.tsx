@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 function Field({
   label,
@@ -35,10 +36,32 @@ function Field({
   );
 }
 
+function localizeApiErrorMessage(msg: unknown, t: TFunction): string | null {
+  if (typeof msg !== "string") return null;
+
+  if (msg.startsWith("errors.")) return t(msg);
+
+  const m = msg.toLowerCase();
+
+  if (
+    m.includes("invalid password") ||
+    m.includes("bad credentials") ||
+    m.includes("unauthorized") ||
+    m.includes("wrong password") ||
+    m.includes("invalid credentials")
+  ) {
+    return t("errors.invalidPassword");
+  }
+
+  if (/[а-яё]/i.test(msg)) return msg;
+
+  return msg || null;
+}
+
 export function LoginPage() {
-  const { t } = useTranslation();
   const nav = useNavigate();
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -91,7 +114,8 @@ export function LoginPage() {
                 await login(email, password);
                 nav("/", { replace: true });
               } catch (e: any) {
-                setErr(e?.response?.data?.message ?? "Login failed");
+                const msg = e?.response?.data?.message ?? e?.message;
+                setErr(localizeApiErrorMessage(msg, t) ?? t("errors.authUnknown"));
               } finally {
                 setLoading(false);
               }
@@ -115,10 +139,8 @@ export function LoginPage() {
           </div>
         </div>
       </div>
-
-      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-        {t("auth.tip")} <code>test1@test.com</code>.
-      </p>
     </div>
   );
 }
+
+export default LoginPage;

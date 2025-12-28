@@ -10,6 +10,14 @@ function pickAddressId(o: any): string {
   return o?.addressId ?? o?.address?.id ?? "";
 }
 
+const NAME_MIN = 2;
+const NAME_MAX = 255;
+
+function isNameValid(name: string) {
+  const n = name.trim();
+  return n.length >= NAME_MIN && n.length <= NAME_MAX;
+}
+
 export function OrdersPage() {
   const { t } = useTranslation();
 
@@ -38,6 +46,9 @@ export function OrdersPage() {
     [addresses]
   );
 
+  const createNameOk = isNameValid(orderName);
+  const editNameOk = isNameValid(editName);
+
   async function reload() {
     setLoading(true);
     try {
@@ -45,7 +56,7 @@ export function OrdersPage() {
       const content = Array.isArray(data) ? data : data?.content ?? [];
       setOrders(content);
     } catch (e: any) {
-      setErr(e?.response?.data?.message ?? "Failed to load orders");
+      setErr(e?.response?.data?.message ?? t("errors.loadOrderFail"));
     } finally {
       setLoading(false);
     }
@@ -62,7 +73,7 @@ export function OrdersPage() {
         cancelEdit();
       }
     } catch (e: any) {
-      setErr(e?.response?.data?.message ?? "Delete order failed");
+      setErr(e?.response?.data?.message ?? t("errors.deleteOrderFail"));
     } finally {
       setDeletingId(null);
     }
@@ -88,8 +99,12 @@ export function OrdersPage() {
     const name = editName.trim();
     const addr = editAddressId;
 
-    if (!name || !addr) {
-      setErr(t("errors.fillAll"));
+    if (!addr) {
+      setErr(t("errors.fillOrderAndAddress"));
+      return;
+    }
+    if (!isNameValid(name)) {
+      setErr(t("errors.orderNameLength", { min: NAME_MIN, max: NAME_MAX }));
       return;
     }
 
@@ -104,7 +119,7 @@ export function OrdersPage() {
 
       cancelEdit();
     } catch (e: any) {
-      setErr(e?.response?.data?.message ?? "Update order failed");
+      setErr(e?.response?.data?.message ?? t("errors.updateOrderFail"));
     } finally {
       setUpdatingId(null);
     }
@@ -125,9 +140,7 @@ export function OrdersPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">{t("orders.title")}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {t("orders.subtitle")}
-          </p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t("orders.subtitle")}</p>
         </div>
         <button
           onClick={reload}
@@ -154,11 +167,17 @@ export function OrdersPage() {
             </div>
             <input
               value={orderName}
+              maxLength={NAME_MAX}
               onChange={(e) => setOrderName(e.target.value)}
               placeholder={t("orders.orderNamePlaceholder")}
               className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
                          dark:bg-slate-950 dark:border-slate-800 dark:focus:ring-slate-800"
             />
+            {!!orderName.trim() && !createNameOk && (
+              <div className="mt-1 text-xs text-red-600 dark:text-red-300">
+                {t("errors.orderNameLength", { min: NAME_MIN, max: NAME_MAX })}
+              </div>
+            )}
           </div>
 
           <div className="sm:col-span-1">
@@ -181,15 +200,26 @@ export function OrdersPage() {
 
           <div className="sm:col-span-1 flex justify-end">
             <button
-              disabled={!addressId || !orderName.trim()}
+              disabled={!addressId || !createNameOk}
               onClick={async () => {
                 setErr(null);
+
+                const name = orderName.trim();
+                if (!addressId) {
+                  setErr(t("errors.fillOrderAndAddress"));
+                  return;
+                }
+                if (!isNameValid(name)) {
+                  setErr(t("errors.orderNameLength", { min: NAME_MIN, max: NAME_MAX }));
+                  return;
+                }
+
                 try {
-                  await createOrder({ addressId, name: orderName.trim() });
+                  await createOrder({ addressId, name });
                   setOrderName("");
                   await reload();
                 } catch (e: any) {
-                  setErr(e?.response?.data?.message ?? "Create order failed");
+                  setErr(e?.response?.data?.message ?? t("errors.createOrderFail"));
                 }
               }}
               className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition
@@ -221,11 +251,10 @@ export function OrdersPage() {
               const isEditing = editingId === o.id;
               const isUpdating = updatingId === o.id;
 
+              const statusLabel = t(`orderStatus.${o.status}`, { defaultValue: o.status });
+
               return (
-                <li
-                  key={o.id}
-                  className="p-4 hover:bg-slate-50 transition dark:hover:bg-slate-900/40"
-                >
+                <li key={o.id} className="p-4 hover:bg-slate-50 transition dark:hover:bg-slate-900/40">
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                       <div className="min-w-0">
@@ -238,13 +267,22 @@ export function OrdersPage() {
                           </Link>
                         ) : (
                           <div className="grid gap-2 sm:grid-cols-3">
-                            <input
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              placeholder={t("orders.name")}
-                              className="sm:col-span-2 w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
-                                         dark:bg-slate-950 dark:border-slate-800 dark:focus:ring-slate-800"
-                            />
+                            <div className="sm:col-span-2">
+                              <input
+                                value={editName}
+                                maxLength={NAME_MAX}
+                                onChange={(e) => setEditName(e.target.value)}
+                                placeholder={t("orders.orderNameEditPlaceholder")}
+                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
+                                           dark:bg-slate-950 dark:border-slate-800 dark:focus:ring-slate-800"
+                              />
+                              {!!editName.trim() && !editNameOk && (
+                                <div className="mt-1 text-xs text-red-600 dark:text-red-300">
+                                  {t("errors.orderNameLength", { min: NAME_MIN, max: NAME_MAX })}
+                                </div>
+                              )}
+                            </div>
+
                             <select
                               value={editAddressId}
                               onChange={(e) => setEditAddressId(e.target.value)}
@@ -271,7 +309,7 @@ export function OrdersPage() {
                           className="inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-semibold
                                      dark:border-slate-700 dark:text-slate-200"
                         >
-                          {o.status}
+                          {statusLabel}
                         </span>
 
                         {!isEditing ? (
@@ -293,14 +331,14 @@ export function OrdersPage() {
                                          border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50 transition
                                          dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/40"
                             >
-                              {isDeleting ? t("common.deleting") : t("common.delete")}
+                              {isDeleting ? t("common.deleting") : t("orders.delete")}
                             </button>
                           </>
                         ) : (
                           <>
                             <button
                               onClick={() => saveEdit(o.id)}
-                              disabled={isUpdating || !editName.trim() || !editAddressId}
+                              disabled={isUpdating || !editAddressId || !editNameOk}
                               className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
                                          bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition
                                          dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"

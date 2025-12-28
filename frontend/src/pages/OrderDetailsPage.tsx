@@ -9,7 +9,61 @@ function cn(...a: Array<string | false | null | undefined>) {
   return a.filter(Boolean).join(" ");
 }
 
-function StatusBadge({ status }: { status: string }) {
+const LINK_MIN = 2;
+const LINK_MAX = 50;
+const SIZE_MIN = 2;
+const SIZE_MAX = 50;
+const CONF_MIN = 2;
+const CONF_MAX = 50;
+
+function lenBetween(v: string, min: number, max: number) {
+  const s = v.trim();
+  return s.length >= min && s.length <= max;
+}
+
+function parseSpringValidationMessage(msg: string) {
+  // field: "on field 'link'"
+  const fieldMatch = msg.match(/on field '([^']+)'/);
+  const field = fieldMatch?.[1];
+
+  // ru: "от 2 до 50"
+  const ruRange = msg.match(/от\s+(\d+)\s+до\s+(\d+)/i);
+  if (ruRange) {
+    return { field, min: Number(ruRange[1]), max: Number(ruRange[2]) };
+  }
+
+  // en: "between 2 and 50"
+  const enRange = msg.match(/between\s+(\d+)\s+and\s+(\d+)/i);
+  if (enRange) {
+    return { field, min: Number(enRange[1]), max: Number(enRange[2]) };
+  }
+
+  // fallback: "...,50,2" (max,min) sometimes appears
+  const nums = msg.match(/,(\d+),(\d+)\]/);
+  if (nums) {
+    const a = Number(nums[2]);
+    const b = Number(nums[1]);
+    if (Number.isFinite(a) && Number.isFinite(b)) return { field, min: a, max: b };
+  }
+
+  return null;
+}
+
+function fieldKeyBySpringField(field?: string) {
+  if (!field) return null;
+  if (field === "link") return "order.link";
+  if (field === "size") return "order.size";
+  if (field === "configuration") return "order.configuration";
+  return null;
+}
+
+function StatusBadge({
+  status,
+  label,
+}: {
+  status: string;
+  label: string;
+}) {
   const cls =
     status === "PAID"
       ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-200"
@@ -21,7 +75,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold", cls)}>
-      {status}
+      {label}
     </span>
   );
 }
@@ -38,6 +92,12 @@ export function OrderDetailsPage() {
   const [size, setSize] = useState("");
   const [configuration, setConfiguration] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [touched, setTouched] = useState({
+    link: false,
+    size: false,
+    configuration: false,
+  });
 
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
@@ -56,6 +116,47 @@ export function OrderDetailsPage() {
     }
   }
 
+  function fieldLenMsg(fieldKey: string, min: number, max: number) {
+    return t("errors.fieldLengthBetween", { field: t(fieldKey), min, max });
+  }
+
+  const linkErr =
+    !link.trim()
+      ? t("errors.required")
+      : !lenBetween(link, LINK_MIN, LINK_MAX)
+      ? fieldLenMsg("order.link", LINK_MIN, LINK_MAX)
+      : null;
+
+  const sizeErr =
+    !size.trim()
+      ? t("errors.required")
+      : !lenBetween(size, SIZE_MIN, SIZE_MAX)
+      ? fieldLenMsg("order.size", SIZE_MIN, SIZE_MAX)
+      : null;
+
+  const confErr =
+    !configuration.trim()
+      ? t("errors.required")
+      : !lenBetween(configuration, CONF_MIN, CONF_MAX)
+      ? fieldLenMsg("order.configuration", CONF_MIN, CONF_MAX)
+      : null;
+
+  const canSubmit = !linkErr && !sizeErr && !confErr && !saving;
+
+  function formatApiError(e: any) {
+    const msg = e?.response?.data?.message;
+    if (typeof msg !== "string" || !msg.trim()) return t("errors.addItemFail");
+
+    // try to parse spring validation and show a clean localized message
+    const parsed = parseSpringValidationMessage(msg);
+    if (parsed?.min && parsed?.max) {
+      const k = fieldKeyBySpringField(parsed.field);
+      if (k) return fieldLenMsg(k, parsed.min, parsed.max);
+    }
+
+    return msg; // fallback (e.g. other backend errors)
+  }
+
   useEffect(() => {
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -64,6 +165,9 @@ export function OrderDetailsPage() {
   if (!id) return null;
 
   const title = order?.name?.trim() ? order!.name : id;
+
+  const status = order?.status ?? "";
+  const statusLabel = status ? t(`orderStatus.${status}`, { defaultValue: status }) : "";
 
   return (
     <div className="space-y-6">
@@ -79,7 +183,7 @@ export function OrderDetailsPage() {
 
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <h1 className="text-xl sm:text-2xl font-semibold break-words">{title}</h1>
-            {order?.status && <StatusBadge status={order.status} />}
+            {status && <StatusBadge status={status} label={statusLabel} />}
           </div>
 
           <div className="mt-1 text-xs text-slate-500 dark:text-slate-400 break-all">
@@ -121,49 +225,93 @@ export function OrderDetailsPage() {
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <input
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            placeholder="https://example.com/product/1"
-            className="rounded-xl border px-3 py-2 text-sm outline-none
-                       bg-white dark:bg-slate-950 dark:border-slate-800
-                       focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800 sm:col-span-2"
-          />
-          <input
-            value={size}
-            onChange={(e) => setSize(e.target.value)}
-            placeholder="42.5"
-            className="rounded-xl border px-3 py-2 text-sm outline-none
-                       bg-white dark:bg-slate-950 dark:border-slate-800
-                       focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800"
-          />
-          <input
-            value={configuration}
-            onChange={(e) => setConfiguration(e.target.value)}
-            placeholder="black"
-            className="rounded-xl border px-3 py-2 text-sm outline-none
-                       bg-white dark:bg-slate-950 dark:border-slate-800
-                       focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800 sm:col-span-3"
-          />
+          {/* LINK */}
+          <div className="sm:col-span-2">
+            <input
+              value={link}
+              maxLength={LINK_MAX}
+              onChange={(e) => setLink(e.target.value)}
+              onBlur={() => setTouched((p) => ({ ...p, link: true }))}
+              placeholder="https://example.com/product/1"
+              className={cn(
+                "w-full rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
+                "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
+                touched.link && linkErr && "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
+              )}
+            />
+            {touched.link && linkErr && (
+              <div className="mt-1 text-xs text-red-600 dark:text-red-300">{linkErr}</div>
+            )}
+          </div>
+
+          {/* SIZE */}
+          <div>
+            <input
+              value={size}
+              maxLength={SIZE_MAX}
+              onChange={(e) => setSize(e.target.value)}
+              onBlur={() => setTouched((p) => ({ ...p, size: true }))}
+              placeholder="42.5"
+              className={cn(
+                "w-full rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
+                "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
+                touched.size && sizeErr && "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
+              )}
+            />
+            {touched.size && sizeErr && (
+              <div className="mt-1 text-xs text-red-600 dark:text-red-300">{sizeErr}</div>
+            )}
+          </div>
+
+          {/* CONFIG */}
+          <div className="sm:col-span-3">
+            <input
+              value={configuration}
+              maxLength={CONF_MAX}
+              onChange={(e) => setConfiguration(e.target.value)}
+              onBlur={() => setTouched((p) => ({ ...p, configuration: true }))}
+              placeholder="black"
+              className={cn(
+                "w-full rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
+                "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
+                touched.configuration && confErr && "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
+              )}
+            />
+            {touched.configuration && confErr && (
+              <div className="mt-1 text-xs text-red-600 dark:text-red-300">{confErr}</div>
+            )}
+          </div>
 
           <div className="sm:col-span-3 flex justify-end">
             <button
-              disabled={saving || !link.trim() || !size.trim() || !configuration.trim()}
+              disabled={!canSubmit}
               onClick={async () => {
+                setErr(null);
+
+                // mark touched to show errors
+                setTouched({ link: true, size: true, configuration: true });
+
+                if (!canSubmit) {
+                  setErr(t("errors.fixForm"));
+                  return;
+                }
+
                 setSaving(true);
                 try {
-                  setErr(null);
                   await addOrderItem(id, {
                     link: link.trim(),
                     size: size.trim(),
                     configuration: configuration.trim(),
                   });
+
                   setLink("");
                   setSize("");
                   setConfiguration("");
+                  setTouched({ link: false, size: false, configuration: false });
+
                   await reload();
                 } catch (e: any) {
-                  setErr(e?.response?.data?.message ?? t("errors.addItemFail"));
+                  setErr(formatApiError(e));
                 } finally {
                   setSaving(false);
                 }
@@ -203,13 +351,11 @@ export function OrderDetailsPage() {
                     <div className="min-w-0">
                       <div className="text-sm font-semibold break-all">{itemId ?? "(no id)"}</div>
 
-                      <div className="mt-1 text-sm text-slate-700 dark:text-slate-200 break-all">
-                        {it.link}
-                      </div>
+                      <div className="mt-1 text-sm text-slate-700 dark:text-slate-200 break-all">{it.link}</div>
 
                       <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                        {t("order.size")}: <span className="font-medium">{it.size}</span> • {t("order.configuration")}:{" "}
-                        <span className="font-medium">{it.configuration}</span>
+                        {t("order.size")}: <span className="font-medium">{it.size}</span> •{" "}
+                        {t("order.configuration")}: <span className="font-medium">{it.configuration}</span>
                         {typeof (it as any).price !== "undefined" && (
                           <>
                             {" "}
@@ -220,7 +366,6 @@ export function OrderDetailsPage() {
                     </div>
 
                     <div className="flex gap-2 shrink-0">
-                      {/* IMPORTANT: open ONLY by button, not as link text */}
                       <Link
                         to={canOpen ? `/orders/${id}/items/${itemId}` : "#"}
                         onClick={(e) => {

@@ -29,7 +29,7 @@ const resources = {
         create: "Create",
         clear: "Clear",
 
-        edit: "Edit",          // ✅ добавлено
+        edit: "Edit",
         saving: "Saving...",
         deleting: "Deleting...",
       },
@@ -51,11 +51,7 @@ const resources = {
         noAccount: "No account?",
         haveAccount: "Already have an account?",
 
-        tip: "Tip: use your test user from backend (e.g.: {{email}}).",
-
         passwordHint: "min 4 chars",
-        passwordValidationNote:
-          "Password validation is minimal on frontend. Backend will validate anyway.",
       },
 
       addresses: {
@@ -63,7 +59,7 @@ const resources = {
         subtitle: "Manage delivery addresses",
 
         add: "Add address",
-        edit: "Edit address", // ✅ добавлено (для режима редактирования)
+        edit: "Edit address",
 
         saved: "{{count}} saved",
         clear: "Clear",
@@ -78,11 +74,17 @@ const resources = {
         postalCode: "Postal code",
 
         yourAddresses: "Your addresses",
-        noAddresses: "No addresses yet.", // ✅ добавлено (использует страница)
+        noAddresses: "No addresses yet.",
 
-        // оставил совместимость со старыми ключами (если где-то ещё используются)
         your: "Your addresses",
         none: "No addresses yet.",
+      },
+
+      orderStatus: {
+        CREATED: "Created",
+        ORDERED: "Ordered",
+        PAID: "Paid",
+        CANCELED: "Canceled",
       },
 
       orders: {
@@ -109,6 +111,9 @@ const resources = {
         hint: "link + size + configuration",
         items: "Items",
         noItems: "No items yet.",
+
+        link: "link",
+
         size: "size",
         configuration: "configuration",
         price: "price",
@@ -134,6 +139,20 @@ const resources = {
       errors: {
         fillAll: "Fill link / size / configuration",
         fillOrderAndAddress: "Fill order name and select address",
+
+        orderNameLength: "Order name must be between {{min}} and {{max}} characters",
+
+        required: "Required",
+        minLength: "Minimum {{min}} characters",
+        phoneInvalid: "Phone must be a Russian number (+7) with 11 digits",
+        postalInvalid: "Postal code must be 6 digits",
+
+        fixForm: "Please fix the highlighted fields",
+        fieldLengthBetween: "{{field}} must be between {{min}} and {{max}} characters",
+
+        invalidPassword: "Invalid password",
+        userAlreadyExists: "User with this email already exists",
+        authUnknown: "Authentication error",
 
         loadOrderFail: "Failed to load order",
         addItemFail: "Failed to add item",
@@ -180,7 +199,7 @@ const resources = {
         create: "Создать",
         clear: "Очистить",
 
-        edit: "Изменить",      // ✅ добавлено
+        edit: "Изменить",
         saving: "Сохраняем...",
         deleting: "Удаляем...",
       },
@@ -202,11 +221,7 @@ const resources = {
         noAccount: "Нет аккаунта?",
         haveAccount: "Уже есть аккаунт?",
 
-        tip: "Подсказка: используй тестового пользователя из бэка (например: {{email}}).",
-
         passwordHint: "мин 4 символа",
-        passwordValidationNote:
-          "Проверка пароля на фронте минимальная. Бэк всё равно проверит.",
       },
 
       addresses: {
@@ -214,7 +229,7 @@ const resources = {
         subtitle: "Управление адресами доставки",
 
         add: "Добавить адрес",
-        edit: "Редактирование адреса", // ✅ добавлено
+        edit: "Редактирование адреса",
 
         saved: "Сохранено: {{count}}",
         clear: "Очистить",
@@ -229,11 +244,17 @@ const resources = {
         postalCode: "Индекс",
 
         yourAddresses: "Ваши адреса",
-        noAddresses: "Адресов пока нет.", // ✅ добавлено
+        noAddresses: "Адресов пока нет.",
 
-        // совместимость со старыми ключами
         your: "Ваши адреса",
         none: "Адресов пока нет.",
+      },
+
+      orderStatus: {
+        CREATED: "Создан",
+        ORDERED: "Оформлен",
+        PAID: "Оплачен",
+        CANCELED: "Отменён",
       },
 
       orders: {
@@ -262,6 +283,9 @@ const resources = {
         hint: "ссылка + размер + конфигурация",
         items: "Товары",
         noItems: "Товаров пока нет.",
+
+        link: "ссылка",
+
         size: "размер",
         configuration: "конфигурация",
         price: "цена",
@@ -288,6 +312,20 @@ const resources = {
         fillAll: "Заполни link / size / configuration",
         fillOrderAndAddress: "Заполни имя заказа и выбери адрес",
 
+        orderNameLength: "Название заказа должно быть от {{min}} до {{max}} символов",
+
+        required: "Обязательное поле",
+        minLength: "Минимум {{min}} символов",
+        phoneInvalid: "Телефон должен быть российским (+7) и содержать 11 цифр",
+        postalInvalid: "Индекс должен содержать 6 цифр",
+
+        fixForm: "Исправьте подсвеченные поля",
+        fieldLengthBetween: "Поле «{{field}}» должно быть от {{min}} до {{max}} символов",
+
+        invalidPassword: "Неверный пароль",
+        userAlreadyExists: "Пользователь с таким email уже существует",
+        authUnknown: "Ошибка авторизации",
+
         loadOrderFail: "Не удалось загрузить заказ",
         addItemFail: "Не удалось добавить товар",
         deleteFail: "Не удалось удалить",
@@ -309,19 +347,16 @@ const resources = {
   },
 } as const;
 
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources,
-    fallbackLng: "ru",
-    supportedLngs: ["ru", "en"],
-    interpolation: { escapeValue: false },
-    detection: {
-      order: ["localStorage", "navigator"],
-      caches: ["localStorage"],
-      lookupLocalStorage: "lang",
-    },
-  });
+i18n.use(LanguageDetector).use(initReactI18next).init({
+  resources,
+  fallbackLng: "ru",
+  supportedLngs: ["ru", "en"],
+  interpolation: { escapeValue: false },
+  detection: {
+    order: ["localStorage", "navigator"],
+    caches: ["localStorage"],
+    lookupLocalStorage: "lang",
+  },
+});
 
 export default i18n;
