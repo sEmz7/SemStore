@@ -18,6 +18,10 @@ function isNameValid(name: string) {
   return n.length >= NAME_MIN && n.length <= NAME_MAX;
 }
 
+function cn(...a: Array<string | false | null | undefined>) {
+  return a.filter(Boolean).join(" ");
+}
+
 export function OrdersPage() {
   const { t } = useTranslation();
 
@@ -36,6 +40,27 @@ export function OrdersPage() {
   const [editName, setEditName] = useState("");
   const [editAddressId, setEditAddressId] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+
+  useEffect(() => {
+    function onDocMouseDown(e: MouseEvent) {
+      if (!menuOpenId) return;
+      const target = e.target as HTMLElement;
+      if (target.closest(`[data-orders-menu="${menuOpenId}"]`)) return;
+      setMenuOpenId(null);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpenId(null);
+    }
+
+    document.addEventListener("mousedown", onDocMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpenId]);
 
   const addressOptions = useMemo(
     () =>
@@ -68,10 +93,7 @@ export function OrdersPage() {
     try {
       await deleteOrder(orderId);
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
-
-      if (editingId === orderId) {
-        cancelEdit();
-      }
+      if (editingId === orderId) cancelEdit();
     } catch (e: any) {
       setErr(e?.response?.data?.message ?? t("errors.deleteOrderFail"));
     } finally {
@@ -86,6 +108,7 @@ export function OrdersPage() {
 
     const currentAddr = pickAddressId(o as any);
     setEditAddressId(currentAddr || (addresses[0]?.id ?? ""));
+    setMenuOpenId(null);
   }
 
   function cancelEdit() {
@@ -114,7 +137,9 @@ export function OrdersPage() {
       const updated = await updateOrder(orderId, { name, addressId: addr });
 
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? ({ ...o, ...(updated as any) } as OrderDto) : o))
+        prev.map((o) =>
+          o.id === orderId ? ({ ...o, ...(updated as any) } as OrderDto) : o
+        )
       );
 
       cancelEdit();
@@ -135,12 +160,21 @@ export function OrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function tStatus(status?: string) {
+    if (!status) return "";
+    const key = `orderStatus.${status}`;
+    const tr = t(key);
+    return tr === key ? status : tr;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">{t("orders.title")}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{t("orders.subtitle")}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {t("orders.subtitle")}
+          </p>
         </div>
         <button
           onClick={reload}
@@ -230,10 +264,8 @@ export function OrdersPage() {
           </div>
         </div>
       </div>
-
-      {/* Orders list */}
-      <div className="rounded-2xl border bg-white overflow-hidden dark:bg-slate-950 dark:border-slate-800">
-        <div className="px-4 py-3 border-b flex items-center justify-between dark:border-slate-800">
+      <div className="rounded-2xl border bg-white dark:bg-slate-950 dark:border-slate-800">
+        <div className="px-4 py-3 border-b flex items-center justify-between dark:border-slate-800 rounded-t-2xl">
           <div className="text-sm font-semibold">{t("orders.recent")}</div>
           <div className="text-xs text-slate-500 dark:text-slate-400">
             {loading ? t("common.loading") : t("orders.itemsCount", { count: orders.length })}
@@ -245,26 +277,24 @@ export function OrdersPage() {
             {t("orders.noOrders")}
           </div>
         ) : (
-          <ul className="divide-y dark:divide-slate-800">
+          <ul className="divide-y dark:divide-slate-800 rounded-b-2xl">
             {orders.map((o) => {
               const isDeleting = deletingId === o.id;
               const isEditing = editingId === o.id;
               const isUpdating = updatingId === o.id;
 
-              const statusLabel = t(`orderStatus.${o.status}`, { defaultValue: o.status });
-
               return (
-                <li key={o.id} className="p-4 hover:bg-slate-50 transition dark:hover:bg-slate-900/40">
+                <li
+                  key={o.id}
+                  className="p-4 hover:bg-slate-50 transition dark:hover:bg-slate-900/40"
+                >
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                       <div className="min-w-0">
                         {!isEditing ? (
-                          <Link
-                            to={`/orders/${o.id}`}
-                            className="font-medium text-slate-900 hover:underline break-words dark:text-slate-50"
-                          >
+                          <div className="font-medium text-slate-900 break-words dark:text-slate-50">
                             {o.name || o.id}
-                          </Link>
+                          </div>
                         ) : (
                           <div className="grid gap-2 sm:grid-cols-3">
                             <div className="sm:col-span-2">
@@ -309,34 +339,81 @@ export function OrdersPage() {
                           className="inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-semibold
                                      dark:border-slate-700 dark:text-slate-200"
                         >
-                          {statusLabel}
+                          {tStatus(o.status)}
                         </span>
 
                         {!isEditing ? (
                           <>
-                            <button
-                              onClick={() => startEdit(o)}
-                              disabled={isDeleting}
-                              className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold
-                                         bg-white hover:bg-slate-50 disabled:opacity-50 transition
-                                         dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
+                            <Link
+                              to={`/orders/${o.id}`}
+                              className={cn(
+                                "inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold",
+                                "bg-slate-900 text-white hover:bg-slate-800 transition",
+                                "dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200",
+                                isDeleting && "opacity-50 pointer-events-none"
+                              )}
                             >
-                              {t("orders.edit")}
-                            </button>
+                              {t("common.open")} {t("nav.orders").toLowerCase()}
+                            </Link>
 
-                            <button
-                              disabled={isDeleting}
-                              onClick={() => onDeleteOrder(o.id)}
-                              className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold
-                                         border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50 transition
-                                         dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/40"
+                            {/* ⋯ меню */}
+                            <div
+                              data-orders-menu={o.id}
+                              className="relative"
                             >
-                              {isDeleting ? t("common.deleting") : t("orders.delete")}
-                            </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMenuOpenId((prev) => (prev === o.id ? null : o.id));
+                                }}
+                                disabled={isDeleting}
+                                className="inline-flex items-center justify-center rounded-full border w-9 h-9
+                                           bg-white hover:bg-slate-50 disabled:opacity-50 transition
+                                           dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
+                                aria-label="menu"
+                              >
+                                ⋯
+                              </button>
+
+                              {menuOpenId === o.id && (
+                                <div
+                                  className="absolute right-0 mt-2 w-44 rounded-xl border bg-white shadow-lg z-50
+                                             dark:bg-slate-950 dark:border-slate-800"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      startEdit(o);
+                                      setMenuOpenId(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition
+                                               dark:hover:bg-slate-900/60 rounded-t-xl"
+                                  >
+                                    {t("common.edit")}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      setMenuOpenId(null);
+                                      await onDeleteOrder(o.id);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm text-red-700 hover:bg-red-50 transition
+                                               dark:text-red-300 dark:hover:bg-red-950/40 rounded-b-xl"
+                                  >
+                                    {isDeleting ? t("common.deleting") : t("common.delete")}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </>
                         ) : (
                           <>
                             <button
+                              type="button"
                               onClick={() => saveEdit(o.id)}
                               disabled={isUpdating || !editAddressId || !editNameOk}
                               className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
@@ -347,6 +424,7 @@ export function OrdersPage() {
                             </button>
 
                             <button
+                              type="button"
                               onClick={cancelEdit}
                               disabled={isUpdating}
                               className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold

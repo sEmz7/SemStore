@@ -91,10 +91,15 @@ const resources = {
         title: "Orders",
         subtitle: "Create, edit and view your orders",
         createOrder: "Create order",
+        openOrder: "Open order", 
         name: "Name",
         address: "Address",
         recent: "Recent",
         noOrders: "No orders yet.",
+
+        total_one: "{{count}} order", 
+        total_other: "{{count}} orders", 
+
         itemsCount_one: "{{count}} item",
         itemsCount_other: "{{count}} items",
         id: "id",
@@ -261,10 +266,17 @@ const resources = {
         title: "Заказы",
         subtitle: "Создавай, редактируй и смотри свои заказы",
         createOrder: "Создать заказ",
+        openOrder: "Открыть заказ", 
         name: "Название",
         address: "Адрес",
         recent: "Последние",
         noOrders: "Пока нет заказов.",
+
+        total_one: "{{count}} заказ", 
+        total_few: "{{count}} заказа", 
+        total_many: "{{count}} заказов", 
+        total_other: "{{count}} заказа", 
+
         itemsCount_one: "{{count}} шт.",
         itemsCount_few: "{{count}} шт.",
         itemsCount_many: "{{count}} шт.",
