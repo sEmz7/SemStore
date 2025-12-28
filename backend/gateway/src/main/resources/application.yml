@@ -1,10 +1,8 @@
 server:
   port: 8080
-
 spring:
   application:
     name: gateway
-
   cloud:
     gateway:
       globalcors:
@@ -21,36 +19,29 @@ spring:
             exposedHeaders:
               - "Authorization"
             allowCredentials: true
-
       routes:
-
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/users/**,/auth/**
-
+            - Path=/users/**, /auth/**
         - id: order-service
           uri: lb://ORDER-SERVICE
           predicates:
             - Path=/orders/**
           filters:
             - AuthFilter
-
-
-        - id: user-service-swagger
-          uri: lb://USER-SERVICE
+        - id: user-service-swagger-redirect
+          uri: no://op
           predicates:
-            - Path=/user-service/swagger-ui/**,/user-service/v3/api-docs/**,/user-service/v3/api-docs
+            - Path=/user-service/swagger
           filters:
-            - StripPrefix=1
-
-        - id: order-service-swagger
-          uri: lb://ORDER-SERVICE
+            - RedirectTo=302,${USER_SWAGGER_ORIGIN}/swagger-ui/index.html
+        - id: order-service-swagger-redirect
+          uri: no://op
           predicates:
-            - Path=/order-service/swagger-ui/**,/order-service/v3/api-docs/**,/order-service/v3/api-docs
+            - Path=/order-service/swagger
           filters:
-            - StripPrefix=1
-
+            - RedirectTo=302,${ORDERS_SWAGGER_ORIGIN}/swagger-ui/index.html
       default-filters:
         - RemoveRequestHeader=X-User-Id
 
