@@ -1,7 +1,9 @@
+// src/pages/OrderDetailsPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { addOrderItem, deleteOrderItem, getOrderById } from "../api/orders";
-import type { OrderDto } from "../api/types";
+import type { OrderDto, OrderItem } from "../api/types";
+import { useTranslation } from "react-i18next";
 
 function cn(...a: Array<string | false | null | undefined>) {
   return a.filter(Boolean).join(" ");
@@ -25,6 +27,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function OrderDetailsPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
 
   const [order, setOrder] = useState<OrderDto | null>(null);
@@ -36,7 +39,9 @@ export function OrderDetailsPage() {
   const [configuration, setConfiguration] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const items = useMemo(() => order?.items ?? [], [order]);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+
+  const items = useMemo<OrderItem[]>(() => (order?.items ?? []) as OrderItem[], [order]);
 
   async function reload() {
     if (!id) return;
@@ -45,7 +50,7 @@ export function OrderDetailsPage() {
       setErr(null);
       setOrder(await getOrderById(id));
     } catch (e: any) {
-      setErr(e?.response?.data?.message ?? "Failed to load order");
+      setErr(e?.response?.data?.message ?? t("errors.loadOrderFail"));
     } finally {
       setLoading(false);
     }
@@ -66,7 +71,7 @@ export function OrderDetailsPage() {
         <div className="min-w-0">
           <div className="text-sm text-slate-500 dark:text-slate-400">
             <Link to="/" className="hover:underline">
-              Orders
+              {t("nav.orders")}
             </Link>{" "}
             <span className="mx-1">/</span>
             <span className="break-words">{title}</span>
@@ -78,12 +83,12 @@ export function OrderDetailsPage() {
           </div>
 
           <div className="mt-1 text-xs text-slate-500 dark:text-slate-400 break-all">
-            id: {id}
+            {t("orders.id")}: {id}
           </div>
 
           {order?.createdDate && (
             <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Created: {order.createdDate}
+              {t("order.created")}: {order.createdDate}
             </div>
           )}
         </div>
@@ -93,13 +98,15 @@ export function OrderDetailsPage() {
           className="px-3 py-2 rounded-xl text-sm font-medium border bg-white hover:bg-slate-50 transition
                      dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
         >
-          {loading ? "Loading..." : "Refresh"}
+          {loading ? t("common.loading") : t("common.refresh")}
         </button>
       </div>
 
       {err && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
-                        dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200">
+        <div
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
+                        dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200"
+        >
           {err}
         </div>
       )}
@@ -108,10 +115,8 @@ export function OrderDetailsPage() {
       <div className="rounded-3xl border bg-white p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold">Add item</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              link + size + configuration
-            </div>
+            <div className="text-sm font-semibold">{t("order.addItem")}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{t("order.hint")}</div>
           </div>
         </div>
 
@@ -145,16 +150,20 @@ export function OrderDetailsPage() {
             <button
               disabled={saving || !link.trim() || !size.trim() || !configuration.trim()}
               onClick={async () => {
-                if (!id) return;
                 setSaving(true);
                 try {
-                  await addOrderItem(id, { link, size, configuration });
+                  setErr(null);
+                  await addOrderItem(id, {
+                    link: link.trim(),
+                    size: size.trim(),
+                    configuration: configuration.trim(),
+                  });
                   setLink("");
                   setSize("");
                   setConfiguration("");
                   await reload();
                 } catch (e: any) {
-                  setErr(e?.response?.data?.message ?? "Failed to add item");
+                  setErr(e?.response?.data?.message ?? t("errors.addItemFail"));
                 } finally {
                   setSaving(false);
                 }
@@ -164,7 +173,7 @@ export function OrderDetailsPage() {
                          disabled:opacity-50 disabled:hover:bg-slate-900
                          dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
             >
-              {saving ? "Saving..." : "Add item"}
+              {saving ? t("common.saving") : t("order.addItem")}
             </button>
           </div>
         </div>
@@ -173,61 +182,91 @@ export function OrderDetailsPage() {
       {/* Items list */}
       <div className="rounded-3xl border bg-white overflow-hidden dark:bg-slate-950 dark:border-slate-800">
         <div className="px-6 py-4 border-b flex items-center justify-between dark:border-slate-800">
-          <div className="text-sm font-semibold">Items</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">{items.length} items</div>
+          <div className="text-sm font-semibold">{t("order.items")}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            {t("orders.itemsCount", { count: items.length })}
+          </div>
         </div>
 
         {items.length === 0 ? (
-          <div className="p-6 text-sm text-slate-500 dark:text-slate-400">
-            No items yet.
-          </div>
+          <div className="p-6 text-sm text-slate-500 dark:text-slate-400">{t("order.noItems")}</div>
         ) : (
           <ul className="divide-y dark:divide-slate-800">
-            {items.map((it) => (
-              <li key={it.id} className="p-6 hover:bg-slate-50 transition dark:hover:bg-slate-900/40">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold break-all">{it.id}</div>
-                    <div className="mt-1 text-sm text-slate-700 dark:text-slate-200 break-all">
-                      <a
-                        className="underline underline-offset-4 hover:opacity-80"
-                        href={it.link}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
+            {items.map((it, idx) => {
+              const itemId = it.id;
+              const canOpen = typeof itemId === "string" && itemId.length > 0;
+              const isDeleting = deletingItemId === itemId;
+
+              return (
+                <li key={itemId ?? `idx-${idx}`} className="p-6 hover:bg-slate-50 transition dark:hover:bg-slate-900/40">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold break-all">{itemId ?? "(no id)"}</div>
+
+                      <div className="mt-1 text-sm text-slate-700 dark:text-slate-200 break-all">
                         {it.link}
-                      </a>
+                      </div>
+
+                      <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        {t("order.size")}: <span className="font-medium">{it.size}</span> • {t("order.configuration")}:{" "}
+                        <span className="font-medium">{it.configuration}</span>
+                        {typeof (it as any).price !== "undefined" && (
+                          <>
+                            {" "}
+                            • {t("order.price")}: <span className="font-medium">{(it as any).price}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                      size: <span className="font-medium">{it.size}</span> • configuration:{" "}
-                      <span className="font-medium">{it.configuration}</span>
-                      {typeof it.price !== "undefined" && (
-                        <>
-                          {" "}
-                          • price: <span className="font-medium">{it.price}</span>
-                        </>
-                      )}
+
+                    <div className="flex gap-2 shrink-0">
+                      {/* IMPORTANT: open ONLY by button, not as link text */}
+                      <Link
+                        to={canOpen ? `/orders/${id}/items/${itemId}` : "#"}
+                        onClick={(e) => {
+                          if (!canOpen) {
+                            e.preventDefault();
+                            setErr(t("errors.noItemIdOpen"));
+                          }
+                        }}
+                        className={cn(
+                          "px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition",
+                          "dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60",
+                          !canOpen && "opacity-50 pointer-events-none"
+                        )}
+                      >
+                        {t("common.open")}
+                      </Link>
+
+                      <button
+                        onClick={async () => {
+                          if (!canOpen) {
+                            setErr(t("errors.noItemIdDelete"));
+                            return;
+                          }
+                          setDeletingItemId(itemId!);
+                          try {
+                            setErr(null);
+                            await deleteOrderItem(id, itemId!);
+                            await reload();
+                          } catch (e: any) {
+                            setErr(e?.response?.data?.message ?? t("errors.deleteFail"));
+                          } finally {
+                            setDeletingItemId(null);
+                          }
+                        }}
+                        disabled={!canOpen || isDeleting}
+                        className="px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition
+                                   disabled:opacity-50
+                                   dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
+                      >
+                        {isDeleting ? t("common.deleting") : t("common.delete")}
+                      </button>
                     </div>
                   </div>
-
-                  <button
-                    onClick={async () => {
-                      if (!id) return;
-                      try {
-                        await deleteOrderItem(id, it.id);
-                        await reload();
-                      } catch (e: any) {
-                        setErr(e?.response?.data?.message ?? "Delete failed");
-                      }
-                    }}
-                    className="px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition
-                               dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

@@ -1,16 +1,42 @@
-import { useEffect, useState } from "react";
+// src/pages/OrdersPage.tsx
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { listAddresses } from "../api/addresses";
-import { createOrder, listOrders } from "../api/orders";
+import { createOrder, deleteOrder, listOrders, updateOrder } from "../api/orders";
 import type { AddressDto, OrderDto } from "../api/types";
+import { useTranslation } from "react-i18next";
+
+function pickAddressId(o: any): string {
+  return o?.addressId ?? o?.address?.id ?? "";
+}
 
 export function OrdersPage() {
+  const { t } = useTranslation();
+
   const [orders, setOrders] = useState<OrderDto[]>([]);
   const [addresses, setAddresses] = useState<AddressDto[]>([]);
   const [addressId, setAddressId] = useState("");
   const [orderName, setOrderName] = useState("");
+
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // edit order
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editAddressId, setEditAddressId] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const addressOptions = useMemo(
+    () =>
+      (addresses ?? []).map((a) => ({
+        id: a.id,
+        label: `${a.city}, ${a.street} ${a.building}`,
+      })),
+    [addresses]
+  );
 
   async function reload() {
     setLoading(true);
@@ -22,6 +48,65 @@ export function OrdersPage() {
       setErr(e?.response?.data?.message ?? "Failed to load orders");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onDeleteOrder(orderId: string) {
+    setErr(null);
+    setDeletingId(orderId);
+    try {
+      await deleteOrder(orderId);
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+
+      if (editingId === orderId) {
+        cancelEdit();
+      }
+    } catch (e: any) {
+      setErr(e?.response?.data?.message ?? "Delete order failed");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  function startEdit(o: OrderDto) {
+    setErr(null);
+    setEditingId(o.id);
+    setEditName((o.name ?? "").toString());
+
+    const currentAddr = pickAddressId(o as any);
+    setEditAddressId(currentAddr || (addresses[0]?.id ?? ""));
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditName("");
+    setEditAddressId("");
+    setUpdatingId(null);
+  }
+
+  async function saveEdit(orderId: string) {
+    const name = editName.trim();
+    const addr = editAddressId;
+
+    if (!name || !addr) {
+      setErr(t("errors.fillAll"));
+      return;
+    }
+
+    setErr(null);
+    setUpdatingId(orderId);
+    try {
+      const updated = await updateOrder(orderId, { name, addressId: addr });
+
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? ({ ...o, ...(updated as any) } as OrderDto) : o))
+      );
+
+      cancelEdit();
+    } catch (e: any) {
+      setErr(e?.response?.data?.message ?? "Update order failed");
+    } finally {
+      setUpdatingId(null);
     }
   }
 
@@ -39,9 +124,9 @@ export function OrdersPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Orders</h1>
+          <h1 className="text-2xl font-semibold">{t("orders.title")}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Create and view your orders
+            {t("orders.subtitle")}
           </p>
         </div>
         <button
@@ -49,7 +134,7 @@ export function OrdersPage() {
           className="px-3 py-2 rounded-xl text-sm font-medium border bg-white hover:bg-slate-50 transition
                      dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
         >
-          Refresh
+          {t("common.refresh")}
         </button>
       </div>
 
@@ -60,16 +145,17 @@ export function OrdersPage() {
         </div>
       )}
 
+      {/* Create order */}
       <div className="rounded-2xl border bg-white p-4 dark:bg-slate-950 dark:border-slate-800">
         <div className="grid gap-3 sm:grid-cols-3 sm:items-end">
           <div className="sm:col-span-1">
             <div className="text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
-              Name
+              {t("orders.name")}
             </div>
             <input
               value={orderName}
               onChange={(e) => setOrderName(e.target.value)}
-              placeholder="My first order"
+              placeholder={t("orders.orderNamePlaceholder")}
               className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
                          dark:bg-slate-950 dark:border-slate-800 dark:focus:ring-slate-800"
             />
@@ -77,7 +163,7 @@ export function OrdersPage() {
 
           <div className="sm:col-span-1">
             <div className="text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
-              Address
+              {t("orders.address")}
             </div>
             <select
               className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
@@ -109,55 +195,141 @@ export function OrdersPage() {
               className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition
                          dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
             >
-              Create order
+              {t("orders.createOrder")}
             </button>
           </div>
         </div>
       </div>
 
+      {/* Orders list */}
       <div className="rounded-2xl border bg-white overflow-hidden dark:bg-slate-950 dark:border-slate-800">
         <div className="px-4 py-3 border-b flex items-center justify-between dark:border-slate-800">
-          <div className="text-sm font-semibold">Recent</div>
+          <div className="text-sm font-semibold">{t("orders.recent")}</div>
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            {loading ? "Loading..." : `${orders.length} items`}
+            {loading ? t("common.loading") : t("orders.itemsCount", { count: orders.length })}
           </div>
         </div>
 
         {orders.length === 0 ? (
           <div className="p-6 text-sm text-slate-500 dark:text-slate-400">
-            No orders yet.
+            {t("orders.noOrders")}
           </div>
         ) : (
           <ul className="divide-y dark:divide-slate-800">
-            {orders.map((o) => (
-              <li
-                key={o.id}
-                className="p-4 hover:bg-slate-50 transition dark:hover:bg-slate-900/40"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div className="min-w-0">
-                    <Link
-                      to={`/orders/${o.id}`}
-                      className="font-medium text-slate-900 hover:underline break-words dark:text-slate-50"
-                    >
-                      {o.name || o.id}
-                    </Link>
-                    <div className="text-xs text-slate-500 mt-1 dark:text-slate-400 break-all">
-                      id: {o.id}
-                      {o.createdDate ? ` • ${o.createdDate}` : ""}
+            {orders.map((o) => {
+              const isDeleting = deletingId === o.id;
+              const isEditing = editingId === o.id;
+              const isUpdating = updatingId === o.id;
+
+              return (
+                <li
+                  key={o.id}
+                  className="p-4 hover:bg-slate-50 transition dark:hover:bg-slate-900/40"
+                >
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div className="min-w-0">
+                        {!isEditing ? (
+                          <Link
+                            to={`/orders/${o.id}`}
+                            className="font-medium text-slate-900 hover:underline break-words dark:text-slate-50"
+                          >
+                            {o.name || o.id}
+                          </Link>
+                        ) : (
+                          <div className="grid gap-2 sm:grid-cols-3">
+                            <input
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              placeholder={t("orders.name")}
+                              className="sm:col-span-2 w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
+                                         dark:bg-slate-950 dark:border-slate-800 dark:focus:ring-slate-800"
+                            />
+                            <select
+                              value={editAddressId}
+                              onChange={(e) => setEditAddressId(e.target.value)}
+                              className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
+                                         dark:bg-slate-950 dark:border-slate-800 dark:focus:ring-slate-800"
+                            >
+                              {addressOptions.map((x) => (
+                                <option key={x.id} value={x.id}>
+                                  {x.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        <div className="text-xs text-slate-500 mt-1 dark:text-slate-400 break-all">
+                          {t("orders.id")}: {o.id}
+                          {o.createdDate ? ` • ${o.createdDate}` : ""}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-semibold
+                                     dark:border-slate-700 dark:text-slate-200"
+                        >
+                          {o.status}
+                        </span>
+
+                        {!isEditing ? (
+                          <>
+                            <button
+                              onClick={() => startEdit(o)}
+                              disabled={isDeleting}
+                              className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold
+                                         bg-white hover:bg-slate-50 disabled:opacity-50 transition
+                                         dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
+                            >
+                              {t("orders.edit")}
+                            </button>
+
+                            <button
+                              disabled={isDeleting}
+                              onClick={() => onDeleteOrder(o.id)}
+                              className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold
+                                         border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50 transition
+                                         dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/40"
+                            >
+                              {isDeleting ? t("common.deleting") : t("common.delete")}
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => saveEdit(o.id)}
+                              disabled={isUpdating || !editName.trim() || !editAddressId}
+                              className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
+                                         bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition
+                                         dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                            >
+                              {isUpdating ? t("common.saving") : t("common.save")}
+                            </button>
+
+                            <button
+                              onClick={cancelEdit}
+                              disabled={isUpdating}
+                              className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold
+                                         bg-white hover:bg-slate-50 disabled:opacity-50 transition
+                                         dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
+                            >
+                              {t("common.cancel")}
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  <span className="inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-semibold
-                                   dark:border-slate-700 dark:text-slate-200">
-                    {o.status}
-                  </span>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
     </div>
   );
 }
+
+export default OrdersPage;

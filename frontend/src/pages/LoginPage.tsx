@@ -1,6 +1,8 @@
+// src/pages/LoginPage.tsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useTranslation } from "react-i18next";
 
 function Field({
   label,
@@ -34,6 +36,7 @@ function Field({
 }
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const nav = useNavigate();
   const { login } = useAuth();
 
@@ -50,9 +53,9 @@ export function LoginPage() {
       <div className="rounded-3xl border bg-white p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Login</h1>
+            <h1 className="text-2xl font-semibold">{t("auth.login")}</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Sign in to manage addresses and orders
+              {t("auth.subtitleLogin")}
             </p>
           </div>
         </div>
@@ -66,13 +69,13 @@ export function LoginPage() {
 
         <div className="mt-5 grid gap-3">
           <Field
-            label="Email"
+            label={t("auth.email")}
             value={email}
             onChange={setEmail}
             placeholder="test1@test.com"
           />
           <Field
-            label="Password"
+            label={t("auth.password")}
             type="password"
             value={password}
             onChange={setPassword}
@@ -98,23 +101,23 @@ export function LoginPage() {
                        disabled:opacity-50 disabled:hover:bg-slate-900
                        dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? t("auth.signingIn") : t("auth.signIn")}
           </button>
 
           <div className="text-sm text-slate-600 dark:text-slate-300">
-            No account?{" "}
+            {t("auth.noAccount")}{" "}
             <Link
               to="/register"
               className="font-semibold underline underline-offset-4 hover:opacity-80"
             >
-              Register
+              {t("auth.register")}
             </Link>
           </div>
         </div>
       </div>
 
       <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-        Tip: use your test user from backend (например: <code>test1@test.com</code>).
+        {t("auth.tip")} <code>test1@test.com</code>.
       </p>
     </div>
   );

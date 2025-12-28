@@ -1,7 +1,10 @@
+// src/pages/ProfilePage.tsx
 import { useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { useTranslation } from "react-i18next";
 
 export function ProfilePage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -22,9 +25,9 @@ export function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Profile</h1>
+        <h1 className="text-2xl font-semibold">{t("profile.title")}</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Your account info
+          {t("profile.subtitle")}
         </p>
       </div>
 
@@ -32,7 +35,7 @@ export function ProfilePage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border p-4 dark:border-slate-800">
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              Email
+              {t("profile.email")}
             </div>
             <div className="mt-1 font-semibold break-all">{user.email}</div>
             <button
@@ -40,13 +43,13 @@ export function ProfilePage() {
               className="mt-3 px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition
                          dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
             >
-              Copy email {copied === "email" ? "✅" : ""}
+              {t("profile.copyEmail")} {copied === "email" ? "✅" : ""}
             </button>
           </div>
 
           <div className="rounded-2xl border p-4 dark:border-slate-800">
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              User ID
+              {t("profile.userId")}
             </div>
             <div className="mt-1 font-semibold break-all">{user.id}</div>
             <button
@@ -54,14 +57,14 @@ export function ProfilePage() {
               className="mt-3 px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition
                          dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
             >
-              Copy id {copied === "id" ? "✅" : ""}
+              {t("profile.copyId")} {copied === "id" ? "✅" : ""}
             </button>
           </div>
         </div>
 
         <details className="mt-6">
           <summary className="cursor-pointer text-sm font-semibold">
-            Raw JSON
+            {t("profile.rawJson")}
           </summary>
           <pre className="mt-3 text-xs rounded-2xl border bg-slate-50 p-4 overflow-auto dark:bg-slate-900/40 dark:border-slate-800">
             {pretty}

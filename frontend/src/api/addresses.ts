@@ -11,7 +11,10 @@ export async function createAddress(dto: AddressCreateDto): Promise<AddressDto> 
   return resp.data as AddressDto;
 }
 
-export async function updateAddress(addressId: string, dto: AddressUpdateDto): Promise<AddressDto> {
+export async function updateAddress(
+  addressId: string,
+  dto: AddressUpdateDto
+): Promise<AddressDto> {
   const resp = await userApi.patch(`/address/${addressId}`, dto);
   return resp.data as AddressDto;
 }

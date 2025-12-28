@@ -1,6 +1,8 @@
+// src/pages/RegisterPage.tsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "../api/auth";
+import { useTranslation } from "react-i18next";
 
 function Field({
   label,
@@ -34,6 +36,7 @@ function Field({
 }
 
 export function RegisterPage() {
+  const { t } = useTranslation();
   const nav = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -48,9 +51,9 @@ export function RegisterPage() {
     <div className="mx-auto max-w-md">
       <div className="rounded-3xl border bg-white p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
         <div>
-          <h1 className="text-2xl font-semibold">Register</h1>
+          <h1 className="text-2xl font-semibold">{t("auth.register")}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Create a new account
+            {t("auth.subtitleRegister")}
           </p>
         </div>
 
@@ -63,17 +66,17 @@ export function RegisterPage() {
 
         <div className="mt-5 grid gap-3">
           <Field
-            label="Email"
+            label={t("auth.email")}
             value={email}
             onChange={setEmail}
             placeholder="new@test.com"
           />
           <Field
-            label="Password"
+            label={t("auth.password")}
             type="password"
             value={password}
             onChange={setPassword}
-            placeholder="min 4 chars"
+            placeholder={t("auth.passwordHint")}
           />
 
           <button
@@ -95,23 +98,23 @@ export function RegisterPage() {
                        disabled:opacity-50 disabled:hover:bg-slate-900
                        dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
           >
-            {loading ? "Creating..." : "Create account"}
+            {loading ? t("auth.creating") : t("auth.createAccount")}
           </button>
 
           <div className="text-sm text-slate-600 dark:text-slate-300">
-            Already have an account?{" "}
+            {t("auth.haveAccount")}{" "}
             <Link
               to="/login"
               className="font-semibold underline underline-offset-4 hover:opacity-80"
             >
-              Login
+              {t("auth.login")}
             </Link>
           </div>
         </div>
       </div>
 
       <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-        Password validation сейчас минимальная (на фронте). Бэк всё равно проверит.
+        {t("auth.passwordValidationNote")}
       </p>
     </div>
   );

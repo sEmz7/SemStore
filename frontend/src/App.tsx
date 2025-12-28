@@ -1,3 +1,4 @@
+// src/App.tsx
 import { Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LoginPage } from "./pages/LoginPage";
@@ -6,6 +7,7 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { AddressesPage } from "./pages/AddressesPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { OrderDetailsPage } from "./pages/OrderDetailsPage";
+import { OrderItemPage } from "./pages/OrderItemPage";
 import { Layout } from "./components/Layout";
 
 export default function App() {
@@ -20,6 +22,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/orders/:id"
           element={
@@ -28,6 +31,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/orders/:orderId/items/:itemId"
+          element={
+            <ProtectedRoute>
+              <OrderItemPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/addresses"
           element={
@@ -36,6 +49,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/profile"
           element={
