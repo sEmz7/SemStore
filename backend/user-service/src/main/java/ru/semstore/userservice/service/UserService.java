@@ -1,11 +1,10 @@
 package ru.semstore.userservice.service;
 
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
-import ru.semstore.userservice.dto.jwt.RefreshTokenDto;
 import ru.semstore.userservice.dto.user.ChangePasswordDto;
+import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
 import ru.semstore.userservice.dto.user.UserDto;
-import ru.semstore.userservice.dto.user.UserCreateDto;
 
 import java.util.UUID;
 
@@ -33,10 +32,10 @@ public interface UserService {
     /**
      * Обновляет JWT токен по refresh token.
      *
-     * @param refreshTokenDto refresh token
+     * @param refreshToken refresh token
      * @return JWT токены
      */
-    JwtAuthDto refreshToken(RefreshTokenDto refreshTokenDto);
+    JwtAuthDto refreshToken(String refreshToken);
 
     /**
      * Возвращает пользователя по идентификатору.
