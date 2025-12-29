@@ -100,14 +100,14 @@ export function RegisterPage() {
             label={t("auth.email")}
             value={email}
             onChange={setEmail}
-            placeholder="new@test.com"
+            placeholder="Enter your email"
           />
           <Field
             label={t("auth.password")}
             type="password"
             value={password}
             onChange={setPassword}
-            placeholder={t("auth.passwordHint")}
+            placeholder="••••••••"
           />
 
           <button

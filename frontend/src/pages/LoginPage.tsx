@@ -95,7 +95,7 @@ export function LoginPage() {
             label={t("auth.email")}
             value={email}
             onChange={setEmail}
-            placeholder="test1@test.com"
+            placeholder="Enter your email"
           />
           <Field
             label={t("auth.password")}
