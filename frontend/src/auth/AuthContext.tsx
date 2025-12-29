@@ -29,10 +29,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string) {
     const tokens = await apiLogin(email, password);
-    tokenStorage.set({
-      accessToken: tokens.token,
-      refreshToken: tokens.refreshToken,
-    });
+
+    tokenStorage.set({ accessToken: tokens.token });
+
     await reloadMe();
   }
 

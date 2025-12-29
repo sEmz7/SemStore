@@ -1,4 +1,3 @@
-// src/api/auth.ts
 import { authApi, userApi } from "./http";
 import type { JwtAuthDto, UserDto } from "./types";
 
