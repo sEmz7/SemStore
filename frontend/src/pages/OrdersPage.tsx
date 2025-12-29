@@ -353,7 +353,7 @@ export function OrdersPage() {
                                 isDeleting && "opacity-50 pointer-events-none"
                               )}
                             >
-                              {t("common.open")} {t("nav.orders").toLowerCase()}
+                              {t("orders.openOrder")} 
                             </Link>
 
                             {/* ⋯ меню */}
