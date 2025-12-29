@@ -1,3 +1,4 @@
+// src/api/auth.ts
 import { authApi, userApi } from "./http";
 import type { JwtAuthDto, UserDto } from "./types";
 
@@ -14,4 +15,8 @@ export async function register(email: string, password: string): Promise<UserDto
 export async function getMe(): Promise<UserDto> {
   const resp = await userApi.get<UserDto>("");
   return resp.data;
+}
+
+export async function logout(): Promise<void> {
+  await authApi.post("/auth/logout");
 }

@@ -1,5 +1,6 @@
+// src/auth/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getMe, login as apiLogin } from "../api/auth";
+import { getMe, login as apiLogin, logout as apiLogout } from "../api/auth";
 import { tokenStorage } from "../api/tokenStorage";
 import type { UserDto } from "../api/types";
 
@@ -7,7 +8,7 @@ type AuthState = {
   user: UserDto | null;
   isLoading: boolean;
   login(email: string, password: string): Promise<void>;
-  logout(): void;
+  logout(): Promise<void>;
   reloadMe(): Promise<void>;
 };
 
@@ -35,9 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await reloadMe();
   }
 
-  function logout() {
+  async function logout() {
     tokenStorage.clear();
     setUser(null);
+    try {
+      await apiLogout();
+    } catch {
+      // ignore
+    }
   }
 
   useEffect(() => {
@@ -51,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = useMemo(
