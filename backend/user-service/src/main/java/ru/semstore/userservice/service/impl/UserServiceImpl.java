@@ -6,7 +6,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
-import ru.semstore.userservice.dto.jwt.RefreshTokenDto;
 import ru.semstore.userservice.dto.user.ChangePasswordDto;
 import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
@@ -83,15 +82,14 @@ public class UserServiceImpl implements UserService {
     /**
      * Обновляет JWT токены по refresh token.
      *
-     * @param refreshTokenDto refresh token
+     * @param refreshToken refresh token
      * @return новые JWT токены
      * @throws AuthException если refresh token невалиден
      * @throws NotFoundException если пользователь не найден
      */
     @Transactional(readOnly = true)
     @Override
-    public JwtAuthDto refreshToken(RefreshTokenDto refreshTokenDto) {
-        String refreshToken = refreshTokenDto.getRefreshToken();
+    public JwtAuthDto refreshToken(String refreshToken) {
         if (refreshToken != null && jwtService.validateJwtToken(refreshToken)) {
             User user = userRepository.findByEmail(jwtService.getEmailFromToken(refreshToken))
                     .orElseThrow(() -> new NotFoundException("User with not found"));
