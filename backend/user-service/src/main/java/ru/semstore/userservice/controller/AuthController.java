@@ -8,13 +8,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.semstore.userservice.dto.jwt.AccessTokenDto;
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
-import ru.semstore.userservice.dto.jwt.RefreshTokenDto;
 import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
 import ru.semstore.userservice.dto.user.UserDto;
@@ -47,7 +45,6 @@ public class AuthController {
      * @param dto данные для регистрации пользователя
      * @return зарегистрированный пользователь
      */
-
     @Operation(summary = "Регистрация нового пользователя",
             description = "Создает нового пользователя и возвращает его данные")
     @ApiResponses({
@@ -69,17 +66,16 @@ public class AuthController {
     }
 
     /**
-     * Аутентифицирует пользователя и возвращает JWT токены.
+     * Аутентифицирует пользователя, устанавливает refresh токен в cookie и возвращает access токен.
      *
      * @param dto учетные данные пользователя
-     * @return access и refresh JWT токены
+     * @return access токен
      */
-
     @Operation(summary = "Авторизация", description = "Аутентификация пользователя и получение JWT токенов")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "(OK) Успешная авторизация", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = JwtAuthDto.class))),
+                            schema = @Schema(implementation = AccessTokenDto.class))),
             @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Ошибка входных данных", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class))),
@@ -91,31 +87,53 @@ public class AuthController {
                             schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/login")
-    public JwtAuthDto login(@Valid @RequestBody UserCredentialsDto dto) {
-        return userService.logIn(dto);
+    public ResponseEntity<AccessTokenDto> login(@Valid @RequestBody UserCredentialsDto dto) {
+        JwtAuthDto jwt = userService.logIn(dto);
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", jwt.getRefreshToken())
+                .httpOnly(true)
+                .path("/")
+                .secure(false)
+                .sameSite("Lax")
+                .maxAge(30L * 24 * 60 * 60)
+                .build();
+        AccessTokenDto accessTokenDto = new AccessTokenDto(jwt.getToken());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(accessTokenDto);
     }
 
     /**
-     * Обновляет JWT токены с использованием refresh token.
+     * Обновляет access токен с использованием refresh токена.
      *
-     * @param dto refresh token
-     * @return новые access и refresh токены
+     * @param refreshToken refresh токен из cookie
+     * @return новый access токен
      */
-
     @Operation(summary = "Обновление токена доступа",
             description = "Обновление JWT токена доступа с использованием refresh token")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "(OK) Токен успешно обновлен", content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = JwtAuthDto.class))),
+                            schema = @Schema(implementation = AccessTokenDto.class))),
             @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Неверный или просроченный refresh token",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/refresh")
-    public JwtAuthDto refresh(@Valid @RequestBody RefreshTokenDto dto) {
-        return userService.refreshToken(dto);
+    public ResponseEntity<AccessTokenDto> refresh(@CookieValue(name = "refreshToken", required = false)
+                                                      String refreshToken) {
+        JwtAuthDto jwt = userService.refreshToken(refreshToken);
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", jwt.getRefreshToken())
+                .httpOnly(true)
+                .path("/")
+                .secure(false)
+                .maxAge(30L * 24 * 60 * 60)
+                .sameSite("Lax")
+                .build();
+        AccessTokenDto accessTokenDto = new AccessTokenDto(jwt.getToken());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(accessTokenDto);
     }
 
     /**
@@ -124,9 +142,30 @@ public class AuthController {
      * @param authHeader HTTP заголовок Authorization с JWT токеном
      * @return данные пользователя, извлечённые из токена
      */
-
     @PostMapping("/validateToken")
     public UserDto validateToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         return userService.validateToken(authHeader);
+    }
+
+    /**
+     * Выход из системы. Удаляет refresh токен из cookie.
+     */
+    @Operation(summary = "Выход из системы", description = "Удаляет refresh токен из cookie",
+    responses = {
+            @ApiResponse(responseCode = "204", description = "(NO CONTENT) Токен успешно удален")
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .path("/")
+                .secure(false)
+                .sameSite("Lax")
+                .maxAge(0)
+                .build();
+
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
+                .build();
     }
 }
