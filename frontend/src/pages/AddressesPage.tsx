@@ -257,9 +257,7 @@ export function AddressesPage() {
     setTouched(all);
   }
 
-  const noChangesText = t("noChangesToSave", {
-    defaultValue: t("common.noChangesToSave", { defaultValue: "Нет изменений — нечего сохранять" }),
-  });
+  const noChangesText = t("errors.noChangesToSave");
 
   async function doDeleteAddress(addressId: string) {
     setErr(null);
