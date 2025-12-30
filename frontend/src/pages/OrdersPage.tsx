@@ -5,6 +5,7 @@ import { listAddresses } from "../api/addresses";
 import { createOrder, deleteOrder, listOrders, updateOrder } from "../api/orders";
 import type { AddressDto, OrderDto } from "../api/types";
 import { useTranslation } from "react-i18next";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 function pickAddressId(o: any): string {
   return o?.addressId ?? o?.address?.id ?? "";
@@ -28,7 +29,7 @@ type MenuState = {
   left: number;
 };
 
-const MENU_W = 176; 
+const MENU_W = 176;
 const MENU_GAP = 8;
 
 function normStr(v: unknown) {
@@ -64,6 +65,9 @@ export function OrdersPage() {
   // menu
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
+
+  // confirm delete modal
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     function onDocPointerDown(e: PointerEvent) {
@@ -142,7 +146,7 @@ export function OrdersPage() {
     }
   }
 
-  async function onDeleteOrder(orderId: string) {
+  async function onDeleteOrder(orderId: string): Promise<boolean> {
     setErr(null);
     setDeletingId(orderId);
     try {
@@ -159,8 +163,10 @@ export function OrdersPage() {
       await reload(nextPage);
 
       if (editingId === orderId) cancelEdit();
+      return true;
     } catch (e: any) {
       setErr(e?.response?.data?.message ?? t("errors.deleteOrderFail"));
+      return false;
     } finally {
       setDeletingId(null);
     }
@@ -488,11 +494,11 @@ export function OrdersPage() {
 
                                 <button
                                   type="button"
-                                  onClick={async (e) => {
+                                  onClick={(e) => {
                                     e.stopPropagation();
                                     setMenuOpenId(null);
                                     setMenu(null);
-                                    await onDeleteOrder(o.id);
+                                    setConfirmDelete({ id: o.id, name: normStr(o.name) || o.id });
                                   }}
                                   className="w-full text-left px-3 py-2 text-sm text-red-700 hover:bg-red-50 transition
                                              dark:text-red-300 dark:hover:bg-red-950/40 rounded-b-xl"
@@ -567,6 +573,23 @@ export function OrdersPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title={t("orders.confirmDeleteTitle")}
+        description={
+          confirmDelete ? t("orders.confirmDeleteText", { name: confirmDelete.name, id: confirmDelete.id }) : undefined
+        }
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
+        loading={!!confirmDelete && deletingId === confirmDelete.id}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          const ok = await onDeleteOrder(confirmDelete.id);
+          if (ok) setConfirmDelete(null);
+        }}
+      />
     </div>
   );
 }

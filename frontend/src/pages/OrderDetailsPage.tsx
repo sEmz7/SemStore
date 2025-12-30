@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { addOrderItem, deleteOrderItem, getOrderById } from "../api/orders";
 import type { OrderDto, OrderItem } from "../api/types";
 import { useTranslation } from "react-i18next";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 function cn(...a: Array<string | false | null | undefined>) {
   return a.filter(Boolean).join(" ");
@@ -26,14 +27,10 @@ function parseSpringValidationMessage(msg: string) {
   const field = fieldMatch?.[1];
 
   const ruRange = msg.match(/от\s+(\d+)\s+до\s+(\d+)/i);
-  if (ruRange) {
-    return { field, min: Number(ruRange[1]), max: Number(ruRange[2]) };
-  }
+  if (ruRange) return { field, min: Number(ruRange[1]), max: Number(ruRange[2]) };
 
   const enRange = msg.match(/between\s+(\d+)\s+and\s+(\d+)/i);
-  if (enRange) {
-    return { field, min: Number(enRange[1]), max: Number(enRange[2]) };
-  }
+  if (enRange) return { field, min: Number(enRange[1]), max: Number(enRange[2]) };
 
   const nums = msg.match(/,(\d+),(\d+)\]/);
   if (nums) {
@@ -83,13 +80,10 @@ export function OrderDetailsPage() {
   const [configuration, setConfiguration] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const [touched, setTouched] = useState({
-    link: false,
-    size: false,
-    configuration: false,
-  });
-
+  const [touched, setTouched] = useState({ link: false, size: false, configuration: false });
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+
+  const [confirmDelete, setConfirmDelete] = useState<{ itemId: string } | null>(null);
 
   const items = useMemo<OrderItem[]>(() => (order?.items ?? []) as OrderItem[], [order]);
 
@@ -146,6 +140,20 @@ export function OrderDetailsPage() {
     return msg;
   }
 
+  async function doDeleteItem(itemId: string) {
+    if (!id) return;
+    setDeletingItemId(itemId);
+    try {
+      setErr(null);
+      await deleteOrderItem(id, itemId);
+      await reload();
+    } catch (e: any) {
+      setErr(e?.response?.data?.message ?? t("errors.deleteFail"));
+    } finally {
+      setDeletingItemId(null);
+    }
+  }
+
   useEffect(() => {
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,7 +167,6 @@ export function OrderDetailsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header (mobile friendly) */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm text-slate-500 dark:text-slate-400">
@@ -196,10 +203,8 @@ export function OrderDetailsPage() {
       </div>
 
       {err && (
-        <div
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
-                     dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 break-words"
-        >
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
+                        dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 break-words">
           {err}
         </div>
       )}
@@ -214,7 +219,6 @@ export function OrderDetailsPage() {
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {/* LINK */}
           <div className="sm:col-span-2">
             <input
               value={link}
@@ -235,7 +239,6 @@ export function OrderDetailsPage() {
             )}
           </div>
 
-          {/* SIZE */}
           <div>
             <input
               value={size}
@@ -256,7 +259,6 @@ export function OrderDetailsPage() {
             )}
           </div>
 
-          {/* CONFIG */}
           <div className="sm:col-span-3">
             <input
               value={configuration}
@@ -361,8 +363,7 @@ export function OrderDetailsPage() {
                         </span>
                         {typeof (it as any).price !== "undefined" && (
                           <span>
-                            {t("order.price")}:{" "}
-                            <span className="font-medium">{(it as any).price}</span>
+                            {t("order.price")}: <span className="font-medium">{(it as any).price}</span>
                           </span>
                         )}
                       </div>
@@ -387,23 +388,14 @@ export function OrderDetailsPage() {
                       </Link>
 
                       <button
-                        onClick={async () => {
+                        disabled={!canOpen || isDeleting}
+                        onClick={() => {
                           if (!canOpen) {
                             setErr(t("errors.noItemIdDelete"));
                             return;
                           }
-                          setDeletingItemId(itemId!);
-                          try {
-                            setErr(null);
-                            await deleteOrderItem(id, itemId!);
-                            await reload();
-                          } catch (e: any) {
-                            setErr(e?.response?.data?.message ?? t("errors.deleteFail"));
-                          } finally {
-                            setDeletingItemId(null);
-                          }
+                          setConfirmDelete({ itemId: itemId! });
                         }}
-                        disabled={!canOpen || isDeleting}
                         className="w-full sm:w-auto px-3 py-2 rounded-xl text-sm font-medium border transition disabled:opacity-50
                                    border-red-200 text-red-700 hover:bg-red-50
                                    dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/40"
@@ -418,6 +410,24 @@ export function OrderDetailsPage() {
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title={t("common.confirmDeleteTitle")}
+        description={
+          confirmDelete ? t("common.confirmDeleteText", { id: confirmDelete.itemId }) : undefined
+        }
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
+        loading={!!confirmDelete && deletingItemId === confirmDelete.itemId}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          const itemId = confirmDelete.itemId;
+          await doDeleteItem(itemId);
+          setConfirmDelete(null);
+        }}
+      />
     </div>
   );
 }

@@ -1,13 +1,9 @@
 // src/pages/AddressesPage.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  createAddress,
-  deleteAddress,
-  listAddresses,
-  updateAddress,
-} from "../api/addresses";
+import { createAddress, deleteAddress, listAddresses, updateAddress } from "../api/addresses";
 import type { AddressCreateDto, AddressDto } from "../api/types";
 import { useTranslation } from "react-i18next";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const MAX_ADDRESSES = 10;
 
@@ -84,16 +80,10 @@ function normalizeForCompare(f: AddressCreateDto): AddressCreateDto {
 }
 
 function sameForm(a: AddressCreateDto, b: AddressCreateDto) {
-  return (
-    JSON.stringify(normalizeForCompare(a)) ===
-    JSON.stringify(normalizeForCompare(b))
-  );
+  return JSON.stringify(normalizeForCompare(a)) === JSON.stringify(normalizeForCompare(b));
 }
 
-function normalizeCreateAddressError(
-  msg: unknown,
-  t: (k: string, opt?: any) => string
-) {
+function normalizeCreateAddressError(msg: unknown, t: (k: string, opt?: any) => string) {
   const s = typeof msg === "string" ? msg : "";
   const m = s.toLowerCase();
 
@@ -107,8 +97,7 @@ function normalizeCreateAddressError(
 function getScrollOffset() {
   const base = window.innerWidth < 640 ? 152 : 104;
 
-  const header =
-    document.querySelector<HTMLElement>('header,[role="banner"]') ?? null;
+  const header = document.querySelector<HTMLElement>('header,[role="banner"]') ?? null;
 
   if (header) {
     const st = getComputedStyle(header);
@@ -130,8 +119,7 @@ export function AddressesPage() {
   const [form, setForm] = useState<AddressCreateDto>(empty);
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [initialEditForm, setInitialEditForm] =
-    useState<AddressCreateDto | null>(null);
+  const [initialEditForm, setInitialEditForm] = useState<AddressCreateDto | null>(null);
 
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -139,6 +127,8 @@ export function AddressesPage() {
   const [touched, setTouched] = useState<Partial<Record<FormKey, boolean>>>({});
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; address: string } | null>(null);
 
   const formHeaderRef = useRef<HTMLDivElement | null>(null);
 
@@ -173,8 +163,7 @@ export function AddressesPage() {
 
     const ph = normalizeRuPhone(f.phone);
     if (!ph) e.phone = t("errors.required");
-    else if (ph.length !== 11 || !ph.startsWith("7"))
-      e.phone = t("errors.phoneInvalid");
+    else if (ph.length !== 11 || !ph.startsWith("7")) e.phone = t("errors.phoneInvalid");
 
     reqNoDigits("city", 2);
     reqNoDigits("street", 2);
@@ -191,18 +180,14 @@ export function AddressesPage() {
   }
 
   const fieldErrors = useMemo(() => validate(form), [form]); // eslint-disable-line react-hooks/exhaustive-deps
-  const isValid = useMemo(
-    () => Object.keys(fieldErrors).length === 0,
-    [fieldErrors]
-  );
+  const isValid = useMemo(() => Object.keys(fieldErrors).length === 0, [fieldErrors]);
 
   const isDirtyEdit = useMemo(() => {
     if (!editingId || !initialEditForm) return false;
     return !sameForm(form, initialEditForm);
   }, [editingId, initialEditForm, form]);
 
-  const canSave =
-    !saving && isValid && (isEditMode ? isDirtyEdit : !limitReached);
+  const canSave = !saving && isValid && (isEditMode ? isDirtyEdit : !limitReached);
 
   async function reload() {
     setLoading(true);
@@ -228,10 +213,7 @@ export function AddressesPage() {
     const rect = el.getBoundingClientRect();
     const targetTop = rect.top + window.scrollY - offset;
 
-    window.scrollTo({
-      top: Math.max(0, targetTop),
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
   }
 
   function startEdit(a: AddressDto) {
@@ -275,16 +257,30 @@ export function AddressesPage() {
     setTouched(all);
   }
 
-  const noChangesText = t("errors.noChangesToSave");
+  const noChangesText = t("noChangesToSave", {
+    defaultValue: t("common.noChangesToSave", { defaultValue: "Нет изменений — нечего сохранять" }),
+  });
+
+  async function doDeleteAddress(addressId: string) {
+    setErr(null);
+    setDeletingId(addressId);
+    try {
+      await deleteAddress(addressId);
+      await reload();
+      if (editingId === addressId) cancelEdit();
+    } catch (e: any) {
+      setErr(e?.response?.data?.message ?? t("errors.deleteFail"));
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("addresses.title")}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {t("addresses.subtitle")}
-          </p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t("addresses.subtitle")}</p>
         </div>
 
         <button
@@ -311,22 +307,16 @@ export function AddressesPage() {
 
       {/* FORM */}
       <div className="rounded-2xl border bg-white p-4 dark:bg-slate-950 dark:border-slate-800">
-        <div
-          ref={formHeaderRef}
-          className="flex items-center justify-between gap-3"
-        >
-          <div className="text-sm font-semibold">
-            {editingId ? t("addresses.edit") : t("addresses.add")}
-          </div>
+        <div ref={formHeaderRef} className="flex items-center justify-between gap-3">
+          <div className="text-sm font-semibold">{editingId ? t("addresses.edit") : t("addresses.add")}</div>
 
           <div className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
-            {loading
-              ? t("common.loading")
-              : t("addresses.saved", { count: items.length })}
+            {loading ? t("common.loading") : t("addresses.saved", { count: items.length })}
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* firstname */}
           <div className="grid gap-1">
             <input
               className="rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
@@ -337,12 +327,11 @@ export function AddressesPage() {
               onBlur={() => touch("firstname")}
             />
             {touched.firstname && fieldErrors.firstname && (
-              <div className="text-xs text-red-600 dark:text-red-300">
-                {fieldErrors.firstname}
-              </div>
+              <div className="text-xs text-red-600 dark:text-red-300">{fieldErrors.firstname}</div>
             )}
           </div>
 
+          {/* lastname */}
           <div className="grid gap-1">
             <input
               className="rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
@@ -353,12 +342,11 @@ export function AddressesPage() {
               onBlur={() => touch("lastname")}
             />
             {touched.lastname && fieldErrors.lastname && (
-              <div className="text-xs text-red-600 dark:text-red-300">
-                {fieldErrors.lastname}
-              </div>
+              <div className="text-xs text-red-600 dark:text-red-300">{fieldErrors.lastname}</div>
             )}
           </div>
 
+          {/* patronymic */}
           <div className="grid gap-1">
             <input
               className="rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
@@ -369,12 +357,11 @@ export function AddressesPage() {
               onBlur={() => touch("patronymic")}
             />
             {touched.patronymic && fieldErrors.patronymic && (
-              <div className="text-xs text-red-600 dark:text-red-300">
-                {fieldErrors.patronymic}
-              </div>
+              <div className="text-xs text-red-600 dark:text-red-300">{fieldErrors.patronymic}</div>
             )}
           </div>
 
+          {/* phone */}
           <div className="grid gap-1">
             <input
               className="rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
@@ -389,12 +376,11 @@ export function AddressesPage() {
               inputMode="tel"
             />
             {touched.phone && fieldErrors.phone && (
-              <div className="text-xs text-red-600 dark:text-red-300">
-                {fieldErrors.phone}
-              </div>
+              <div className="text-xs text-red-600 dark:text-red-300">{fieldErrors.phone}</div>
             )}
           </div>
 
+          {/* city */}
           <div className="grid gap-1">
             <input
               className="rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
@@ -405,12 +391,11 @@ export function AddressesPage() {
               onBlur={() => touch("city")}
             />
             {touched.city && fieldErrors.city && (
-              <div className="text-xs text-red-600 dark:text-red-300">
-                {fieldErrors.city}
-              </div>
+              <div className="text-xs text-red-600 dark:text-red-300">{fieldErrors.city}</div>
             )}
           </div>
 
+          {/* street */}
           <div className="grid gap-1">
             <input
               className="rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
@@ -421,12 +406,11 @@ export function AddressesPage() {
               onBlur={() => touch("street")}
             />
             {touched.street && fieldErrors.street && (
-              <div className="text-xs text-red-600 dark:text-red-300">
-                {fieldErrors.street}
-              </div>
+              <div className="text-xs text-red-600 dark:text-red-300">{fieldErrors.street}</div>
             )}
           </div>
 
+          {/* building */}
           <div className="grid gap-1">
             <input
               className="rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
@@ -437,12 +421,11 @@ export function AddressesPage() {
               onBlur={() => touch("building")}
             />
             {touched.building && fieldErrors.building && (
-              <div className="text-xs text-red-600 dark:text-red-300">
-                {fieldErrors.building}
-              </div>
+              <div className="text-xs text-red-600 dark:text-red-300">{fieldErrors.building}</div>
             )}
           </div>
 
+          {/* postal */}
           <div className="grid gap-1">
             <input
               className="rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200
@@ -454,9 +437,7 @@ export function AddressesPage() {
               inputMode="numeric"
             />
             {touched.postalCode && fieldErrors.postalCode && (
-              <div className="text-xs text-red-600 dark:text-red-300">
-                {fieldErrors.postalCode}
-              </div>
+              <div className="text-xs text-red-600 dark:text-red-300">{fieldErrors.postalCode}</div>
             )}
           </div>
         </div>
@@ -480,11 +461,8 @@ export function AddressesPage() {
               try {
                 const dto: AddressCreateDto = normalizeForCompare(form);
 
-                if (editingId) {
-                  await updateAddress(editingId, dto as any);
-                } else {
-                  await createAddress(dto);
-                }
+                if (editingId) await updateAddress(editingId, dto as any);
+                else await createAddress(dto);
 
                 cancelEdit();
                 await reload();
@@ -526,9 +504,7 @@ export function AddressesPage() {
         </div>
 
         {isEditMode && !isDirtyEdit && isValid && (
-          <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            {noChangesText}
-          </div>
+          <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">{noChangesText}</div>
         )}
       </div>
 
@@ -539,30 +515,22 @@ export function AddressesPage() {
         </div>
 
         {items.length === 0 ? (
-          <div className="p-6 text-sm text-slate-500 dark:text-slate-400">
-            {t("addresses.noAddresses")}
-          </div>
+          <div className="p-6 text-sm text-slate-500 dark:text-slate-400">{t("addresses.noAddresses")}</div>
         ) : (
           <ul className="divide-y dark:divide-slate-800">
             {items.map((a) => {
               const isDeleting = deletingId === a.id;
+              const addrLabel = `${a.city}, ${a.street} ${a.building} — ${a.postalCode}`;
 
               return (
-                <li
-                  key={a.id}
-                  className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-                >
+                <li key={a.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="min-w-0">
                     <div className="font-medium break-words">
                       {a.city}, {a.street} {a.building}
-                      <span className="text-slate-500 dark:text-slate-400">
-                        {" "}
-                        — {a.postalCode}
-                      </span>
+                      <span className="text-slate-500 dark:text-slate-400"> — {a.postalCode}</span>
                     </div>
                     <div className="text-sm text-slate-600 dark:text-slate-300 break-words">
-                      {a.firstname} {a.lastname} ·{" "}
-                      {formatRuPhone((a as any).phone ?? "") || (a as any).phone}
+                      {a.firstname} {a.lastname} · {formatRuPhone((a as any).phone ?? "") || (a as any).phone}
                     </div>
                   </div>
 
@@ -577,18 +545,9 @@ export function AddressesPage() {
 
                     <button
                       disabled={isDeleting}
-                      onClick={async () => {
+                      onClick={() => {
                         setErr(null);
-                        setDeletingId(a.id);
-                        try {
-                          await deleteAddress(a.id);
-                          await reload();
-                          if (editingId === a.id) cancelEdit();
-                        } catch (e: any) {
-                          setErr(e?.response?.data?.message ?? t("errors.deleteFail"));
-                        } finally {
-                          setDeletingId(null);
-                        }
+                        setConfirmDelete({ id: a.id, address: addrLabel });
                       }}
                       className="px-3 py-2 rounded-xl text-sm font-medium border transition disabled:opacity-50
                                  border-red-200 text-red-700 hover:bg-red-50
@@ -603,6 +562,22 @@ export function AddressesPage() {
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title={t("addresses.confirmDeleteTitle")}
+        description={confirmDelete ? t("addresses.confirmDeleteText", { address: confirmDelete.address }) : undefined}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
+        loading={!!confirmDelete && deletingId === confirmDelete.id}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          const id = confirmDelete.id;
+          setConfirmDelete(null);
+          await doDeleteAddress(id);
+        }}
+      />
     </div>
   );
 }
