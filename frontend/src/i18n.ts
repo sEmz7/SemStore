@@ -28,7 +28,6 @@ const resources = {
         back: "Back",
         create: "Create",
         clear: "Clear",
-
         edit: "Edit",
         saving: "Saving...",
         deleting: "Deleting...",
@@ -39,31 +38,25 @@ const resources = {
         subtitleLogin: "Sign in to manage addresses and orders",
         register: "Register",
         subtitleRegister: "Create a new account",
-
         email: "Email",
         password: "Password",
-
+        enterEmail: "Enter your email", 
         signIn: "Sign in",
         signingIn: "Signing in...",
         createAccount: "Create account",
         creating: "Creating...",
-
         noAccount: "No account?",
         haveAccount: "Already have an account?",
-
         passwordHint: "min 4 chars",
       },
 
       addresses: {
         title: "Addresses",
         subtitle: "Manage delivery addresses",
-
         add: "Add address",
         edit: "Edit address",
-
         saved: "{{count}} saved",
         clear: "Clear",
-
         firstName: "First name",
         lastName: "Last name",
         patronymic: "Patronymic",
@@ -72,10 +65,8 @@ const resources = {
         street: "Street",
         building: "Building",
         postalCode: "Postal code",
-
         yourAddresses: "Your addresses",
         noAddresses: "No addresses yet.",
-
         your: "Your addresses",
         none: "No addresses yet.",
       },
@@ -91,22 +82,19 @@ const resources = {
         title: "Orders",
         subtitle: "Create, edit and view your orders",
         createOrder: "Create order",
-        openOrder: "Open order", 
+        openOrder: "Open order",
         name: "Name",
         address: "Address",
         recent: "Recent",
         noOrders: "No orders yet.",
-
-        total_one: "{{count}} order", 
-        total_other: "{{count}} orders", 
-
+        total_one: "{{count}} order",
+        total_other: "{{count}} orders",
         itemsCount_one: "{{count}} item",
         itemsCount_other: "{{count}} items",
         id: "id",
         created: "Created",
         edit: "Edit",
         delete: "Delete",
-
         orderNamePlaceholder: "My first order",
         orderNameEditPlaceholder: "Order name",
       },
@@ -116,9 +104,7 @@ const resources = {
         hint: "link + size + configuration",
         items: "Items",
         noItems: "No items yet.",
-
         link: "link",
-
         size: "size",
         configuration: "configuration",
         price: "price",
@@ -144,30 +130,23 @@ const resources = {
       errors: {
         fillAll: "Fill link / size / configuration",
         fillOrderAndAddress: "Fill order name and select address",
-
         orderNameLength: "Order name must be between {{min}} and {{max}} characters",
-
         required: "Required",
         minLength: "Minimum {{min}} characters",
         phoneInvalid: "Phone must be a Russian number (+7) with 11 digits",
         postalInvalid: "Postal code must be 6 digits",
-
         fixForm: "Please fix the highlighted fields",
         fieldLengthBetween: "{{field}} must be between {{min}} and {{max}} characters",
-
         invalidPassword: "Invalid password",
         userAlreadyExists: "User with this email already exists",
         authUnknown: "Authentication error",
-
         loadOrderFail: "Failed to load order",
         addItemFail: "Failed to add item",
         deleteFail: "Delete failed",
         loadItemFail: "Failed to load item",
         updateItemFail: "Failed to update item",
-
         noItemIdOpen: "Item has no id — cannot open",
         noItemIdDelete: "Item has no id — cannot delete",
-
         createAddressFail: "Create address failed",
         loadAddressesFail: "Failed to load addresses",
         loginFail: "Login failed",
@@ -203,7 +182,6 @@ const resources = {
         back: "Назад",
         create: "Создать",
         clear: "Очистить",
-
         edit: "Изменить",
         saving: "Сохраняем...",
         deleting: "Удаляем...",
@@ -214,31 +192,25 @@ const resources = {
         subtitleLogin: "Войдите, чтобы управлять адресами и заказами",
         register: "Регистрация",
         subtitleRegister: "Создайте новый аккаунт",
-
         email: "Email",
         password: "Пароль",
-
+        enterEmail: "Введите email", 
         signIn: "Войти",
         signingIn: "Входим...",
         createAccount: "Создать аккаунт",
         creating: "Создаём...",
-
         noAccount: "Нет аккаунта?",
         haveAccount: "Уже есть аккаунт?",
-
         passwordHint: "мин 4 символа",
       },
 
       addresses: {
         title: "Адреса",
         subtitle: "Управление адресами доставки",
-
         add: "Добавить адрес",
         edit: "Редактирование адреса",
-
         saved: "Сохранено: {{count}}",
         clear: "Очистить",
-
         firstName: "Имя",
         lastName: "Фамилия",
         patronymic: "Отчество",
@@ -247,10 +219,8 @@ const resources = {
         street: "Улица",
         building: "Дом/кв",
         postalCode: "Индекс",
-
         yourAddresses: "Ваши адреса",
         noAddresses: "Адресов пока нет.",
-
         your: "Ваши адреса",
         none: "Адресов пока нет.",
       },
@@ -266,17 +236,15 @@ const resources = {
         title: "Заказы",
         subtitle: "Создавай, редактируй и смотри свои заказы",
         createOrder: "Создать заказ",
-        openOrder: "Открыть заказ", 
+        openOrder: "Открыть заказ",
         name: "Название",
         address: "Адрес",
         recent: "Последние",
         noOrders: "Пока нет заказов.",
-
-        total_one: "{{count}} заказ", 
-        total_few: "{{count}} заказа", 
-        total_many: "{{count}} заказов", 
-        total_other: "{{count}} заказа", 
-
+        total_one: "{{count}} заказ",
+        total_few: "{{count}} заказа",
+        total_many: "{{count}} заказов",
+        total_other: "{{count}} заказа",
         itemsCount_one: "{{count}} шт.",
         itemsCount_few: "{{count}} шт.",
         itemsCount_many: "{{count}} шт.",
@@ -285,7 +253,6 @@ const resources = {
         created: "Создан",
         edit: "Изменить",
         delete: "Удалить",
-
         orderNamePlaceholder: "Мой первый заказ",
         orderNameEditPlaceholder: "Название заказа",
       },
@@ -295,9 +262,7 @@ const resources = {
         hint: "ссылка + размер + конфигурация",
         items: "Товары",
         noItems: "Товаров пока нет.",
-
         link: "ссылка",
-
         size: "размер",
         configuration: "конфигурация",
         price: "цена",
@@ -323,30 +288,23 @@ const resources = {
       errors: {
         fillAll: "Заполни link / size / configuration",
         fillOrderAndAddress: "Заполни имя заказа и выбери адрес",
-
         orderNameLength: "Название заказа должно быть от {{min}} до {{max}} символов",
-
         required: "Обязательное поле",
         minLength: "Минимум {{min}} символов",
         phoneInvalid: "Телефон должен быть российским (+7) и содержать 11 цифр",
         postalInvalid: "Индекс должен содержать 6 цифр",
-
         fixForm: "Исправьте подсвеченные поля",
         fieldLengthBetween: "Поле «{{field}}» должно быть от {{min}} до {{max}} символов",
-
         invalidPassword: "Неверный пароль",
         userAlreadyExists: "Пользователь с таким email уже существует",
         authUnknown: "Ошибка авторизации",
-
         loadOrderFail: "Не удалось загрузить заказ",
         addItemFail: "Не удалось добавить товар",
         deleteFail: "Не удалось удалить",
         loadItemFail: "Не удалось загрузить товар",
         updateItemFail: "Не удалось обновить товар",
-
         noItemIdOpen: "У товара нет id — нельзя открыть",
         noItemIdDelete: "У товара нет id — нельзя удалить",
-
         createAddressFail: "Не удалось создать адрес",
         loadAddressesFail: "Не удалось загрузить адреса",
         loginFail: "Не удалось войти",

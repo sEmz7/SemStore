@@ -100,7 +100,7 @@ export function RegisterPage() {
             label={t("auth.email")}
             value={email}
             onChange={setEmail}
-            placeholder="Enter your email"
+            placeholder={t("auth.enterEmail")}
           />
           <Field
             label={t("auth.password")}
