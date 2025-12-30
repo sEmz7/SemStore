@@ -1,9 +1,12 @@
-// src/pages/RegisterPage.tsx
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "../api/auth";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
+
+function isEmailValid(email: string) {
+  const e = email.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+}
 
 function Field({
   label,
@@ -11,11 +14,13 @@ function Field({
   value,
   onChange,
   placeholder,
+  error,
 }: {
   label: string;
   type?: string;
   value: string;
   placeholder?: string;
+  error?: string | null;
   onChange(v: string): void;
 }) {
   return (
@@ -28,43 +33,45 @@ function Field({
         value={value}
         placeholder={placeholder ?? label}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border px-3 py-2 text-sm outline-none
+        className={`w-full rounded-xl border px-3 py-2 text-sm outline-none
                    bg-white dark:bg-slate-950 dark:border-slate-800
-                   focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800"
+                   focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800
+                   ${error ? "border-red-300 focus:ring-red-200 dark:border-red-900/50 dark:focus:ring-red-950/40" : ""}`}
       />
+      {!!error && (
+        <div className="text-xs text-red-600 dark:text-red-300">{error}</div>
+      )}
     </label>
   );
 }
 
-function localizeApiErrorMessage(
-  msg: unknown,
-  t: TFunction,
-  emailFallback?: string
-): string | null {
-  if (typeof msg !== "string") return null;
-
-  // server returned i18n key like "errors.userAlreadyExists"
-  if (msg.startsWith("errors.")) {
-    if (msg === "errors.userAlreadyExists") {
-      return t(msg, { email: emailFallback });
-    }
-    return t(msg);
-  }
-
+function normalizeRegisterError(
+  e: any,
+  t: (k: string, opt?: any) => string,
+  email: string
+) {
+  const msg: string = e?.response?.data?.message ?? e?.message ?? "";
   const m = msg.toLowerCase();
 
   if (m.includes("already exists") || m.includes("already exist") || m.includes("exists")) {
-    const fromMsg =
-      msg.match(/email\s*=\s*([^\s,;]+)/i)?.[1] ??
-      msg.match(/email[:\s]+([^\s,;]+)/i)?.[1];
-
-    return t("errors.userAlreadyExists", { email: fromMsg ?? emailFallback });
+    return t("errors.userAlreadyExists", { email });
   }
 
-  if (/[а-яё]/i.test(msg)) return msg;
+  if (
+    m.includes("must be a well-formed email") ||
+    m.includes("must be a valid email") ||
+    m.includes("email") && m.includes("format") ||
+    /должно иметь формат адреса электронной почты/i.test(msg)
+  ) {
+    return t("errors.emailInvalid");
+  }
 
-  return msg || null;
+  if (msg && /[а-яё]/i.test(msg)) return msg;
+
+  return msg ? msg : t("errors.authUnknown");
 }
+
+const PASS_MIN = 4;
 
 export function RegisterPage() {
   const nav = useNavigate();
@@ -76,7 +83,21 @@ export function RegisterPage() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const canSubmit = email.trim().length > 0 && password.trim().length >= 4;
+  const [touchedEmail, setTouchedEmail] = useState(false);
+  const [touchedPass, setTouchedPass] = useState(false);
+
+  const emailOk = useMemo(() => isEmailValid(email), [email]);
+  const passOk = useMemo(() => password.trim().length >= PASS_MIN, [password]);
+
+  const emailError =
+    touchedEmail && email.trim().length > 0 && !emailOk ? t("errors.emailInvalid") : null;
+
+  const passError =
+    touchedPass && password.trim().length > 0 && !passOk
+      ? t("errors.passwordMinLength", { min: PASS_MIN })
+      : null;
+
+  const canSubmit = emailOk && passOk;
 
   return (
     <div className="mx-auto max-w-md">
@@ -96,31 +117,62 @@ export function RegisterPage() {
         )}
 
         <div className="mt-5 grid gap-3">
-          <Field
-            label={t("auth.email")}
-            value={email}
-            onChange={setEmail}
-            placeholder={t("auth.enterEmail")}
-          />
-          <Field
-            label={t("auth.password")}
-            type="password"
-            value={password}
-            onChange={setPassword}
-            placeholder="••••••••"
-          />
+          <div
+            onBlur={() => setTouchedEmail(true)}
+            onFocus={() => setTouchedEmail(true)}
+          >
+            <Field
+              label={t("auth.email")}
+              type="email"
+              value={email}
+              onChange={(v) => {
+                setEmail(v);
+                setErr(null);
+              }}
+              placeholder={t("auth.enterEmail")}
+              error={emailError}
+            />
+          </div>
+
+          <div
+            onBlur={() => setTouchedPass(true)}
+            onFocus={() => setTouchedPass(true)}
+          >
+            <Field
+              label={t("auth.password")}
+              type="password"
+              value={password}
+              onChange={(v) => {
+                setPassword(v);
+                setErr(null);
+              }}
+              placeholder="••••••••"
+              error={passError}
+            />
+          </div>
 
           <button
             disabled={!canSubmit || loading}
             onClick={async () => {
+              setTouchedEmail(true);
+              setTouchedPass(true);
+
+              if (!emailOk) {
+                setErr(t("errors.emailInvalid"));
+                return;
+              }
+              if (!passOk) {
+                setErr(t("errors.passwordMinLength", { min: PASS_MIN }));
+                return;
+              }
+
               setErr(null);
               setLoading(true);
               try {
-                await register(email, password);
+                await register(email.trim(), password);
                 nav("/login", { replace: true });
               } catch (e: any) {
-                const msg = e?.response?.data?.message ?? e?.message;
-                setErr(localizeApiErrorMessage(msg, t, email) ?? t("errors.authUnknown"));
+                setErr(normalizeRegisterError(e, t, email.trim()));
               } finally {
                 setLoading(false);
               }
