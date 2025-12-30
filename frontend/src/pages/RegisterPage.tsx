@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "../api/auth";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 function isEmailValid(email: string) {
   const e = email.trim();
@@ -15,6 +16,8 @@ function Field({
   onChange,
   placeholder,
   error,
+  onBlur,
+  onFocus,
 }: {
   label: string;
   type?: string;
@@ -22,6 +25,8 @@ function Field({
   placeholder?: string;
   error?: string | null;
   onChange(v: string): void;
+  onBlur?(): void;
+  onFocus?(): void;
 }) {
   return (
     <label className="grid gap-1">
@@ -33,23 +38,34 @@ function Field({
         value={value}
         placeholder={placeholder ?? label}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-xl border px-3 py-2 text-sm outline-none
-                   bg-white dark:bg-slate-950 dark:border-slate-800
-                   focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800
-                   ${error ? "border-red-300 focus:ring-red-200 dark:border-red-900/50 dark:focus:ring-red-950/40" : ""}`}
+        onBlur={onBlur}
+        onFocus={onFocus}
+        className={`
+          w-full rounded-xl border px-3 py-2 text-sm outline-none
+          bg-white dark:bg-slate-950 dark:border-slate-800
+          focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800
+          ${error ? "border-red-300 focus:ring-red-200 dark:border-red-900/50 dark:focus:ring-red-950/40" : ""}
+        `}
       />
       {!!error && (
-        <div className="text-xs text-red-600 dark:text-red-300">{error}</div>
+        <div className="text-xs text-red-600 dark:text-red-300 break-words">{error}</div>
       )}
     </label>
   );
 }
 
-function normalizeRegisterError(
-  e: any,
-  t: (k: string, opt?: any) => string,
-  email: string
-) {
+function isEmailBackendError(msg: string) {
+  const m = msg.toLowerCase();
+  return (
+    m.includes("email") &&
+    (m.includes("well-formed") ||
+      m.includes("valid") ||
+      m.includes("format") ||
+      m.includes("должно иметь формат адреса электронной почты"))
+  );
+}
+
+function normalizeRegisterError(e: any, t: TFunction, email: string) {
   const msg: string = e?.response?.data?.message ?? e?.message ?? "";
   const m = msg.toLowerCase();
 
@@ -57,12 +73,7 @@ function normalizeRegisterError(
     return t("errors.userAlreadyExists", { email });
   }
 
-  if (
-    m.includes("must be a well-formed email") ||
-    m.includes("must be a valid email") ||
-    m.includes("email") && m.includes("format") ||
-    /должно иметь формат адреса электронной почты/i.test(msg)
-  ) {
+  if (msg && isEmailBackendError(msg)) {
     return t("errors.emailInvalid");
   }
 
@@ -100,8 +111,8 @@ export function RegisterPage() {
   const canSubmit = emailOk && passOk;
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="rounded-3xl border bg-white p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
+    <div className="mx-auto max-w-md px-2 sm:px-0">
+      <div className="rounded-3xl border bg-white p-4 sm:p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
         <div>
           <h1 className="text-2xl font-semibold">{t("auth.register")}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -111,45 +122,39 @@ export function RegisterPage() {
 
         {err && (
           <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
-                          dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200">
+                          dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 break-words">
             {err}
           </div>
         )}
 
         <div className="mt-5 grid gap-3">
-          <div
+          <Field
+            label={t("auth.email")}
+            type="email"
+            value={email}
+            onChange={(v) => {
+              setEmail(v);
+              setErr(null);
+            }}
             onBlur={() => setTouchedEmail(true)}
             onFocus={() => setTouchedEmail(true)}
-          >
-            <Field
-              label={t("auth.email")}
-              type="email"
-              value={email}
-              onChange={(v) => {
-                setEmail(v);
-                setErr(null);
-              }}
-              placeholder={t("auth.enterEmail")}
-              error={emailError}
-            />
-          </div>
+            placeholder={t("auth.enterEmail")}
+            error={emailError}
+          />
 
-          <div
+          <Field
+            label={t("auth.password")}
+            type="password"
+            value={password}
+            onChange={(v) => {
+              setPassword(v);
+              setErr(null);
+            }}
             onBlur={() => setTouchedPass(true)}
             onFocus={() => setTouchedPass(true)}
-          >
-            <Field
-              label={t("auth.password")}
-              type="password"
-              value={password}
-              onChange={(v) => {
-                setPassword(v);
-                setErr(null);
-              }}
-              placeholder="••••••••"
-              error={passError}
-            />
-          </div>
+            placeholder="••••••••"
+            error={passError}
+          />
 
           <button
             disabled={!canSubmit || loading}
