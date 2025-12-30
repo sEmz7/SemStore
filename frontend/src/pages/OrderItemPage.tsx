@@ -17,6 +17,10 @@ function hasRu(s: string) {
   return /[а-яё]/i.test(s);
 }
 
+function norm(v: string) {
+  return (v ?? "").toString().trim();
+}
+
 function validateValue(v: string, min: number, max: number) {
   const s = v.trim();
   if (!s) return { ok: false, kind: "required" as const };
@@ -63,7 +67,6 @@ export function OrderItemPage() {
   const { t } = useTranslation();
   const nav = useNavigate();
 
-
   const params = useParams();
   const orderId = (params as any).id ?? (params as any).orderId ?? "";
   const itemId = (params as any).itemId ?? "";
@@ -73,6 +76,9 @@ export function OrderItemPage() {
   const [link, setLink] = useState("");
   const [size, setSize] = useState("");
   const [configuration, setConfiguration] = useState("");
+  const [initial, setInitial] = useState<{ link: string; size: string; configuration: string } | null>(
+    null
+  );
 
   const [touched, setTouched] = useState({
     link: false,
@@ -101,7 +107,24 @@ export function OrderItemPage() {
   const sizeV = validateValue(size, MIN_LEN, MAX_LEN);
   const confV = validateValue(configuration, MIN_LEN, MAX_LEN);
 
-  const canSave = !!orderId && !!itemId && linkV.ok && sizeV.ok && confV.ok;
+  const isDirty = useMemo(() => {
+    if (!initial) return false;
+    return (
+      norm(link) !== initial.link ||
+      norm(size) !== initial.size ||
+      norm(configuration) !== initial.configuration
+    );
+  }, [initial, link, size, configuration]);
+
+  const canSave =
+    !!orderId &&
+    !!itemId &&
+    !loading &&
+    !saving &&
+    linkV.ok &&
+    sizeV.ok &&
+    confV.ok &&
+    isDirty; 
 
   function computeClientFieldErrors() {
     const next: Partial<Record<"link" | "size" | "configuration", string>> = {};
@@ -150,10 +173,18 @@ export function OrderItemPage() {
       setFieldErr({});
       const it = await getOrderItemById(orderId, itemId);
 
+      const l = (it as any)?.link ?? "";
+      const s = (it as any)?.size ?? "";
+      const c = (it as any)?.configuration ?? "";
+
       setItem(it);
-      setLink((it as any)?.link ?? "");
-      setSize((it as any)?.size ?? "");
-      setConfiguration((it as any)?.configuration ?? "");
+      setLink(l);
+      setSize(s);
+      setConfiguration(c);
+
+      setInitial({ link: norm(l), size: norm(s), configuration: norm(c) });
+
+      setTouched({ link: false, size: false, configuration: false });
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? e?.message;
       setErr(typeof msg === "string" ? msg : t("errors.loadItemFail"));
@@ -336,7 +367,7 @@ export function OrderItemPage() {
             </Link>
 
             <button
-              disabled={saving || !canSave}
+              disabled={!canSave}
               onClick={async () => {
                 setErr(null);
 
@@ -348,6 +379,8 @@ export function OrderItemPage() {
                   setErr(t("errors.fixForm"));
                   return;
                 }
+
+                if (!isDirty) return;
 
                 setSaving(true);
                 try {
@@ -364,7 +397,11 @@ export function OrderItemPage() {
                   if (msg) {
                     const parsed = localizeValidationFromBackend(msg, t, fieldLabels);
 
-                    if (parsed.field === "link" || parsed.field === "size" || parsed.field === "configuration") {
+                    if (
+                      parsed.field === "link" ||
+                      parsed.field === "size" ||
+                      parsed.field === "configuration"
+                    ) {
                       setFieldErr((p) => ({ ...p, [parsed.field]: parsed.text }));
                       setErr(t("errors.fixForm"));
                     } else {

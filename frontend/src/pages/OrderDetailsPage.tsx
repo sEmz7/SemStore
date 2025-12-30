@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { addOrderItem, deleteOrderItem, getOrderById } from "../api/orders";
 import type { OrderDto, OrderItem } from "../api/types";
 import { useTranslation } from "react-i18next";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 function cn(...a: Array<string | false | null | undefined>) {
   return a.filter(Boolean).join(" ");
@@ -22,23 +23,15 @@ function lenBetween(v: string, min: number, max: number) {
 }
 
 function parseSpringValidationMessage(msg: string) {
-  // field: "on field 'link'"
   const fieldMatch = msg.match(/on field '([^']+)'/);
   const field = fieldMatch?.[1];
 
-  // ru: "от 2 до 50"
   const ruRange = msg.match(/от\s+(\d+)\s+до\s+(\d+)/i);
-  if (ruRange) {
-    return { field, min: Number(ruRange[1]), max: Number(ruRange[2]) };
-  }
+  if (ruRange) return { field, min: Number(ruRange[1]), max: Number(ruRange[2]) };
 
-  // en: "between 2 and 50"
   const enRange = msg.match(/between\s+(\d+)\s+and\s+(\d+)/i);
-  if (enRange) {
-    return { field, min: Number(enRange[1]), max: Number(enRange[2]) };
-  }
+  if (enRange) return { field, min: Number(enRange[1]), max: Number(enRange[2]) };
 
-  // fallback: "...,50,2" (max,min) sometimes appears
   const nums = msg.match(/,(\d+),(\d+)\]/);
   if (nums) {
     const a = Number(nums[2]);
@@ -57,13 +50,7 @@ function fieldKeyBySpringField(field?: string) {
   return null;
 }
 
-function StatusBadge({
-  status,
-  label,
-}: {
-  status: string;
-  label: string;
-}) {
+function StatusBadge({ status, label }: { status: string; label: string }) {
   const cls =
     status === "PAID"
       ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-200"
@@ -93,13 +80,10 @@ export function OrderDetailsPage() {
   const [configuration, setConfiguration] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const [touched, setTouched] = useState({
-    link: false,
-    size: false,
-    configuration: false,
-  });
-
+  const [touched, setTouched] = useState({ link: false, size: false, configuration: false });
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+
+  const [confirmDelete, setConfirmDelete] = useState<{ itemId: string } | null>(null);
 
   const items = useMemo<OrderItem[]>(() => (order?.items ?? []) as OrderItem[], [order]);
 
@@ -147,14 +131,27 @@ export function OrderDetailsPage() {
     const msg = e?.response?.data?.message;
     if (typeof msg !== "string" || !msg.trim()) return t("errors.addItemFail");
 
-    // try to parse spring validation and show a clean localized message
     const parsed = parseSpringValidationMessage(msg);
     if (parsed?.min && parsed?.max) {
       const k = fieldKeyBySpringField(parsed.field);
       if (k) return fieldLenMsg(k, parsed.min, parsed.max);
     }
 
-    return msg; // fallback (e.g. other backend errors)
+    return msg;
+  }
+
+  async function doDeleteItem(itemId: string) {
+    if (!id) return;
+    setDeletingItemId(itemId);
+    try {
+      setErr(null);
+      await deleteOrderItem(id, itemId);
+      await reload();
+    } catch (e: any) {
+      setErr(e?.response?.data?.message ?? t("errors.deleteFail"));
+    } finally {
+      setDeletingItemId(null);
+    }
   }
 
   useEffect(() => {
@@ -165,13 +162,12 @@ export function OrderDetailsPage() {
   if (!id) return null;
 
   const title = order?.name?.trim() ? order!.name : id;
-
   const status = order?.status ?? "";
   const statusLabel = status ? t(`orderStatus.${status}`, { defaultValue: status }) : "";
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm text-slate-500 dark:text-slate-400">
             <Link to="/" className="hover:underline">
@@ -199,7 +195,7 @@ export function OrderDetailsPage() {
 
         <button
           onClick={reload}
-          className="px-3 py-2 rounded-xl text-sm font-medium border bg-white hover:bg-slate-50 transition
+          className="w-full sm:w-auto px-3 py-2 rounded-xl text-sm font-medium border bg-white hover:bg-slate-50 transition
                      dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
         >
           {loading ? t("common.loading") : t("common.refresh")}
@@ -207,16 +203,14 @@ export function OrderDetailsPage() {
       </div>
 
       {err && (
-        <div
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
-                        dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200"
-        >
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
+                        dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 break-words">
           {err}
         </div>
       )}
 
       {/* Add item */}
-      <div className="rounded-3xl border bg-white p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
+      <div className="rounded-3xl border bg-white p-4 sm:p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold">{t("order.addItem")}</div>
@@ -225,7 +219,6 @@ export function OrderDetailsPage() {
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {/* LINK */}
           <div className="sm:col-span-2">
             <input
               value={link}
@@ -236,15 +229,16 @@ export function OrderDetailsPage() {
               className={cn(
                 "w-full rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
                 "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
-                touched.link && linkErr && "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
+                touched.link &&
+                  linkErr &&
+                  "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
               )}
             />
             {touched.link && linkErr && (
-              <div className="mt-1 text-xs text-red-600 dark:text-red-300">{linkErr}</div>
+              <div className="mt-1 text-xs text-red-600 dark:text-red-300 break-words">{linkErr}</div>
             )}
           </div>
 
-          {/* SIZE */}
           <div>
             <input
               value={size}
@@ -255,15 +249,16 @@ export function OrderDetailsPage() {
               className={cn(
                 "w-full rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
                 "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
-                touched.size && sizeErr && "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
+                touched.size &&
+                  sizeErr &&
+                  "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
               )}
             />
             {touched.size && sizeErr && (
-              <div className="mt-1 text-xs text-red-600 dark:text-red-300">{sizeErr}</div>
+              <div className="mt-1 text-xs text-red-600 dark:text-red-300 break-words">{sizeErr}</div>
             )}
           </div>
 
-          {/* CONFIG */}
           <div className="sm:col-span-3">
             <input
               value={configuration}
@@ -274,11 +269,13 @@ export function OrderDetailsPage() {
               className={cn(
                 "w-full rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
                 "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
-                touched.configuration && confErr && "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
+                touched.configuration &&
+                  confErr &&
+                  "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
               )}
             />
             {touched.configuration && confErr && (
-              <div className="mt-1 text-xs text-red-600 dark:text-red-300">{confErr}</div>
+              <div className="mt-1 text-xs text-red-600 dark:text-red-300 break-words">{confErr}</div>
             )}
           </div>
 
@@ -287,8 +284,6 @@ export function OrderDetailsPage() {
               disabled={!canSubmit}
               onClick={async () => {
                 setErr(null);
-
-                // mark touched to show errors
                 setTouched({ link: true, size: true, configuration: true });
 
                 if (!canSubmit) {
@@ -316,7 +311,7 @@ export function OrderDetailsPage() {
                   setSaving(false);
                 }
               }}
-              className="px-4 py-2 rounded-xl text-sm font-semibold
+              className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold
                          bg-slate-900 text-white hover:bg-slate-800 transition
                          disabled:opacity-50 disabled:hover:bg-slate-900
                          dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
@@ -329,9 +324,9 @@ export function OrderDetailsPage() {
 
       {/* Items list */}
       <div className="rounded-3xl border bg-white overflow-hidden dark:bg-slate-950 dark:border-slate-800">
-        <div className="px-6 py-4 border-b flex items-center justify-between dark:border-slate-800">
+        <div className="px-4 sm:px-6 py-4 border-b flex items-center justify-between dark:border-slate-800 gap-3">
           <div className="text-sm font-semibold">{t("order.items")}</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
             {t("orders.itemsCount", { count: items.length })}
           </div>
         </div>
@@ -346,26 +341,35 @@ export function OrderDetailsPage() {
               const isDeleting = deletingItemId === itemId;
 
               return (
-                <li key={itemId ?? `idx-${idx}`} className="p-6 hover:bg-slate-50 transition dark:hover:bg-slate-900/40">
+                <li
+                  key={itemId ?? `idx-${idx}`}
+                  className="p-4 sm:p-6 hover:bg-slate-50 transition dark:hover:bg-slate-900/40"
+                >
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold break-all">{itemId ?? "(no id)"}</div>
 
-                      <div className="mt-1 text-sm text-slate-700 dark:text-slate-200 break-all">{it.link}</div>
+                      <div className="mt-1 text-sm text-slate-700 dark:text-slate-200 break-all">
+                        {it.link}
+                      </div>
 
-                      <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                        {t("order.size")}: <span className="font-medium">{it.size}</span> •{" "}
-                        {t("order.configuration")}: <span className="font-medium">{it.configuration}</span>
+                      <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 flex flex-wrap gap-x-3 gap-y-1">
+                        <span>
+                          {t("order.size")}: <span className="font-medium">{it.size}</span>
+                        </span>
+                        <span>
+                          {t("order.configuration")}:{" "}
+                          <span className="font-medium">{it.configuration}</span>
+                        </span>
                         {typeof (it as any).price !== "undefined" && (
-                          <>
-                            {" "}
-                            • {t("order.price")}: <span className="font-medium">{(it as any).price}</span>
-                          </>
+                          <span>
+                            {t("order.price")}: <span className="font-medium">{(it as any).price}</span>
+                          </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex gap-2 shrink-0">
+                    <div className="grid grid-cols-2 sm:flex gap-2 shrink-0">
                       <Link
                         to={canOpen ? `/orders/${id}/items/${itemId}` : "#"}
                         onClick={(e) => {
@@ -375,35 +379,26 @@ export function OrderDetailsPage() {
                           }
                         }}
                         className={cn(
-                          "px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition",
+                          "w-full sm:w-auto px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition text-center",
                           "dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60",
-                          !canOpen && "opacity-50 pointer-events-none"
+                          !canOpen && "opacity-50"
                         )}
                       >
                         {t("common.open")}
                       </Link>
 
                       <button
-                        onClick={async () => {
+                        disabled={!canOpen || isDeleting}
+                        onClick={() => {
                           if (!canOpen) {
                             setErr(t("errors.noItemIdDelete"));
                             return;
                           }
-                          setDeletingItemId(itemId!);
-                          try {
-                            setErr(null);
-                            await deleteOrderItem(id, itemId!);
-                            await reload();
-                          } catch (e: any) {
-                            setErr(e?.response?.data?.message ?? t("errors.deleteFail"));
-                          } finally {
-                            setDeletingItemId(null);
-                          }
+                          setConfirmDelete({ itemId: itemId! });
                         }}
-                        disabled={!canOpen || isDeleting}
-                        className="px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition
-                                   disabled:opacity-50
-                                   dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
+                        className="w-full sm:w-auto px-3 py-2 rounded-xl text-sm font-medium border transition disabled:opacity-50
+                                   border-red-200 text-red-700 hover:bg-red-50
+                                   dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/40"
                       >
                         {isDeleting ? t("common.deleting") : t("common.delete")}
                       </button>
@@ -415,6 +410,26 @@ export function OrderDetailsPage() {
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title={t("common.confirmDeleteTitle")}
+        description={
+          confirmDelete ? t("common.confirmDeleteText", { id: confirmDelete.itemId }) : undefined
+        }
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
+        loading={!!confirmDelete && deletingItemId === confirmDelete.itemId}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          const itemId = confirmDelete.itemId;
+          await doDeleteItem(itemId);
+          setConfirmDelete(null);
+        }}
+      />
     </div>
   );
 }
+
+export default OrderDetailsPage;
