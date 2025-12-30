@@ -162,7 +162,7 @@ services:
     image: ${DOCKERHUB_USERNAME}/frontend:latest
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       gateway:
         condition: service_started
