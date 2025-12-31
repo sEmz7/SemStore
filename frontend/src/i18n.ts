@@ -1,4 +1,3 @@
-// src/i18n.ts
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
@@ -136,6 +135,10 @@ const resources = {
         copyEmail: "Copy email",
         copyId: "Copy id",
         rawJson: "Raw JSON",
+
+        copySuccessEmail: "Email copied",
+        copySuccessId: "ID copied",
+        copyFail: "Copy failed",
       },
 
       errors: {
@@ -312,6 +315,10 @@ const resources = {
         copyEmail: "Скопировать email",
         copyId: "Скопировать id",
         rawJson: "Raw JSON",
+
+        copySuccessEmail: "Email скопирован",
+        copySuccessId: "ID скопирован",
+        copyFail: "Не удалось скопировать",
       },
 
       errors: {
