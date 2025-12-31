@@ -6,8 +6,15 @@ import type { OrderItem } from "../api/types";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
-const MIN_LEN = 2;
-const MAX_LEN = 50;
+// Field-specific limits
+const LINK_MIN = 2;
+const LINK_MAX = 50;
+
+const SIZE_MIN = 2;
+const SIZE_MAX = 30;
+
+const CONF_MIN = 2;
+const CONF_MAX = 255;
 
 function cn(...a: Array<string | false | null | undefined>) {
   return a.filter(Boolean).join(" ");
@@ -37,11 +44,9 @@ function localizeValidationFromBackend(
   const m = msg.toLowerCase();
 
   const fieldMatch =
-    msg.match(/on field '([^']+)'/i)?.[1] ??
-    msg.match(/field\s+'([^']+)'/i)?.[1];
+    msg.match(/on field '([^']+)'/i)?.[1] ?? msg.match(/field\s+'([^']+)'/i)?.[1];
 
-  const rangeMatch =
-    msg.match(/(\d+)\s*до\s*(\d+)/i) ?? msg.match(/(\d+)\s*to\s*(\d+)/i);
+  const rangeMatch = msg.match(/(\d+)\s*до\s*(\d+)/i) ?? msg.match(/(\d+)\s*to\s*(\d+)/i);
 
   if (fieldMatch && rangeMatch) {
     const fieldKey = fieldMatch.trim();
@@ -86,9 +91,9 @@ export function OrderItemPage() {
     configuration: false,
   });
 
-  const [fieldErr, setFieldErr] = useState<
-    Partial<Record<"link" | "size" | "configuration", string>>
-  >({});
+  const [fieldErr, setFieldErr] = useState<Partial<Record<"link" | "size" | "configuration", string>>>(
+    {}
+  );
 
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -103,28 +108,20 @@ export function OrderItemPage() {
     [t]
   );
 
-  const linkV = validateValue(link, MIN_LEN, MAX_LEN);
-  const sizeV = validateValue(size, MIN_LEN, MAX_LEN);
-  const confV = validateValue(configuration, MIN_LEN, MAX_LEN);
+  // Field-specific validations
+  const linkV = validateValue(link, LINK_MIN, LINK_MAX);
+  const sizeV = validateValue(size, SIZE_MIN, SIZE_MAX);
+  const confV = validateValue(configuration, CONF_MIN, CONF_MAX);
 
   const isDirty = useMemo(() => {
     if (!initial) return false;
     return (
-      norm(link) !== initial.link ||
-      norm(size) !== initial.size ||
-      norm(configuration) !== initial.configuration
+      norm(link) !== initial.link || norm(size) !== initial.size || norm(configuration) !== initial.configuration
     );
   }, [initial, link, size, configuration]);
 
   const canSave =
-    !!orderId &&
-    !!itemId &&
-    !loading &&
-    !saving &&
-    linkV.ok &&
-    sizeV.ok &&
-    confV.ok &&
-    isDirty; 
+    !!orderId && !!itemId && !loading && !saving && linkV.ok && sizeV.ok && confV.ok && isDirty;
 
   function computeClientFieldErrors() {
     const next: Partial<Record<"link" | "size" | "configuration", string>> = {};
@@ -135,8 +132,8 @@ export function OrderItemPage() {
           ? t("errors.required")
           : t("errors.fieldLengthBetween", {
               field: fieldLabels.link,
-              min: MIN_LEN,
-              max: MAX_LEN,
+              min: LINK_MIN,
+              max: LINK_MAX,
             });
     }
 
@@ -146,8 +143,8 @@ export function OrderItemPage() {
           ? t("errors.required")
           : t("errors.fieldLengthBetween", {
               field: fieldLabels.size,
-              min: MIN_LEN,
-              max: MAX_LEN,
+              min: SIZE_MIN,
+              max: SIZE_MAX,
             });
     }
 
@@ -157,8 +154,8 @@ export function OrderItemPage() {
           ? t("errors.required")
           : t("errors.fieldLengthBetween", {
               field: fieldLabels.configuration,
-              min: MIN_LEN,
-              max: MAX_LEN,
+              min: CONF_MIN,
+              max: CONF_MAX,
             });
     }
 
@@ -203,8 +200,7 @@ export function OrderItemPage() {
       <div className="rounded-2xl border bg-white p-6 dark:bg-slate-950 dark:border-slate-800">
         <div className="text-lg font-semibold">Route params not found</div>
         <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-          Expected: <code>/orders/:id/items/:itemId</code> or{" "}
-          <code>/orders/:orderId/items/:itemId</code>
+          Expected: <code>/orders/:id/items/:itemId</code> or <code>/orders/:orderId/items/:itemId</code>
         </div>
         <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           Got: <code>{JSON.stringify(params)}</code>
@@ -238,9 +234,7 @@ export function OrderItemPage() {
             <span>{itemId}</span>
           </div>
 
-          <h1 className="mt-2 text-xl sm:text-2xl font-semibold break-all">
-            {t("item.title", { id: itemId })}
-          </h1>
+          <h1 className="mt-2 text-xl sm:text-2xl font-semibold break-all">{t("item.title", { id: itemId })}</h1>
 
           <div className="mt-1 text-sm text-slate-600 dark:text-slate-300 break-all">
             {t("item.orderId")}: {orderId}
@@ -249,9 +243,7 @@ export function OrderItemPage() {
           <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             {t("order.price")}:{" "}
             <span className="font-medium">
-              {typeof (item as any)?.price === "undefined" || (item as any)?.price === null
-                ? "—"
-                : (item as any).price}
+              {typeof (item as any)?.price === "undefined" || (item as any)?.price === null ? "—" : (item as any).price}
             </span>
           </div>
         </div>
@@ -266,8 +258,10 @@ export function OrderItemPage() {
       </div>
 
       {err && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
-                        dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200">
+        <div
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
+                        dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200"
+        >
           {err}
         </div>
       )}
@@ -280,9 +274,7 @@ export function OrderItemPage() {
 
         <div className="mt-4 grid gap-3">
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-              {t("order.link")}
-            </span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("order.link")}</span>
             <input
               value={link}
               onChange={(e) => {
@@ -305,9 +297,7 @@ export function OrderItemPage() {
           </label>
 
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-              {t("order.size")}
-            </span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("order.size")}</span>
             <input
               value={size}
               onChange={(e) => {
@@ -330,15 +320,12 @@ export function OrderItemPage() {
           </label>
 
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-              {t("order.configuration")}
-            </span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("order.configuration")}</span>
             <input
               value={configuration}
               onChange={(e) => {
                 setConfiguration(e.target.value);
-                if (touched.configuration)
-                  setFieldErr((p) => ({ ...p, configuration: undefined }));
+                if (touched.configuration) setFieldErr((p) => ({ ...p, configuration: undefined }));
               }}
               onBlur={() => {
                 setTouched((p) => ({ ...p, configuration: true }));
@@ -397,11 +384,7 @@ export function OrderItemPage() {
                   if (msg) {
                     const parsed = localizeValidationFromBackend(msg, t, fieldLabels);
 
-                    if (
-                      parsed.field === "link" ||
-                      parsed.field === "size" ||
-                      parsed.field === "configuration"
-                    ) {
+                    if (parsed.field === "link" || parsed.field === "size" || parsed.field === "configuration") {
                       setFieldErr((p) => ({ ...p, [parsed.field]: parsed.text }));
                       setErr(t("errors.fixForm"));
                     } else {

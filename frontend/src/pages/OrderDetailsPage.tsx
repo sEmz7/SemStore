@@ -12,10 +12,12 @@ function cn(...a: Array<string | false | null | undefined>) {
 
 const LINK_MIN = 2;
 const LINK_MAX = 50;
+
 const SIZE_MIN = 2;
-const SIZE_MAX = 50;
+const SIZE_MAX = 30;
+
 const CONF_MIN = 2;
-const CONF_MAX = 50;
+const CONF_MAX = 255;
 
 function lenBetween(v: string, min: number, max: number) {
   const s = v.trim();
@@ -414,9 +416,7 @@ export function OrderDetailsPage() {
       <ConfirmDialog
         open={!!confirmDelete}
         title={t("common.confirmDeleteTitle")}
-        description={
-          confirmDelete ? t("common.confirmDeleteText", { id: confirmDelete.itemId }) : undefined
-        }
+        description={confirmDelete ? t("common.confirmDeleteText", { id: confirmDelete.itemId }) : undefined}
         confirmText={t("common.delete")}
         cancelText={t("common.cancel")}
         loading={!!confirmDelete && deletingItemId === confirmDelete.itemId}
