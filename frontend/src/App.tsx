@@ -7,7 +7,7 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { AddressesPage } from "./pages/AddressesPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { OrderDetailsPage } from "./pages/OrderDetailsPage";
-import { OrderItemPage } from "./pages/OrderItemPage";
+import OrderItemPage from "./pages/OrderItemPage";
 import { Layout } from "./components/Layout";
 
 export default function App() {
