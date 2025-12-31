@@ -1,12 +1,10 @@
 // src/pages/OrderItemPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getOrderItemById, updateOrderItem } from "../api/orders";
 import type { OrderItem } from "../api/types";
-import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 
-// Field-specific limits
 const LINK_MIN = 2;
 const LINK_MAX = 50;
 
@@ -20,60 +18,21 @@ function cn(...a: Array<string | false | null | undefined>) {
   return a.filter(Boolean).join(" ");
 }
 
-function hasRu(s: string) {
-  return /[а-яё]/i.test(s);
-}
-
-function norm(v: string) {
+function norm(v: unknown) {
   return (v ?? "").toString().trim();
 }
 
-function validateValue(v: string, min: number, max: number) {
+function lenBetween(v: string, min: number, max: number) {
   const s = v.trim();
-  if (!s) return { ok: false, kind: "required" as const };
-  if (s.length < min) return { ok: false, kind: "min" as const };
-  if (s.length > max) return { ok: false, kind: "max" as const };
-  return { ok: true as const };
+  return s.length >= min && s.length <= max;
 }
 
-function localizeValidationFromBackend(
-  msg: string,
-  t: TFunction,
-  fieldLabels: Record<string, string>
-) {
-  const m = msg.toLowerCase();
-
-  const fieldMatch =
-    msg.match(/on field '([^']+)'/i)?.[1] ?? msg.match(/field\s+'([^']+)'/i)?.[1];
-
-  const rangeMatch = msg.match(/(\d+)\s*до\s*(\d+)/i) ?? msg.match(/(\d+)\s*to\s*(\d+)/i);
-
-  if (fieldMatch && rangeMatch) {
-    const fieldKey = fieldMatch.trim();
-    const min = Number(rangeMatch[1]);
-    const max = Number(rangeMatch[2]);
-    const label = fieldLabels[fieldKey] ?? fieldKey;
-
-    return {
-      field: fieldKey,
-      text: t("errors.fieldLengthBetween", { field: label, min, max }),
-    };
-  }
-
-  if (m.includes("validation failed") || m.includes("field error")) {
-    return { field: null as any, text: t("errors.fixForm") };
-  }
-
-  if (hasRu(msg)) return { field: null as any, text: msg };
-  return { field: null as any, text: msg || t("errors.updateItemFail") };
-}
-
-export function OrderItemPage() {
+export default function OrderItemPage() {
   const { t } = useTranslation();
   const nav = useNavigate();
 
   const params = useParams();
-  const orderId = (params as any).id ?? (params as any).orderId ?? "";
+  const orderId = (params as any).orderId ?? (params as any).id ?? "";
   const itemId = (params as any).itemId ?? "";
 
   const [item, setItem] = useState<OrderItem | null>(null);
@@ -81,93 +40,55 @@ export function OrderItemPage() {
   const [link, setLink] = useState("");
   const [size, setSize] = useState("");
   const [configuration, setConfiguration] = useState("");
-  const [initial, setInitial] = useState<{ link: string; size: string; configuration: string } | null>(
-    null
-  );
 
-  const [touched, setTouched] = useState({
-    link: false,
-    size: false,
-    configuration: false,
-  });
+  const [initial, setInitial] = useState<{ link: string; size: string; configuration: string } | null>(null);
 
-  const [fieldErr, setFieldErr] = useState<Partial<Record<"link" | "size" | "configuration", string>>>(
-    {}
-  );
+  const [touched, setTouched] = useState({ link: false, size: false, configuration: false });
 
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const fieldLabels = useMemo(
-    () => ({
-      link: t("order.link"),
-      size: t("order.size"),
-      configuration: t("order.configuration"),
-    }),
-    [t]
-  );
+  const linkErr = useMemo(() => {
+    if (!touched.link) return null;
+    if (!link.trim()) return t("errors.required");
+    if (!lenBetween(link, LINK_MIN, LINK_MAX))
+      return t("errors.fieldLengthBetween", { field: t("order.link"), min: LINK_MIN, max: LINK_MAX });
+    return null;
+  }, [t, link, touched.link]);
 
-  // Field-specific validations
-  const linkV = validateValue(link, LINK_MIN, LINK_MAX);
-  const sizeV = validateValue(size, SIZE_MIN, SIZE_MAX);
-  const confV = validateValue(configuration, CONF_MIN, CONF_MAX);
+  const sizeErr = useMemo(() => {
+    if (!touched.size) return null;
+    if (!size.trim()) return t("errors.required");
+    if (!lenBetween(size, SIZE_MIN, SIZE_MAX))
+      return t("errors.fieldLengthBetween", { field: t("order.size"), min: SIZE_MIN, max: SIZE_MAX });
+    return null;
+  }, [t, size, touched.size]);
+
+  const confErr = useMemo(() => {
+    if (!touched.configuration) return null;
+    if (!configuration.trim()) return t("errors.required");
+    if (!lenBetween(configuration, CONF_MIN, CONF_MAX))
+      return t("errors.fieldLengthBetween", {
+        field: t("order.configuration"),
+        min: CONF_MIN,
+        max: CONF_MAX,
+      });
+    return null;
+  }, [t, configuration, touched.configuration]);
 
   const isDirty = useMemo(() => {
     if (!initial) return false;
-    return (
-      norm(link) !== initial.link || norm(size) !== initial.size || norm(configuration) !== initial.configuration
-    );
+    return norm(link) !== initial.link || norm(size) !== initial.size || norm(configuration) !== initial.configuration;
   }, [initial, link, size, configuration]);
 
-  const canSave =
-    !!orderId && !!itemId && !loading && !saving && linkV.ok && sizeV.ok && confV.ok && isDirty;
-
-  function computeClientFieldErrors() {
-    const next: Partial<Record<"link" | "size" | "configuration", string>> = {};
-
-    if (!linkV.ok) {
-      next.link =
-        linkV.kind === "required"
-          ? t("errors.required")
-          : t("errors.fieldLengthBetween", {
-              field: fieldLabels.link,
-              min: LINK_MIN,
-              max: LINK_MAX,
-            });
-    }
-
-    if (!sizeV.ok) {
-      next.size =
-        sizeV.kind === "required"
-          ? t("errors.required")
-          : t("errors.fieldLengthBetween", {
-              field: fieldLabels.size,
-              min: SIZE_MIN,
-              max: SIZE_MAX,
-            });
-    }
-
-    if (!confV.ok) {
-      next.configuration =
-        confV.kind === "required"
-          ? t("errors.required")
-          : t("errors.fieldLengthBetween", {
-              field: fieldLabels.configuration,
-              min: CONF_MIN,
-              max: CONF_MAX,
-            });
-    }
-
-    return next;
-  }
+  const canSave = !!orderId && !!itemId && !loading && !saving && !linkErr && !sizeErr && !confErr && isDirty;
 
   async function reload() {
     if (!orderId || !itemId) return;
     setLoading(true);
     try {
       setErr(null);
-      setFieldErr({});
       const it = await getOrderItemById(orderId, itemId);
 
       const l = (it as any)?.link ?? "";
@@ -178,7 +99,6 @@ export function OrderItemPage() {
       setLink(l);
       setSize(s);
       setConfiguration(c);
-
       setInitial({ link: norm(l), size: norm(s), configuration: norm(c) });
 
       setTouched({ link: false, size: false, configuration: false });
@@ -218,6 +138,9 @@ export function OrderItemPage() {
     );
   }
 
+  const price =
+    typeof (item as any)?.price === "undefined" || (item as any)?.price === null ? "—" : (item as any).price;
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -241,10 +164,7 @@ export function OrderItemPage() {
           </div>
 
           <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            {t("order.price")}:{" "}
-            <span className="font-medium">
-              {typeof (item as any)?.price === "undefined" || (item as any)?.price === null ? "—" : (item as any).price}
-            </span>
+            {t("order.price")}: <span className="font-medium">{price}</span>
           </div>
         </div>
 
@@ -260,7 +180,7 @@ export function OrderItemPage() {
       {err && (
         <div
           className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
-                        dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200"
+                     dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 break-words"
         >
           {err}
         </div>
@@ -277,71 +197,48 @@ export function OrderItemPage() {
             <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("order.link")}</span>
             <input
               value={link}
-              onChange={(e) => {
-                setLink(e.target.value);
-                if (touched.link) setFieldErr((p) => ({ ...p, link: undefined }));
-              }}
-              onBlur={() => {
-                setTouched((p) => ({ ...p, link: true }));
-                const next = computeClientFieldErrors();
-                setFieldErr((p) => ({ ...p, link: next.link }));
-              }}
+              maxLength={LINK_MAX}
+              onChange={(e) => setLink(e.target.value)}
+              onBlur={() => setTouched((p) => ({ ...p, link: true }))}
               className={cn(
                 "rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
                 "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
-                fieldErr.link &&
-                  "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
+                linkErr && "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
               )}
             />
-            {fieldErr.link && <div className="text-xs text-red-600 dark:text-red-300">{fieldErr.link}</div>}
+            {linkErr && <div className="text-xs text-red-600 dark:text-red-300">{linkErr}</div>}
           </label>
 
           <label className="grid gap-1">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("order.size")}</span>
             <input
               value={size}
-              onChange={(e) => {
-                setSize(e.target.value);
-                if (touched.size) setFieldErr((p) => ({ ...p, size: undefined }));
-              }}
-              onBlur={() => {
-                setTouched((p) => ({ ...p, size: true }));
-                const next = computeClientFieldErrors();
-                setFieldErr((p) => ({ ...p, size: next.size }));
-              }}
+              maxLength={SIZE_MAX}
+              onChange={(e) => setSize(e.target.value)}
+              onBlur={() => setTouched((p) => ({ ...p, size: true }))}
               className={cn(
                 "rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
                 "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
-                fieldErr.size &&
-                  "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
+                sizeErr && "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
               )}
             />
-            {fieldErr.size && <div className="text-xs text-red-600 dark:text-red-300">{fieldErr.size}</div>}
+            {sizeErr && <div className="text-xs text-red-600 dark:text-red-300">{sizeErr}</div>}
           </label>
 
           <label className="grid gap-1">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("order.configuration")}</span>
             <input
               value={configuration}
-              onChange={(e) => {
-                setConfiguration(e.target.value);
-                if (touched.configuration) setFieldErr((p) => ({ ...p, configuration: undefined }));
-              }}
-              onBlur={() => {
-                setTouched((p) => ({ ...p, configuration: true }));
-                const next = computeClientFieldErrors();
-                setFieldErr((p) => ({ ...p, configuration: next.configuration }));
-              }}
+              maxLength={CONF_MAX}
+              onChange={(e) => setConfiguration(e.target.value)}
+              onBlur={() => setTouched((p) => ({ ...p, configuration: true }))}
               className={cn(
                 "rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
                 "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
-                fieldErr.configuration &&
-                  "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
+                confErr && "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
               )}
             />
-            {fieldErr.configuration && (
-              <div className="text-xs text-red-600 dark:text-red-300">{fieldErr.configuration}</div>
-            )}
+            {confErr && <div className="text-xs text-red-600 dark:text-red-300">{confErr}</div>}
           </label>
 
           <div className="mt-2 flex items-center justify-between gap-2">
@@ -357,16 +254,12 @@ export function OrderItemPage() {
               disabled={!canSave}
               onClick={async () => {
                 setErr(null);
-
-                const next = computeClientFieldErrors();
                 setTouched({ link: true, size: true, configuration: true });
-                setFieldErr(next);
 
-                if (next.link || next.size || next.configuration) {
+                if (linkErr || sizeErr || confErr) {
                   setErr(t("errors.fixForm"));
                   return;
                 }
-
                 if (!isDirty) return;
 
                 setSaving(true);
@@ -380,19 +273,7 @@ export function OrderItemPage() {
                   nav(`/orders/${orderId}`, { replace: true });
                 } catch (e: any) {
                   const msg: string = e?.response?.data?.message ?? e?.message ?? "";
-
-                  if (msg) {
-                    const parsed = localizeValidationFromBackend(msg, t, fieldLabels);
-
-                    if (parsed.field === "link" || parsed.field === "size" || parsed.field === "configuration") {
-                      setFieldErr((p) => ({ ...p, [parsed.field]: parsed.text }));
-                      setErr(t("errors.fixForm"));
-                    } else {
-                      setErr(parsed.text);
-                    }
-                  } else {
-                    setErr(t("errors.updateItemFail"));
-                  }
+                  setErr(msg || t("errors.updateItemFail"));
                 } finally {
                   setSaving(false);
                 }
@@ -410,5 +291,3 @@ export function OrderItemPage() {
     </div>
   );
 }
-
-export default OrderItemPage;

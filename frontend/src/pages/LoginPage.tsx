@@ -1,96 +1,9 @@
-// src/pages/LoginPage.tsx
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
-
-function isEmailValid(email: string) {
-  const e = email.trim();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-}
-
-function isEmailBackendError(msg: string) {
-  const m = msg.toLowerCase();
-  return (
-    m.includes("email") &&
-    (m.includes("well-formed") ||
-      m.includes("valid") ||
-      m.includes("format") ||
-      m.includes("должно иметь формат адреса электронной почты"))
-  );
-}
-
-function Field({
-  label,
-  type = "text",
-  value,
-  onChange,
-  placeholder,
-  error,
-  onBlur,
-  onFocus,
-}: {
-  label: string;
-  type?: string;
-  value: string;
-  placeholder?: string;
-  error?: string | null;
-  onChange(v: string): void;
-  onBlur?(): void;
-  onFocus?(): void;
-}) {
-  return (
-    <label className="grid gap-1">
-      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-        {label}
-      </span>
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder ?? label}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={onBlur}
-        onFocus={onFocus}
-        className={cn(
-          "w-full rounded-xl border px-3 py-2 text-sm outline-none",
-          "bg-white dark:bg-slate-950 dark:border-slate-800",
-          "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
-          error && "border-red-300 focus:ring-red-200 dark:border-red-900/50 dark:focus:ring-red-950/40"
-        )}
-      />
-      {!!error && <div className="text-xs text-red-600 dark:text-red-300 break-words">{error}</div>}
-    </label>
-  );
-}
-
-function cn(...a: Array<string | false | null | undefined>) {
-  return a.filter(Boolean).join(" ");
-}
-
-function localizeApiErrorMessage(msg: unknown, t: TFunction): string | null {
-  if (typeof msg !== "string") return null;
-
-  if (msg.startsWith("errors.")) return t(msg);
-
-  if (isEmailBackendError(msg)) return t("errors.emailInvalid");
-
-  const m = msg.toLowerCase();
-
-  if (
-    m.includes("invalid password") ||
-    m.includes("bad credentials") ||
-    m.includes("unauthorized") ||
-    m.includes("wrong password") ||
-    m.includes("invalid credentials")
-  ) {
-    return t("errors.invalidPassword");
-  }
-
-  if (/[а-яё]/i.test(msg)) return msg;
-
-  return msg || null;
-}
+import FormField from "../components/FormField";
+import { isEmailValid, localizeLoginError } from "../utils/auth";
 
 export function LoginPage() {
   const nav = useNavigate();
@@ -103,28 +16,53 @@ export function LoginPage() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [touchedEmail, setTouchedEmail] = useState(false);
-  const [touchedPass, setTouchedPass] = useState(false);
+  const [touched, setTouched] = useState({ email: false, password: false });
 
-  const emailOk = useMemo(() => isEmailValid(email), [email]);
-  const passOk = useMemo(() => password.trim().length > 0, [password]);
+  const emailTrim = email.trim();
+  const passTrim = password.trim();
+
+  const emailOk = useMemo(() => isEmailValid(emailTrim), [emailTrim]);
+  const passOk = useMemo(() => passTrim.length > 0, [passTrim]);
 
   const emailError =
-    touchedEmail && email.trim().length > 0 && !emailOk ? t("errors.emailInvalid") : null;
+    touched.email && emailTrim.length > 0 && !emailOk ? t("errors.emailInvalid") : null;
 
   const passError =
-    touchedPass && password.trim().length === 0 ? t("errors.required") : null;
+    touched.password && passTrim.length === 0 ? t("errors.required") : null;
 
-  const canSubmit = emailOk && passOk;
+  const canSubmit = emailOk && passOk && !loading;
+
+  async function submit() {
+    setTouched({ email: true, password: true });
+
+    if (!emailOk) {
+      setErr(t("errors.emailInvalid"));
+      return;
+    }
+    if (!passOk) {
+      setErr(t("errors.required"));
+      return;
+    }
+
+    setErr(null);
+    setLoading(true);
+    try {
+      await login(emailTrim, password);
+      nav("/", { replace: true });
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? e?.message;
+      setErr(localizeLoginError(msg, t) ?? t("errors.authUnknown"));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-md px-2 sm:px-0">
       <div className="rounded-3xl border bg-white p-4 sm:p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
         <div>
           <h1 className="text-2xl font-semibold">{t("auth.login")}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {t("auth.subtitleLogin")}
-          </p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t("auth.subtitleLogin")}</p>
         </div>
 
         {err && (
@@ -135,7 +73,7 @@ export function LoginPage() {
         )}
 
         <div className="mt-5 grid gap-3">
-          <Field
+          <FormField
             label={t("auth.email")}
             type="email"
             value={email}
@@ -143,13 +81,13 @@ export function LoginPage() {
               setEmail(v);
               setErr(null);
             }}
-            onBlur={() => setTouchedEmail(true)}
-            onFocus={() => setTouchedEmail(true)}
+            onBlur={() => setTouched((p) => ({ ...p, email: true }))}
             placeholder={t("auth.enterEmail")}
+            autoComplete="email"
             error={emailError}
           />
 
-          <Field
+          <FormField
             label={t("auth.password")}
             type="password"
             value={password}
@@ -157,39 +95,15 @@ export function LoginPage() {
               setPassword(v);
               setErr(null);
             }}
-            onBlur={() => setTouchedPass(true)}
-            onFocus={() => setTouchedPass(true)}
+            onBlur={() => setTouched((p) => ({ ...p, password: true }))}
             placeholder="••••••••"
+            autoComplete="current-password"
             error={passError}
           />
 
           <button
-            disabled={!canSubmit || loading}
-            onClick={async () => {
-              setTouchedEmail(true);
-              setTouchedPass(true);
-
-              if (!emailOk) {
-                setErr(t("errors.emailInvalid"));
-                return;
-              }
-              if (!passOk) {
-                setErr(t("errors.required"));
-                return;
-              }
-
-              setErr(null);
-              setLoading(true);
-              try {
-                await login(email.trim(), password);
-                nav("/", { replace: true });
-              } catch (e: any) {
-                const msg = e?.response?.data?.message ?? e?.message;
-                setErr(localizeApiErrorMessage(msg, t) ?? t("errors.authUnknown"));
-              } finally {
-                setLoading(false);
-              }
-            }}
+            disabled={!canSubmit}
+            onClick={submit}
             className="mt-2 w-full px-4 py-2 rounded-xl text-sm font-semibold
                        bg-slate-900 text-white hover:bg-slate-800 transition
                        disabled:opacity-50 disabled:hover:bg-slate-900
@@ -200,10 +114,7 @@ export function LoginPage() {
 
           <div className="text-sm text-slate-600 dark:text-slate-300">
             {t("auth.noAccount")}{" "}
-            <Link
-              to="/register"
-              className="font-semibold underline underline-offset-4 hover:opacity-80"
-            >
+            <Link to="/register" className="font-semibold underline underline-offset-4 hover:opacity-80">
               {t("auth.register")}
             </Link>
           </div>

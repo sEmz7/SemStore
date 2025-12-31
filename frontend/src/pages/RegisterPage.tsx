@@ -2,85 +2,8 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "../api/auth";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
-
-function isEmailValid(email: string) {
-  const e = email.trim();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-}
-
-function Field({
-  label,
-  type = "text",
-  value,
-  onChange,
-  placeholder,
-  error,
-  onBlur,
-  onFocus,
-}: {
-  label: string;
-  type?: string;
-  value: string;
-  placeholder?: string;
-  error?: string | null;
-  onChange(v: string): void;
-  onBlur?(): void;
-  onFocus?(): void;
-}) {
-  return (
-    <label className="grid gap-1">
-      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-        {label}
-      </span>
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder ?? label}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={onBlur}
-        onFocus={onFocus}
-        className={`
-          w-full rounded-xl border px-3 py-2 text-sm outline-none
-          bg-white dark:bg-slate-950 dark:border-slate-800
-          focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800
-          ${error ? "border-red-300 focus:ring-red-200 dark:border-red-900/50 dark:focus:ring-red-950/40" : ""}
-        `}
-      />
-      {!!error && (
-        <div className="text-xs text-red-600 dark:text-red-300 break-words">{error}</div>
-      )}
-    </label>
-  );
-}
-
-function isEmailBackendError(msg: string) {
-  const m = msg.toLowerCase();
-  return (
-    m.includes("email") &&
-    (m.includes("well-formed") ||
-      m.includes("valid") ||
-      m.includes("format") ||
-      m.includes("должно иметь формат адреса электронной почты"))
-  );
-}
-
-function normalizeRegisterError(e: any, t: TFunction, email: string) {
-  const msg: string = e?.response?.data?.message ?? e?.message ?? "";
-  const m = msg.toLowerCase();
-
-  if (m.includes("already exists") || m.includes("already exist") || m.includes("exists")) {
-    return t("errors.userAlreadyExists", { email });
-  }
-
-  if (msg && isEmailBackendError(msg)) {
-    return t("errors.emailInvalid");
-  }
-
-  if (msg && /[а-яё]/i.test(msg)) return msg;
-
-  return msg ? msg : t("errors.authUnknown");
-}
+import FormField from "../components/FormField";
+import { isEmailValid, localizeRegisterError } from "../utils/auth";
 
 const PASS_MIN = 4;
 
@@ -94,30 +17,54 @@ export function RegisterPage() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [touchedEmail, setTouchedEmail] = useState(false);
-  const [touchedPass, setTouchedPass] = useState(false);
+  const [touched, setTouched] = useState({ email: false, password: false });
 
-  const emailOk = useMemo(() => isEmailValid(email), [email]);
-  const passOk = useMemo(() => password.trim().length >= PASS_MIN, [password]);
+  const emailTrim = email.trim();
+  const passTrim = password.trim();
+
+  const emailOk = useMemo(() => isEmailValid(emailTrim), [emailTrim]);
+  const passOk = useMemo(() => passTrim.length >= PASS_MIN, [passTrim]);
 
   const emailError =
-    touchedEmail && email.trim().length > 0 && !emailOk ? t("errors.emailInvalid") : null;
+    touched.email && emailTrim.length > 0 && !emailOk ? t("errors.emailInvalid") : null;
 
   const passError =
-    touchedPass && password.trim().length > 0 && !passOk
+    touched.password && passTrim.length > 0 && !passOk
       ? t("errors.passwordMinLength", { min: PASS_MIN })
       : null;
 
-  const canSubmit = emailOk && passOk;
+  const canSubmit = emailOk && passOk && !loading;
+
+  async function submit() {
+    setTouched({ email: true, password: true });
+
+    if (!emailOk) {
+      setErr(t("errors.emailInvalid"));
+      return;
+    }
+    if (!passOk) {
+      setErr(t("errors.passwordMinLength", { min: PASS_MIN }));
+      return;
+    }
+
+    setErr(null);
+    setLoading(true);
+    try {
+      await register(emailTrim, password);
+      nav("/login", { replace: true });
+    } catch (e: any) {
+      setErr(localizeRegisterError(e, t, emailTrim));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-md px-2 sm:px-0">
       <div className="rounded-3xl border bg-white p-4 sm:p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
         <div>
           <h1 className="text-2xl font-semibold">{t("auth.register")}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {t("auth.subtitleRegister")}
-          </p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t("auth.subtitleRegister")}</p>
         </div>
 
         {err && (
@@ -128,7 +75,7 @@ export function RegisterPage() {
         )}
 
         <div className="mt-5 grid gap-3">
-          <Field
+          <FormField
             label={t("auth.email")}
             type="email"
             value={email}
@@ -136,13 +83,13 @@ export function RegisterPage() {
               setEmail(v);
               setErr(null);
             }}
-            onBlur={() => setTouchedEmail(true)}
-            onFocus={() => setTouchedEmail(true)}
+            onBlur={() => setTouched((p) => ({ ...p, email: true }))}
             placeholder={t("auth.enterEmail")}
+            autoComplete="email"
             error={emailError}
           />
 
-          <Field
+          <FormField
             label={t("auth.password")}
             type="password"
             value={password}
@@ -150,38 +97,15 @@ export function RegisterPage() {
               setPassword(v);
               setErr(null);
             }}
-            onBlur={() => setTouchedPass(true)}
-            onFocus={() => setTouchedPass(true)}
+            onBlur={() => setTouched((p) => ({ ...p, password: true }))}
             placeholder="••••••••"
+            autoComplete="new-password"
             error={passError}
           />
 
           <button
-            disabled={!canSubmit || loading}
-            onClick={async () => {
-              setTouchedEmail(true);
-              setTouchedPass(true);
-
-              if (!emailOk) {
-                setErr(t("errors.emailInvalid"));
-                return;
-              }
-              if (!passOk) {
-                setErr(t("errors.passwordMinLength", { min: PASS_MIN }));
-                return;
-              }
-
-              setErr(null);
-              setLoading(true);
-              try {
-                await register(email.trim(), password);
-                nav("/login", { replace: true });
-              } catch (e: any) {
-                setErr(normalizeRegisterError(e, t, email.trim()));
-              } finally {
-                setLoading(false);
-              }
-            }}
+            disabled={!canSubmit}
+            onClick={submit}
             className="mt-2 w-full px-4 py-2 rounded-xl text-sm font-semibold
                        bg-slate-900 text-white hover:bg-slate-800 transition
                        disabled:opacity-50 disabled:hover:bg-slate-900
@@ -192,10 +116,7 @@ export function RegisterPage() {
 
           <div className="text-sm text-slate-600 dark:text-slate-300">
             {t("auth.haveAccount")}{" "}
-            <Link
-              to="/login"
-              className="font-semibold underline underline-offset-4 hover:opacity-80"
-            >
+            <Link to="/login" className="font-semibold underline underline-offset-4 hover:opacity-80">
               {t("auth.login")}
             </Link>
           </div>

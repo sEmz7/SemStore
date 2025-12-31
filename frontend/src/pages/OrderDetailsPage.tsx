@@ -1,55 +1,30 @@
-// src/pages/OrderDetailsPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { addOrderItem, deleteOrderItem, getOrderById } from "../api/orders";
 import type { OrderDto, OrderItem } from "../api/types";
 import { useTranslation } from "react-i18next";
 import ConfirmDialog from "../components/ConfirmDialog";
+import FormField from "../components/FormField";
+import { localizeBackendLengthError } from "../utils/springValidation";
+
+type FieldKey = "link" | "size" | "configuration";
 
 function cn(...a: Array<string | false | null | undefined>) {
   return a.filter(Boolean).join(" ");
 }
 
-const LINK_MIN = 2;
-const LINK_MAX = 50;
+const LIMITS: Record<FieldKey, { min: number; max: number; labelKey: string; placeholder: string }> = {
+  link: { min: 2, max: 50, labelKey: "order.link", placeholder: "https://example.com/product/1" },
+  size: { min: 2, max: 30, labelKey: "order.size", placeholder: "42.5" },
+  configuration: { min: 2, max: 255, labelKey: "order.configuration", placeholder: "black" },
+};
 
-const SIZE_MIN = 2;
-const SIZE_MAX = 30;
-
-const CONF_MIN = 2;
-const CONF_MAX = 255;
-
-function lenBetween(v: string, min: number, max: number) {
+function validateLen(v: string, min: number, max: number) {
   const s = v.trim();
-  return s.length >= min && s.length <= max;
-}
-
-function parseSpringValidationMessage(msg: string) {
-  const fieldMatch = msg.match(/on field '([^']+)'/);
-  const field = fieldMatch?.[1];
-
-  const ruRange = msg.match(/от\s+(\d+)\s+до\s+(\d+)/i);
-  if (ruRange) return { field, min: Number(ruRange[1]), max: Number(ruRange[2]) };
-
-  const enRange = msg.match(/between\s+(\d+)\s+and\s+(\d+)/i);
-  if (enRange) return { field, min: Number(enRange[1]), max: Number(enRange[2]) };
-
-  const nums = msg.match(/,(\d+),(\d+)\]/);
-  if (nums) {
-    const a = Number(nums[2]);
-    const b = Number(nums[1]);
-    if (Number.isFinite(a) && Number.isFinite(b)) return { field, min: a, max: b };
-  }
-
-  return null;
-}
-
-function fieldKeyBySpringField(field?: string) {
-  if (!field) return null;
-  if (field === "link") return "order.link";
-  if (field === "size") return "order.size";
-  if (field === "configuration") return "order.configuration";
-  return null;
+  if (!s) return { ok: false as const, kind: "required" as const };
+  if (s.length < min) return { ok: false as const, kind: "min" as const };
+  if (s.length > max) return { ok: false as const, kind: "max" as const };
+  return { ok: true as const };
 }
 
 function StatusBadge({ status, label }: { status: string; label: string }) {
@@ -74,90 +49,145 @@ export function OrderDetailsPage() {
   const { id } = useParams<{ id: string }>();
 
   const [order, setOrder] = useState<OrderDto | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [link, setLink] = useState("");
-  const [size, setSize] = useState("");
-  const [configuration, setConfiguration] = useState("");
+  const [form, setForm] = useState<Record<FieldKey, string>>({
+    link: "",
+    size: "",
+    configuration: "",
+  });
+
+  const [touched, setTouched] = useState<Record<FieldKey, boolean>>({
+    link: false,
+    size: false,
+    configuration: false,
+  });
+
+  const [serverErrors, setServerErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [saving, setSaving] = useState(false);
 
-  const [touched, setTouched] = useState({ link: false, size: false, configuration: false });
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
-
   const [confirmDelete, setConfirmDelete] = useState<{ itemId: string } | null>(null);
 
+  const labels = useMemo<Record<FieldKey, string>>(
+    () => ({
+      link: t("order.link"),
+      size: t("order.size"),
+      configuration: t("order.configuration"),
+    }),
+    [t]
+  );
+
   const items = useMemo<OrderItem[]>(() => (order?.items ?? []) as OrderItem[], [order]);
+
+  function setField(key: FieldKey, value: string) {
+    setForm((p) => ({ ...p, [key]: value }));
+    if (touched[key]) setServerErrors((p) => ({ ...p, [key]: undefined }));
+  }
+
+  function touchField(key: FieldKey) {
+    setTouched((p) => ({ ...p, [key]: true }));
+  }
+
+  function touchAll() {
+    setTouched({ link: true, size: true, configuration: true });
+  }
+
+  const clientErrors = useMemo(() => {
+    const out: Partial<Record<FieldKey, string>> = {};
+    (Object.keys(LIMITS) as FieldKey[]).forEach((k) => {
+      const lim = LIMITS[k];
+      const v = validateLen(form[k], lim.min, lim.max);
+      if (!v.ok) {
+        out[k] =
+          v.kind === "required"
+            ? t("errors.required")
+            : t("errors.fieldLengthBetween", { field: labels[k], min: lim.min, max: lim.max });
+      }
+    });
+    return out;
+  }, [form, labels, t]);
+
+  const isValid = !clientErrors.link && !clientErrors.size && !clientErrors.configuration;
+  const canSubmit = isValid && !saving;
+
+  function shownError(key: FieldKey) {
+    return serverErrors[key] ?? (touched[key] ? clientErrors[key] : null);
+  }
 
   async function reload() {
     if (!id) return;
     setLoading(true);
     try {
-      setErr(null);
+      setPageError(null);
       setOrder(await getOrderById(id));
     } catch (e: any) {
-      setErr(e?.response?.data?.message ?? t("errors.loadOrderFail"));
+      setPageError(e?.response?.data?.message ?? t("errors.loadOrderFail"));
     } finally {
       setLoading(false);
     }
   }
 
-  function fieldLenMsg(fieldKey: string, min: number, max: number) {
-    return t("errors.fieldLengthBetween", { field: t(fieldKey), min, max });
-  }
+  async function addItem() {
+    if (!id) return;
 
-  const linkErr =
-    !link.trim()
-      ? t("errors.required")
-      : !lenBetween(link, LINK_MIN, LINK_MAX)
-      ? fieldLenMsg("order.link", LINK_MIN, LINK_MAX)
-      : null;
+    setPageError(null);
+    setServerErrors({});
+    touchAll();
 
-  const sizeErr =
-    !size.trim()
-      ? t("errors.required")
-      : !lenBetween(size, SIZE_MIN, SIZE_MAX)
-      ? fieldLenMsg("order.size", SIZE_MIN, SIZE_MAX)
-      : null;
-
-  const confErr =
-    !configuration.trim()
-      ? t("errors.required")
-      : !lenBetween(configuration, CONF_MIN, CONF_MAX)
-      ? fieldLenMsg("order.configuration", CONF_MIN, CONF_MAX)
-      : null;
-
-  const canSubmit = !linkErr && !sizeErr && !confErr && !saving;
-
-  function formatApiError(e: any) {
-    const msg = e?.response?.data?.message;
-    if (typeof msg !== "string" || !msg.trim()) return t("errors.addItemFail");
-
-    const parsed = parseSpringValidationMessage(msg);
-    if (parsed?.min && parsed?.max) {
-      const k = fieldKeyBySpringField(parsed.field);
-      if (k) return fieldLenMsg(k, parsed.min, parsed.max);
+    if (!canSubmit) {
+      setPageError(t("errors.fixForm"));
+      return;
     }
 
-    return msg;
+    setSaving(true);
+    try {
+      await addOrderItem(id, {
+        link: form.link.trim(),
+        size: form.size.trim(),
+        configuration: form.configuration.trim(),
+      });
+
+      setForm({ link: "", size: "", configuration: "" });
+      setTouched({ link: false, size: false, configuration: false });
+      await reload();
+    } catch (e: any) {
+      const msg: string = e?.response?.data?.message ?? e?.message ?? "";
+
+      const parsed = localizeBackendLengthError<FieldKey>(msg, t, {
+        fieldLabels: labels,
+        fieldNameMap: { link: "link", size: "size", configuration: "configuration" },
+        defaultTextKey: "errors.addItemFail",
+      });
+
+      if (parsed.field) {
+        setServerErrors((p) => ({ ...p, [parsed.field!]: parsed.text }));
+        setPageError(t("errors.fixForm"));
+      } else {
+        setPageError(parsed.text);
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function doDeleteItem(itemId: string) {
     if (!id) return;
     setDeletingItemId(itemId);
     try {
-      setErr(null);
+      setPageError(null);
       await deleteOrderItem(id, itemId);
       await reload();
     } catch (e: any) {
-      setErr(e?.response?.data?.message ?? t("errors.deleteFail"));
+      setPageError(e?.response?.data?.message ?? t("errors.deleteFail"));
     } finally {
       setDeletingItemId(null);
     }
   }
 
   useEffect(() => {
-    reload();
+    reload().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -169,6 +199,7 @@ export function OrderDetailsPage() {
 
   return (
     <div className="space-y-6">
+      {/* header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm text-slate-500 dark:text-slate-400">
@@ -204,115 +235,61 @@ export function OrderDetailsPage() {
         </button>
       </div>
 
-      {err && (
+      {pageError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
                         dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 break-words">
-          {err}
+          {pageError}
         </div>
       )}
 
-      {/* Add item */}
+      {/* add item */}
       <div className="rounded-3xl border bg-white p-4 sm:p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold">{t("order.addItem")}</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">{t("order.hint")}</div>
-          </div>
+        <div>
+          <div className="text-sm font-semibold">{t("order.addItem")}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{t("order.hint")}</div>
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div className="sm:col-span-2">
-            <input
-              value={link}
-              maxLength={LINK_MAX}
-              onChange={(e) => setLink(e.target.value)}
-              onBlur={() => setTouched((p) => ({ ...p, link: true }))}
-              placeholder="https://example.com/product/1"
-              className={cn(
-                "w-full rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
-                "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
-                touched.link &&
-                  linkErr &&
-                  "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
-              )}
+            <FormField
+              label={labels.link}
+              value={form.link}
+              onChange={(v) => setField("link", v)}
+              onBlur={() => touchField("link")}
+              placeholder={LIMITS.link.placeholder}
+              maxLength={LIMITS.link.max}
+              error={shownError("link")}
             />
-            {touched.link && linkErr && (
-              <div className="mt-1 text-xs text-red-600 dark:text-red-300 break-words">{linkErr}</div>
-            )}
           </div>
 
           <div>
-            <input
-              value={size}
-              maxLength={SIZE_MAX}
-              onChange={(e) => setSize(e.target.value)}
-              onBlur={() => setTouched((p) => ({ ...p, size: true }))}
-              placeholder="42.5"
-              className={cn(
-                "w-full rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
-                "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
-                touched.size &&
-                  sizeErr &&
-                  "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
-              )}
+            <FormField
+              label={labels.size}
+              value={form.size}
+              onChange={(v) => setField("size", v)}
+              onBlur={() => touchField("size")}
+              placeholder={LIMITS.size.placeholder}
+              maxLength={LIMITS.size.max}
+              error={shownError("size")}
             />
-            {touched.size && sizeErr && (
-              <div className="mt-1 text-xs text-red-600 dark:text-red-300 break-words">{sizeErr}</div>
-            )}
           </div>
 
           <div className="sm:col-span-3">
-            <input
-              value={configuration}
-              maxLength={CONF_MAX}
-              onChange={(e) => setConfiguration(e.target.value)}
-              onBlur={() => setTouched((p) => ({ ...p, configuration: true }))}
-              placeholder="black"
-              className={cn(
-                "w-full rounded-xl border px-3 py-2 text-sm outline-none bg-white dark:bg-slate-950 dark:border-slate-800",
-                "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-800",
-                touched.configuration &&
-                  confErr &&
-                  "border-red-300 focus:ring-red-100 dark:border-red-900/60 dark:focus:ring-red-900/30"
-              )}
+            <FormField
+              label={labels.configuration}
+              value={form.configuration}
+              onChange={(v) => setField("configuration", v)}
+              onBlur={() => touchField("configuration")}
+              placeholder={LIMITS.configuration.placeholder}
+              maxLength={LIMITS.configuration.max}
+              error={shownError("configuration")}
             />
-            {touched.configuration && confErr && (
-              <div className="mt-1 text-xs text-red-600 dark:text-red-300 break-words">{confErr}</div>
-            )}
           </div>
 
           <div className="sm:col-span-3 flex justify-end">
             <button
               disabled={!canSubmit}
-              onClick={async () => {
-                setErr(null);
-                setTouched({ link: true, size: true, configuration: true });
-
-                if (!canSubmit) {
-                  setErr(t("errors.fixForm"));
-                  return;
-                }
-
-                setSaving(true);
-                try {
-                  await addOrderItem(id, {
-                    link: link.trim(),
-                    size: size.trim(),
-                    configuration: configuration.trim(),
-                  });
-
-                  setLink("");
-                  setSize("");
-                  setConfiguration("");
-                  setTouched({ link: false, size: false, configuration: false });
-
-                  await reload();
-                } catch (e: any) {
-                  setErr(formatApiError(e));
-                } finally {
-                  setSaving(false);
-                }
-              }}
+              onClick={addItem}
               className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold
                          bg-slate-900 text-white hover:bg-slate-800 transition
                          disabled:opacity-50 disabled:hover:bg-slate-900
@@ -324,7 +301,7 @@ export function OrderDetailsPage() {
         </div>
       </div>
 
-      {/* Items list */}
+      {/* items */}
       <div className="rounded-3xl border bg-white overflow-hidden dark:bg-slate-950 dark:border-slate-800">
         <div className="px-4 sm:px-6 py-4 border-b flex items-center justify-between dark:border-slate-800 gap-3">
           <div className="text-sm font-semibold">{t("order.items")}</div>
@@ -377,7 +354,7 @@ export function OrderDetailsPage() {
                         onClick={(e) => {
                           if (!canOpen) {
                             e.preventDefault();
-                            setErr(t("errors.noItemIdOpen"));
+                            setPageError(t("errors.noItemIdOpen"));
                           }
                         }}
                         className={cn(
@@ -393,7 +370,7 @@ export function OrderDetailsPage() {
                         disabled={!canOpen || isDeleting}
                         onClick={() => {
                           if (!canOpen) {
-                            setErr(t("errors.noItemIdDelete"));
+                            setPageError(t("errors.noItemIdDelete"));
                             return;
                           }
                           setConfirmDelete({ itemId: itemId! });

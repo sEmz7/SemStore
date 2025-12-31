@@ -1,38 +1,34 @@
-import { useMemo } from "react";
+// src/pages/ProfilePage.tsx
 import { useAuth } from "../auth/AuthContext";
 import { useTranslation } from "react-i18next";
 import { useAppToast } from "../components/Toast";
+import { copyToClipboard } from "../utils/clipboard";
 
-async function copyToClipboard(text: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    // fall through
-  }
+function InfoCard({
+  label,
+  value,
+  buttonText,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  buttonText: string;
+  onCopy(): void;
+}) {
+  return (
+    <div className="rounded-2xl border p-4 dark:border-slate-800">
+      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="mt-1 font-semibold break-all">{value}</div>
 
-  try {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.setAttribute("readonly", "");
-    ta.style.position = "fixed";
-    ta.style.left = "-9999px";
-    ta.style.top = "-9999px";
-    ta.style.opacity = "0";
-
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    ta.setSelectionRange(0, ta.value.length);
-
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
+      <button
+        onClick={onCopy}
+        className="mt-3 px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition
+                   dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
+      >
+        {buttonText}
+      </button>
+    </div>
+  );
 }
 
 export function ProfilePage() {
@@ -40,9 +36,9 @@ export function ProfilePage() {
   const { user } = useAuth();
   const { showToast } = useAppToast();
 
-  const pretty = useMemo(() => JSON.stringify(user, null, 2), [user]);
+  if (!user) return null;
 
-  async function onCopy(kind: "email" | "id", text: string) {
+  async function handleCopy(text: string, successKey: "profile.copySuccessEmail" | "profile.copySuccessId") {
     const ok = await copyToClipboard(text);
 
     if (!ok) {
@@ -50,10 +46,10 @@ export function ProfilePage() {
       return;
     }
 
-    showToast(kind === "email" ? t("profile.copySuccessEmail") : t("profile.copySuccessId"), "success");
+    showToast(t(successKey), "success");
   }
 
-  if (!user) return null;
+  const pretty = JSON.stringify(user, null, 2);
 
   return (
     <div className="space-y-6">
@@ -64,29 +60,19 @@ export function ProfilePage() {
 
       <div className="rounded-3xl border bg-white p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border p-4 dark:border-slate-800">
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{t("profile.email")}</div>
-            <div className="mt-1 font-semibold break-all">{user.email}</div>
-            <button
-              onClick={() => onCopy("email", user.email)}
-              className="mt-3 px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition
-                         dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
-            >
-              {t("profile.copyEmail")}
-            </button>
-          </div>
+          <InfoCard
+            label={t("profile.email")}
+            value={user.email}
+            buttonText={t("profile.copyEmail")}
+            onCopy={() => handleCopy(user.email, "profile.copySuccessEmail")}
+          />
 
-          <div className="rounded-2xl border p-4 dark:border-slate-800">
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{t("profile.userId")}</div>
-            <div className="mt-1 font-semibold break-all">{user.id}</div>
-            <button
-              onClick={() => onCopy("id", user.id)}
-              className="mt-3 px-3 py-2 rounded-xl text-sm border bg-white hover:bg-slate-50 transition
-                         dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
-            >
-              {t("profile.copyId")}
-            </button>
-          </div>
+          <InfoCard
+            label={t("profile.userId")}
+            value={user.id}
+            buttonText={t("profile.copyId")}
+            onCopy={() => handleCopy(user.id, "profile.copySuccessId")}
+          />
         </div>
 
         <details className="mt-6">
@@ -99,3 +85,5 @@ export function ProfilePage() {
     </div>
   );
 }
+
+export default ProfilePage;
