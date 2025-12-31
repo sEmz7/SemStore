@@ -3,6 +3,7 @@ package ru.semstore.orderservice.errors;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import ru.semstore.orderservice.errors.exceptions.ErrorCode;
 
 import java.time.LocalDateTime;
 
@@ -16,8 +17,11 @@ public class ErrorResponse {
     @JsonFormat(pattern = "YYYY-MM-dd HH:mm:ss")
     private LocalDateTime date;
 
-    public ErrorResponse(String message) {
+    private ErrorCode code;
+
+    public ErrorResponse(String message, ErrorCode code) {
         this.message = message;
         this.date = LocalDateTime.now();
+        this.code = code;
     }
 }

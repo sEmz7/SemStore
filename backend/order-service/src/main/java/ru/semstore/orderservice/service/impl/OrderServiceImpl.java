@@ -14,6 +14,7 @@ import ru.semstore.orderservice.dto.order.OrderShortDto;
 import ru.semstore.orderservice.dto.order.OrderUpdateDto;
 import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
+import ru.semstore.orderservice.errors.exceptions.ErrorCode;
 import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
 import ru.semstore.orderservice.kafka.producer.KafkaProducer;
 import ru.semstore.orderservice.mapper.OrderMapper;
@@ -80,7 +81,7 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.ORDERED) {
             log.warn("Order status is {}, address cannot be changed. orderId={}", order.getStatus(), orderId);
             throw new ConflictException("Order status is " + order.getStatus() +
-                    ", address cannot be changed. orderId=" + orderId);
+                    ", address cannot be changed. orderId=" + orderId, ErrorCode.ORDER_STATUS_NOT_MODIFIABLE);
         }
         orderMapper.update(order, updateDto);
         order.setStatus(OrderStatus.PENDING);
@@ -107,11 +108,13 @@ public class OrderServiceImpl implements OrderService {
         Order order = findOrderByIdOrThrow(orderId);
         if (!order.getUserId().equals(userId)) {
             log.warn("Only order owner can delete order. orderId={}", orderId);
-            throw new ConflictException("Only order owner can delete order. orderId=" + orderId);
+            throw new ConflictException("Only order owner can delete order. orderId=" + orderId,
+                    ErrorCode.ORDER_OWNER_CONFLICT);
         }
         if (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.ORDERED) {
             log.warn("Order cannot be deleted. orderId={}", orderId);
-            throw new ConflictException("Order cannot be deleted. orderId=" + orderId);
+            throw new ConflictException("Order cannot be deleted. orderId=" + orderId,
+                    ErrorCode.ORDER_STATUS_NOT_MODIFIABLE);
         }
         orderRepository.deleteById(orderId);
         log.debug("Order deleted. orderId={}", orderId);
@@ -133,11 +136,12 @@ public class OrderServiceImpl implements OrderService {
     public OrderFullDto getById(UUID orderId, UUID userId) {
         Order order = orderRepository.findOrderByIdWithItems(orderId).orElseThrow(() -> {
             log.warn("Order not found. orderId={}, userId={}", orderId, userId);
-            return new OrderNotFoundException("Order not found");
+            return new OrderNotFoundException("Order not found", ErrorCode.ORDER_NOT_FOUND);
         });
         if (!userId.equals(order.getUserId())) {
             log.warn("Only owner can get order info. orderId={}", orderId);
-            throw new ConflictException("Only owner can get order info. orderId=" + orderId);
+            throw new ConflictException("Only owner can get order info. orderId=" + orderId,
+                    ErrorCode.ORDER_OWNER_CONFLICT);
         }
         return orderMapper.toFullDto(order);
     }
@@ -175,7 +179,7 @@ public class OrderServiceImpl implements OrderService {
     private Order findOrderByIdOrThrow(UUID orderId) {
         return orderRepository.findById(orderId).orElseThrow(() -> {
             log.warn("Order not found. orderId={}", orderId);
-            return new OrderNotFoundException("Order not found. orderId=" + orderId);
+            return new OrderNotFoundException("Order not found. orderId=" + orderId, ErrorCode.ORDER_NOT_FOUND);
         });
     }
 }
