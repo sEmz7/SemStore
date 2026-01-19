@@ -97,7 +97,7 @@ public class OrderServiceTest {
         when(orderRepository.save(order)).thenReturn(order);
         when(orderMapper.toShortDto(order)).thenReturn(orderDto);
 
-        OrderShortDto result = orderService.update(dto, orderId);
+        OrderShortDto result = orderService.update(dto, orderId, userId);
 
         assertNotNull(result);
         assertEquals(orderId, result.getId());
@@ -112,18 +112,18 @@ public class OrderServiceTest {
         order.setStatus(OrderStatus.PAID);
         when(orderRepository.findById(any())).thenReturn(Optional.of(order));
 
-        assertThrows(ConflictException.class, () -> orderService.update(dto, orderId));
+        assertThrows(ConflictException.class, () -> orderService.update(dto, orderId, userId));
         verify(orderRepository, times(1)).findById(orderId);
     }
 
     @Test
-    @DisplayName("Обновление заказа со статусом ORDERED")
+    @DisplayName("Обновление заказа со статусом IN_CHECK")
     void update_ShouldThrow_WhenStatusOrdered() {
         OrderUpdateDto dto = new OrderUpdateDto(name, addressId);
-        order.setStatus(OrderStatus.ORDERED);
+        order.setStatus(OrderStatus.IN_CHECK);
         when(orderRepository.findById(any())).thenReturn(Optional.of(order));
 
-        assertThrows(ConflictException.class, () -> orderService.update(dto, orderId));
+        assertThrows(ConflictException.class, () -> orderService.update(dto, orderId, userId));
         verify(orderRepository, times(1)).findById(orderId);
     }
 
@@ -159,9 +159,9 @@ public class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Удаление заказа со статусом ORDERED")
+    @DisplayName("Удаление заказа со статусом IN_CHECK")
     void delete_shouldThrow_WhenOrderStatusOrdered() {
-        order.setStatus(OrderStatus.ORDERED);
+        order.setStatus(OrderStatus.IN_CHECK);
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
         assertThrows(ConflictException.class, () -> orderService.delete(orderId, userId));

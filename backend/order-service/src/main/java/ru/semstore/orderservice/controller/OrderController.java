@@ -107,6 +107,7 @@ public class OrderController {
      *
      * @param dto     DTO с обновляемыми данными заказа
      * @param orderId идентификатор заказа
+     * @param userId идентификатор пользователя
      * @return обновлённый заказ
      */
     @PatchMapping("/{orderId}")
@@ -135,15 +136,17 @@ public class OrderController {
                             schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
-    public OrderShortDto update(@Valid @RequestBody OrderUpdateDto dto, @PathVariable("orderId") UUID orderId) {
-        return orderService.update(dto, orderId);
+    public OrderShortDto update(@Valid @RequestBody OrderUpdateDto dto,
+                                @PathVariable("orderId") UUID orderId,
+                                @Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId) {
+        return orderService.update(dto, orderId, userId);
     }
 
     /**
      * Удаляет заказ пользователя.
      *
-     * <p>Удаление запрещено для заказов в статусах
-     * {@link OrderStatus#PAID} и {@link OrderStatus#ORDERED}.</p>
+     * <p>Удаление разрешено для заказов в статусах
+     * допускающих изменение заказа.</p>
      *
      * @param orderId идентификатор заказа
      * @param userId  идентификатор пользователя из заголовка {@code X-User-Id}
@@ -214,8 +217,8 @@ public class OrderController {
      *
      * <p>Поддерживается фильтрация по:
      * <ul>
-     *     <li>статусу заказа</li>
-     *     <li>диапазону дат создания</li>
+     *     <li>Статусу заказа</li>
+     *     <li>Диапазону дат создания</li>
      * </ul>
      *
      * @param userId     идентификатор пользователя из заголовка {@code X-User-Id}
@@ -270,5 +273,11 @@ public class OrderController {
                                                     @RequestParam(required = false)
                                            @DateTimeFormat(pattern = DATE_PATTERN) LocalDateTime rangeEnd) {
         return orderService.getAll(userId, page, size, status, rangeStart, rangeEnd);
+    }
+
+    @PatchMapping("/{orderId}/confirm")
+    public OrderFullDto confirmOrder(@PathVariable("orderId") UUID orderId,
+                                     @Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId) {
+        return orderService.confirmOrder(orderId, userId);
     }
 }

@@ -70,7 +70,7 @@ public class OrderServiceIT {
     void update_ShouldUpdate() {
         OrderUpdateDto dto = new OrderUpdateDto(name, UUID.fromString("08acd0a9-b1f8-40ab-a69a-efec2ab7fda6"));
 
-        orderService.update(dto, orderId);
+        orderService.update(dto, orderId, userId);
 
         Order order = orderRepository.findAll().getFirst();
 

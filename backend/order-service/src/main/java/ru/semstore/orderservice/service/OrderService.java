@@ -28,9 +28,10 @@ public interface OrderService {
      *
      * @param updateDto данные для обновления заказа
      * @param orderId   идентификатор заказа
+     * @param userId   идентификатор пользователя
      * @return обновлённый заказ
      */
-    OrderShortDto update(OrderUpdateDto updateDto, UUID orderId);
+    OrderShortDto update(OrderUpdateDto updateDto, UUID orderId, UUID userId);
 
 
     /**
@@ -63,4 +64,6 @@ public interface OrderService {
      */
     PageResponse<OrderShortDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
                                        LocalDateTime rangeEnd);
+
+    OrderFullDto confirmOrder(UUID orderId, UUID userId);
 }
