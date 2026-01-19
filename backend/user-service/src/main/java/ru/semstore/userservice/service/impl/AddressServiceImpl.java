@@ -8,6 +8,7 @@ import ru.semstore.userservice.dto.address.AddressCreateDto;
 import ru.semstore.userservice.dto.address.AddressDto;
 import ru.semstore.userservice.dto.address.AddressUpdateDto;
 import ru.semstore.userservice.exception.ConflictException;
+import ru.semstore.userservice.exception.ErrorCode;
 import ru.semstore.userservice.exception.NotFoundException;
 import ru.semstore.userservice.mapper.AddressMapper;
 import ru.semstore.userservice.model.Address;
@@ -50,7 +51,7 @@ public class AddressServiceImpl implements AddressService {
         User user = findUserByIdOrThrow(userId);
         List<Address> userAddresses = addressRepository.findAllByUserId(user.getId());
         if (userAddresses.size() >= MAX_USER_ADDRESSES_COUNT) {
-            throw new ConflictException("User can have only 10 addresses");
+            throw new ConflictException("User can have only 10 addresses", ErrorCode.ADDRESS_COUNT_LIMIT);
         }
         Address address = addressMapper.toEntity(dto);
         address.setUser(user);
@@ -89,7 +90,7 @@ public class AddressServiceImpl implements AddressService {
     public AddressDto update(AddressUpdateDto dto, UUID addressId, UUID currentUserId) {
         Address address = findAddressByIdOrThrow(addressId);
         if (!address.getUser().getId().equals(currentUserId)) {
-            throw new ConflictException("Only owner can change their addresses");
+            throw new ConflictException("Only owner can change their addresses", ErrorCode.ADDRESS_OWNER_CONFLICT);
         }
         addressMapper.updateFromDto(dto, address);
         addressRepository.save(address);
@@ -124,7 +125,7 @@ public class AddressServiceImpl implements AddressService {
     public void delete(UUID addressId, UUID currentUserId) {
         Address address = findAddressByIdOrThrow(addressId);
         if (!address.getUser().getId().equals(currentUserId)) {
-            throw new ConflictException("Only owner can delete their addresses");
+            throw new ConflictException("Only owner can delete their addresses", ErrorCode.ADDRESS_OWNER_CONFLICT);
         }
         addressRepository.deleteById(addressId);
         log.debug("Deleted address with id={}", addressId);
@@ -133,14 +134,14 @@ public class AddressServiceImpl implements AddressService {
     private User findUserByIdOrThrow(UUID id) {
         return userRepository.findById(id).orElseThrow(() -> {
             log.warn("User with id={} not found", id);
-            return new NotFoundException("User not found");
+            return new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND);
         });
     }
 
     private Address findAddressByIdOrThrow(UUID id) {
         return addressRepository.findById(id).orElseThrow(() -> {
             log.warn("Address with id={} not found", id);
-            return new NotFoundException("Address not found");
+            return new NotFoundException("Address not found", ErrorCode.ADDRESS_NOT_FOUND);
         });
     }
 }

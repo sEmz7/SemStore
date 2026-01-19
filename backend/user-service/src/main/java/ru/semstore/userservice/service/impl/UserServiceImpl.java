@@ -12,6 +12,7 @@ import ru.semstore.userservice.dto.user.UserCredentialsDto;
 import ru.semstore.userservice.dto.user.UserDto;
 import ru.semstore.userservice.exception.AuthException;
 import ru.semstore.userservice.exception.ConflictException;
+import ru.semstore.userservice.exception.ErrorCode;
 import ru.semstore.userservice.exception.NotFoundException;
 import ru.semstore.userservice.mapper.UserMapper;
 import ru.semstore.userservice.model.User;
@@ -49,7 +50,8 @@ public class UserServiceImpl implements UserService {
     public UserDto create(UserCreateDto dto) {
         if (userRepository.existsByEmail(dto.email())) {
             log.warn("Email={} already exists", dto.email());
-            throw new ConflictException("User with email=" + dto.email() + " already exists.");
+            throw new ConflictException("User with email=" + dto.email() + " already exists.",
+                    ErrorCode.USER_ALREADY_EXISTS);
         }
         User user = userMapper.toEntity(dto, passwordEncoder);
         user = userRepository.save(user);
@@ -74,9 +76,9 @@ public class UserServiceImpl implements UserService {
             if (passwordEncoder.matches(dto.password(), user.getPassword())) {
                 return jwtService.generateAuthToken(user);
             }
-            throw new AuthException("Invalid password");
+            throw new AuthException("Invalid password", ErrorCode.INVALID_PASSWORD);
         }
-        throw new NotFoundException("User with email=" + dto.email() + " not found");
+        throw new NotFoundException("User with email=" + dto.email() + " not found", ErrorCode.USER_NOT_FOUND);
     }
 
     /**
@@ -92,10 +94,10 @@ public class UserServiceImpl implements UserService {
     public JwtAuthDto refreshToken(String refreshToken) {
         if (refreshToken != null && jwtService.validateJwtToken(refreshToken)) {
             User user = userRepository.findByEmail(jwtService.getEmailFromToken(refreshToken))
-                    .orElseThrow(() -> new NotFoundException("User with not found"));
+                    .orElseThrow(() -> new NotFoundException("User with not found", ErrorCode.USER_NOT_FOUND));
             return jwtService.refreshBaseToken(user, refreshToken);
         }
-        throw new AuthException("Invalid refresh token");
+        throw new AuthException("Invalid refresh token", ErrorCode.INVALID_REFRESH_TOKEN);
     }
 
     /**
@@ -109,7 +111,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto getById(UUID userId) {
         return userMapper.toDto(userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found")));
+                .orElseThrow(() -> new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND)));
     }
 
     /**
@@ -125,13 +127,13 @@ public class UserServiceImpl implements UserService {
     public void changePassword(UUID userId, ChangePasswordDto dto) {
         User user = userRepository.findById(userId).orElseThrow(() -> {
             log.warn("User with id={} not found", userId);
-            return new NotFoundException("User not found");
+            return new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND);
         });
         if (!passwordEncoder.matches(dto.oldPassword(), user.getPassword())) {
-            throw new ConflictException("Old password is not correct");
+            throw new ConflictException("Old password is not correct", ErrorCode.INVALID_PASSWORD);
         }
         if (passwordEncoder.matches(dto.newPassword(), user.getPassword())) {
-            throw new ConflictException("New password must be different from the old one");
+            throw new ConflictException("New password must be different from the old one", ErrorCode.SAME_PASSWORD);
         }
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
         log.debug("User with id={} changed password", userId);
@@ -149,17 +151,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto validateToken(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new AuthException("Invalid token");
+            throw new AuthException("Invalid token", ErrorCode.INVALID_TOKEN);
         }
         String token = authHeader.substring(7).trim();
         boolean validated = jwtService.validateJwtToken(token);
         if (!validated) {
-            throw new AuthException("Invalid token");
+            throw new AuthException("Invalid token", ErrorCode.INVALID_TOKEN);
         }
         String email = jwtService.getEmailFromToken(token);
         User user = userRepository.findByEmail(email).orElseThrow(() -> {
             log.warn("User not found by email={}", email);
-            return new NotFoundException("User not found. userEmail" + email);
+            return new NotFoundException("User not found. userEmail" + email, ErrorCode.USER_NOT_FOUND);
         });
         return userMapper.toDto(user);
     }

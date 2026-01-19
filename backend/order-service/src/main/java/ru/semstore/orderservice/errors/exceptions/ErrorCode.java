@@ -1,0 +1,13 @@
+package ru.semstore.orderservice.errors.exceptions;
+
+public enum ErrorCode {
+    ORDER_NOT_FOUND,
+    ITEM_NOT_FOUND,
+    ORDER_STATUS_NOT_MODIFIABLE,
+    ORDER_OWNER_CONFLICT,
+    ITEM_NOT_IN_ORDER,
+    METHOD_ARGUMENT_NOT_VALID,
+    MISSING_REQUEST_HEADER,
+    METHOD_ARGUMENT_TYPE_MISMATCH,
+    HTTP_MESSAGE_NOT_READABLE
+}

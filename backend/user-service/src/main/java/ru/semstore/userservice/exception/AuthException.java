@@ -1,7 +1,7 @@
 package ru.semstore.userservice.exception;
 
-public class AuthException extends RuntimeException {
-    public AuthException(String message) {
-        super(message);
+public class AuthException extends AppException {
+    public AuthException(String message, ErrorCode code) {
+        super(message, code);
     }
 }
