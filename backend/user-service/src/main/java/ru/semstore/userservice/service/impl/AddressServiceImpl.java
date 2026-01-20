@@ -49,7 +49,7 @@ public class AddressServiceImpl implements AddressService {
     @Override
     public AddressDto create(AddressCreateDto dto, UUID userId) {
         User user = findUserByIdOrThrow(userId);
-        List<Address> userAddresses = addressRepository.findAllByUserId(user.getId());
+        List<Address> userAddresses = addressRepository.findAllByUserIdAndDeleted(user.getId(), false);
         if (userAddresses.size() >= MAX_USER_ADDRESSES_COUNT) {
             throw new ConflictException("User can have only 10 addresses", ErrorCode.ADDRESS_COUNT_LIMIT);
         }
@@ -71,7 +71,7 @@ public class AddressServiceImpl implements AddressService {
     @Override
     public List<AddressDto> getUserAddresses(UUID userId) {
         User user = findUserByIdOrThrow(userId);
-        List<Address> userAddresses = addressRepository.findAllByUserId(user.getId());
+        List<Address> userAddresses = addressRepository.findAllByUserIdAndDeleted(user.getId(), false);
         log.debug("Found user addresses. userId={}", user.getId());
         return addressMapper.listToDto(userAddresses);
     }
@@ -84,13 +84,16 @@ public class AddressServiceImpl implements AddressService {
      * @param currentUserId  идентификатор текущего пользователя
      * @return обновлённый адрес
      * @throws NotFoundException если адрес не найден
-     * @throws ConflictException если пользователь не является владельцем адреса
+     * @throws ConflictException если пользователь не является владельцем адреса или адрес удален
      */
     @Override
     public AddressDto update(AddressUpdateDto dto, UUID addressId, UUID currentUserId) {
         Address address = findAddressByIdOrThrow(addressId);
         if (!address.getUser().getId().equals(currentUserId)) {
             throw new ConflictException("Only owner can change their addresses", ErrorCode.ADDRESS_OWNER_CONFLICT);
+        }
+        if (address.isDeleted()) {
+            throw new ConflictException("Address deleted.", ErrorCode.ADDRESS_DELETED);
         }
         addressMapper.updateFromDto(dto, address);
         addressRepository.save(address);
@@ -104,11 +107,15 @@ public class AddressServiceImpl implements AddressService {
      * @param addressId идентификатор адреса
      * @return адрес
      * @throws NotFoundException если адрес не найден
+     * @throws ConflictException если адрес удален
      */
     @Transactional(readOnly = true)
     @Override
     public AddressDto getById(UUID addressId) {
         Address address = findAddressByIdOrThrow(addressId);
+        if (address.isDeleted()) {
+            throw new ConflictException("Address deleted.", ErrorCode.ADDRESS_DELETED);
+        }
         log.debug("Found address with id={}", addressId);
         return addressMapper.toDto(address);
     }
@@ -127,8 +134,8 @@ public class AddressServiceImpl implements AddressService {
         if (!address.getUser().getId().equals(currentUserId)) {
             throw new ConflictException("Only owner can delete their addresses", ErrorCode.ADDRESS_OWNER_CONFLICT);
         }
-        addressRepository.deleteById(addressId);
-        log.debug("Deleted address with id={}", addressId);
+        address.setDeleted(true);
+        log.debug("Address status changed to deleted. addressId={}", addressId);
     }
 
     private User findUserByIdOrThrow(UUID id) {

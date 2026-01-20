@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface AddressRepository extends JpaRepository<Address, UUID> {
 
-    List<Address> findAllByUserId(UUID id);
+    List<Address> findAllByUserIdAndDeleted(UUID id, boolean deleted);
 }
