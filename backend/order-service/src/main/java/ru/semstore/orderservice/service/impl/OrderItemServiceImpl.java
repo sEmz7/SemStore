@@ -38,7 +38,8 @@ public class OrderItemServiceImpl implements OrderItemService {
      * Набор статусов заказа, при которых изменение его содержимого запрещено.
      */
     private static final EnumSet<OrderStatus> NOT_MODIFIABLE_STATUSES =
-            EnumSet.of(OrderStatus.PAID, OrderStatus.ORDERED, OrderStatus.CANCELED);
+            EnumSet.of(OrderStatus.PAID, OrderStatus.IN_CHECK, OrderStatus.CANCELED, OrderStatus.AWAITING_PAYMENT,
+                    OrderStatus.DELIVERING, OrderStatus.COMPLETED);
 
     /**
      * Добавляет новый товар в заказ пользователя.

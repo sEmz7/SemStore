@@ -24,6 +24,7 @@ import ru.semstore.orderservice.repository.OrderRepository;
 import ru.semstore.orderservice.service.OrderService;
 
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.UUID;
 
 /**
@@ -37,6 +38,13 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final KafkaProducer kafka;
+
+    /**
+     * Набор статусов заказа, при которых изменение его содержимого запрещено.
+     */
+    private static final EnumSet<OrderStatus> NOT_MODIFIABLE_STATUSES =
+            EnumSet.of(OrderStatus.PAID, OrderStatus.IN_CHECK, OrderStatus.AWAITING_PAYMENT,
+                    OrderStatus.DELIVERING, OrderStatus.COMPLETED);
 
     /**
      * Создаёт новый заказ пользователя.
@@ -64,25 +72,23 @@ public class OrderServiceImpl implements OrderService {
     /**
      * Обновляет заказ.
      *
-     * <p>Обновление запрещено для заказов в статусах
-     * {@link OrderStatus#PAID} и {@link OrderStatus#ORDERED}.
+     * <p>Обновление разрешено для заказов в статусах
+     * {@link OrderStatus#CREATED}, {@link OrderStatus#PENDING} и {@link OrderStatus#CANCELED}.
      * После обновления заказ переводится в статус {@link OrderStatus#PENDING}
      * и отправляется на повторную проверку.</p>
      *
      * @param updateDto данные для обновления заказа
      * @param orderId   идентификатор заказа
+     * @param userId идентификатор пользователя
      * @return обновлённый заказ
      * @throws OrderNotFoundException если заказ не найден
-     * @throws ConflictException      если обновление запрещено по статусу
+     * @throws ConflictException      в случае конфликта
      */
     @Override
-    public OrderShortDto update(OrderUpdateDto updateDto, UUID orderId) {
+    public OrderShortDto update(OrderUpdateDto updateDto, UUID orderId, UUID userId) {
         Order order = findOrderByIdOrThrow(orderId);
-        if (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.ORDERED) {
-            log.warn("Order status is {}, address cannot be changed. orderId={}", order.getStatus(), orderId);
-            throw new ConflictException("Order status is " + order.getStatus() +
-                    ", address cannot be changed. orderId=" + orderId, ErrorCode.ORDER_STATUS_NOT_MODIFIABLE);
-        }
+        validateOrderOwnerOrThrow(order, userId);
+        validateOrderStatusModifiable(order);
         orderMapper.update(order, updateDto);
         order.setStatus(OrderStatus.PENDING);
         orderRepository.save(order);
@@ -95,8 +101,8 @@ public class OrderServiceImpl implements OrderService {
     /**
      * Удаляет заказ пользователя.
      *
-     * <p>Удаление доступно только владельцу заказа и запрещено
-     * для статусов {@link OrderStatus#PAID} и {@link OrderStatus#ORDERED}.</p>
+     * <p>Удаление доступно только владельцу заказа и разрешено
+     * для статусов {@link OrderStatus#CREATED}, {@link OrderStatus#PENDING} и {@link OrderStatus#CANCELED}</p>
      *
      * @param orderId идентификатор заказа
      * @param userId  идентификатор владельца заказа
@@ -106,16 +112,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void delete(UUID orderId, UUID userId) {
         Order order = findOrderByIdOrThrow(orderId);
-        if (!order.getUserId().equals(userId)) {
-            log.warn("Only order owner can delete order. orderId={}", orderId);
-            throw new ConflictException("Only order owner can delete order. orderId=" + orderId,
-                    ErrorCode.ORDER_OWNER_CONFLICT);
-        }
-        if (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.ORDERED) {
-            log.warn("Order cannot be deleted. orderId={}", orderId);
-            throw new ConflictException("Order cannot be deleted. orderId=" + orderId,
-                    ErrorCode.ORDER_STATUS_NOT_MODIFIABLE);
-        }
+        validateOrderOwnerOrThrow(order, userId);
+        validateOrderStatusModifiable(order);
         orderRepository.deleteById(orderId);
         log.debug("Order deleted. orderId={}", orderId);
     }
@@ -129,20 +127,13 @@ public class OrderServiceImpl implements OrderService {
      * @param userId  идентификатор владельца заказа
      * @return заказ
      * @throws OrderNotFoundException если заказ не найден
-     * @throws ConflictException      если пользователь не владелец заказа
+     * @throws ConflictException      в случае конфликта
      */
     @Transactional(readOnly = true)
     @Override
     public OrderFullDto getById(UUID orderId, UUID userId) {
-        Order order = orderRepository.findOrderByIdWithItems(orderId).orElseThrow(() -> {
-            log.warn("Order not found. orderId={}, userId={}", orderId, userId);
-            return new OrderNotFoundException("Order not found", ErrorCode.ORDER_NOT_FOUND);
-        });
-        if (!userId.equals(order.getUserId())) {
-            log.warn("Only owner can get order info. orderId={}", orderId);
-            throw new ConflictException("Only owner can get order info. orderId=" + orderId,
-                    ErrorCode.ORDER_OWNER_CONFLICT);
-        }
+        Order order = findOrderWithItemsByIdOrThrow(orderId);
+        validateOrderOwnerOrThrow(order, userId);
         return orderMapper.toFullDto(order);
     }
 
@@ -170,6 +161,36 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
+     * Подтверждает заказ, переводя его статус в IN_CHECK.
+     *
+     * <p>Этот метод доступен только для заказов в статусе {@link OrderStatus#CREATED}.
+     * Метод также проверяет, что заказ содержит хотя бы один товар.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @param userId идентификатор пользователя
+     * @return обновленный заказ в виде {@link OrderFullDto} с новым статусом
+     * @throws OrderNotFoundException если заказ не найден по указанному идентификатору
+     * @throws ConflictException если заказ не может быть подтвержден из-за неправильного статуса или отсутствия товаров
+     */
+    @Override
+    public OrderFullDto confirmOrder(UUID orderId, UUID userId) {
+        Order order = findOrderWithItemsByIdOrThrow(orderId);
+        validateOrderOwnerOrThrow(order, userId);
+        if (order.getStatus() != OrderStatus.CREATED) {
+            log.warn("The order must be in the CREATED status to be confirmed");
+            throw new ConflictException("The order must be in the CREATED status to be confirmed",
+                    ErrorCode.ORDER_STATUS_NOT_CREATED);
+        }
+        if (order.getItems().isEmpty()) {
+            log.warn("The order must contain at least 1 item");
+            throw new ConflictException("The order must contain at least 1 item", ErrorCode.ORDER_IS_EMPTY);
+        }
+        order.setStatus(OrderStatus.IN_CHECK);
+        orderRepository.save(order);
+        return orderMapper.toFullDto(order);
+    }
+
+    /**
      * Возвращает заказ по идентификатору или выбрасывает исключение.
      *
      * @param orderId идентификатор заказа
@@ -181,5 +202,48 @@ public class OrderServiceImpl implements OrderService {
             log.warn("Order not found. orderId={}", orderId);
             return new OrderNotFoundException("Order not found. orderId=" + orderId, ErrorCode.ORDER_NOT_FOUND);
         });
+    }
+
+    /**
+     * Возвращает заказ с товарами в нем по идентификатору или выбрасывает исключение.
+     *
+     * @param orderId идентификатор заказа
+     * @return заказ
+     * @throws OrderNotFoundException если заказ не найден
+     */
+    private Order findOrderWithItemsByIdOrThrow(UUID orderId) {
+        return orderRepository.findOrderByIdWithItems(orderId).orElseThrow(() -> {
+            log.warn("Order with items not found. orderId={}", orderId);
+            return new OrderNotFoundException("Order not found. orderId=" + orderId, ErrorCode.ORDER_NOT_FOUND);
+        });
+    }
+
+    /**
+     * Проверяет, что владелец заказа текущий пользователь
+     *
+     * @param order заказ
+     * @param userId идентификатор пользователя
+     * @throws ConflictException если пользователь не является владельцем заказа
+     */
+    private void validateOrderOwnerOrThrow(Order order, UUID userId) {
+        if (!order.getUserId().equals(userId)) {
+            log.warn("Only owner can get order. orderId={}", order.getId());
+            throw new ConflictException("Only owner can get order. orderId=" + order.getId(),
+                    ErrorCode.ORDER_OWNER_CONFLICT);
+        }
+    }
+
+    /**
+     * Проверяет, что статус заказа позволяет редактировать заказ
+     *
+     * @param order заказ
+     * @throws ConflictException если статус заказа не позволяет его редактирование
+     */
+    private void validateOrderStatusModifiable(Order order) {
+        if (NOT_MODIFIABLE_STATUSES.contains(order.getStatus())) {
+            log.warn("Order cannot be changed. orderId={}", order.getId());
+            throw new ConflictException("Order cannot be changed. orderId=" + order.getId(),
+                    ErrorCode.ORDER_STATUS_NOT_MODIFIABLE);
+        }
     }
 }
