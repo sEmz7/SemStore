@@ -161,13 +161,16 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * Переводит статус заказа в IN_CHECK для проверки товаров администратором.
+     * Подтверждает заказ, переводя его статус в IN_CHECK.
+     *
+     * <p>Этот метод доступен только для заказов в статусе {@link OrderStatus#CREATED}.
+     * Метод также проверяет, что заказ содержит хотя бы один товар.</p>
      *
      * @param orderId идентификатор заказа
      * @param userId идентификатор пользователя
-     * @return заказ
-     * @throws OrderNotFoundException если заказ не найден
-     * @throws ConflictException в случае конфликта
+     * @return обновленный заказ в виде {@link OrderFullDto} с новым статусом
+     * @throws OrderNotFoundException если заказ не найден по указанному идентификатору
+     * @throws ConflictException если заказ не может быть подтвержден из-за неправильного статуса или отсутствия товаров
      */
     @Override
     public OrderFullDto confirmOrder(UUID orderId, UUID userId) {
@@ -201,6 +204,13 @@ public class OrderServiceImpl implements OrderService {
         });
     }
 
+    /**
+     * Возвращает заказ с товарами в нем по идентификатору или выбрасывает исключение.
+     *
+     * @param orderId идентификатор заказа
+     * @return заказ
+     * @throws OrderNotFoundException если заказ не найден
+     */
     private Order findOrderWithItemsByIdOrThrow(UUID orderId) {
         return orderRepository.findOrderByIdWithItems(orderId).orElseThrow(() -> {
             log.warn("Order with items not found. orderId={}", orderId);
@@ -208,6 +218,13 @@ public class OrderServiceImpl implements OrderService {
         });
     }
 
+    /**
+     * Проверяет, что владелец заказа текущий пользователь
+     *
+     * @param order заказ
+     * @param userId идентификатор пользователя
+     * @throws ConflictException если пользователь не является владельцем заказа
+     */
     private void validateOrderOwnerOrThrow(Order order, UUID userId) {
         if (!order.getUserId().equals(userId)) {
             log.warn("Only owner can get order. orderId={}", order.getId());
@@ -216,6 +233,12 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+    /**
+     * Проверяет, что статус заказа позволяет редактировать заказ
+     *
+     * @param order заказ
+     * @throws ConflictException если статус заказа не позволяет его редактирование
+     */
     private void validateOrderStatusModifiable(Order order) {
         if (NOT_MODIFIABLE_STATUSES.contains(order.getStatus())) {
             log.warn("Order cannot be changed. orderId={}", order.getId());

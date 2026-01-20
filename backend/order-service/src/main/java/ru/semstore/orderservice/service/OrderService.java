@@ -55,7 +55,7 @@ public interface OrderService {
      * Возвращает постраничную выборку заказов пользователя с фильтрами.
      *
      * @param userId     идентификатор пользователя (владельца)
-     * @param page       номер страницы (0...N)
+     * @param page       номер страницы (0... N)
      * @param size       размер страницы
      * @param status     фильтр по статусу (может быть {@code null})
      * @param rangeStart начало диапазона дат создания (может быть {@code null})
@@ -65,5 +65,12 @@ public interface OrderService {
     PageResponse<OrderShortDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
                                        LocalDateTime rangeEnd);
 
+    /**
+     * Переводит статус заказа в IN_CHECK для проверки товаров администратором.
+     *
+     * @param orderId идентификатор заказа
+     * @param userId идентификатор пользователя
+     * @return заказ в виде {@link OrderFullDto} с обновленным статусом
+     */
     OrderFullDto confirmOrder(UUID orderId, UUID userId);
 }

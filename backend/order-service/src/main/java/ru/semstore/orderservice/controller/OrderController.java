@@ -36,9 +36,9 @@ import java.util.UUID;
  *
  * <p>Контроллер предоставляет API для:
  * <ul>
- *     <li>создания заказов</li>
- *     <li>обновления и удаления заказов</li>
- *     <li>получения одного заказа или списка заказов с фильтрацией</li>
+ *     <li>Создания заказов</li>
+ *     <li>Обновления и удаления заказов</li>
+ *     <li>Получения одного заказа или списка заказов с фильтрацией</li>
  * </ul>
  *
  * <p>Идентификатор пользователя передаётся через HTTP-заголовок {@code X-User-Id},
@@ -275,7 +275,39 @@ public class OrderController {
         return orderService.getAll(userId, page, size, status, rangeStart, rangeEnd);
     }
 
+    /**
+     * Подтверждает заказ пользователем, изменяя его статус на {@link OrderStatus#IN_CHECK}.
+     *
+     * <p>Метод доступен только для заказов, находящихся в статусе {@link OrderStatus#CREATED}.
+     * После подтверждения заказ передается в статус проверки (IN_CHECK).</p>
+     *
+     * @param orderId идентификатор заказа
+     * @param userId идентификатор пользователя
+     * @return заказ в виде {@link OrderFullDto} с обновленным статусом
+     */
     @PatchMapping("/{orderId}/confirm")
+    @Operation(
+            summary = "Подтверждение заказа пользователем",
+            description = "Изменяет статус заказа на IN_CHECK для проверки товаров администратором. " +
+                    "Метод доступен только для заказов в статусе CREATED и если заказ содержит хотя бы один товар.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "(OK) Заказ подтверждён",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = OrderFullDto.class))),
+                    @ApiResponse(responseCode = "401", description = "(UNAUTHORIZED) Невалидный JWT токен",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "404", description = "(NOT FOUND) Заказ не найден",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "(CONFLICT) Заказ не может быть подтверждён",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
     public OrderFullDto confirmOrder(@PathVariable("orderId") UUID orderId,
                                      @Parameter(hidden = true) @RequestHeader(USER_ID_HEADER) UUID userId) {
         return orderService.confirmOrder(orderId, userId);
