@@ -19,12 +19,12 @@ import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
 import ru.semstore.orderservice.kafka.producer.KafkaProducer;
 import ru.semstore.orderservice.mapper.OrderMapper;
 import ru.semstore.orderservice.model.Order;
+import ru.semstore.orderservice.model.OrderItem;
 import ru.semstore.orderservice.model.OrderStatus;
 import ru.semstore.orderservice.repository.OrderRepository;
 import ru.semstore.orderservice.service.impl.OrderServiceImpl;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -67,7 +67,8 @@ public class OrderServiceTest {
         order.setAddressId(addressId);
         order.setStatus(OrderStatus.PENDING);
         order.setCreatedDate(LocalDateTime.now());
-        order.setItems(new ArrayList<>());
+        order.setItems(List.of(new OrderItem(UUID.randomUUID(), order, "link",
+                        "size", "configuration", null)));
 
         orderDto = new OrderShortDto(orderId, name, userId, addressId, OrderStatus.PENDING, null);
         orderFullDto = new OrderFullDto(orderId, name, userId, addressId, OrderStatus.PENDING, null, null);
@@ -218,5 +219,24 @@ public class OrderServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(orderId, result.getFirst().getId());
+    }
+
+    @Test
+    @DisplayName("Подтверждение заказа пользователем")
+    void confirmOrder_ShouldConfirm() {
+        order.setStatus(OrderStatus.CREATED);
+        when(orderRepository.findOrderByIdWithItems(orderId)).thenReturn(Optional.of(order));
+
+        OrderFullDto orderFullDto = new OrderFullDto(orderId, name, userId, addressId, OrderStatus.IN_CHECK,
+                null, null);
+        when(orderMapper.toFullDto(any())).thenReturn(orderFullDto);
+
+        OrderFullDto dto = orderService.confirmOrder(orderId, userId);
+
+        assertNotNull(dto);
+
+        verify(orderRepository, times(1)).findOrderByIdWithItems(orderId);
+        verify(orderMapper, times(1)).toFullDto(order);
+        assertEquals(OrderStatus.IN_CHECK, dto.status());
     }
 }

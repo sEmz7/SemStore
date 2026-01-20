@@ -112,4 +112,14 @@ public class OrderServiceIT {
         assertEquals(10, orderDtos.size());
         assertTrue(orderDtos.stream().allMatch(orderDto -> userId.equals(orderDto.getUserId())));
     }
+
+    @Test
+    @DisplayName("Подтверждение заказа пользователем")
+    @Sql({"/data/cleanUp.sql", "/data/insertOrderWithItem.sql"})
+    void confirmOrder_ShouldConfirm() {
+        OrderFullDto dto = orderService.confirmOrder(orderId, userId);
+
+        assertNotNull(dto);
+        assertEquals(OrderStatus.IN_CHECK, dto.status());
+    }
 }
