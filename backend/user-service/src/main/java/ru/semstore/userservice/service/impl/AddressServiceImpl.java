@@ -64,7 +64,7 @@ public class AddressServiceImpl implements AddressService {
      * Возвращает список адресов пользователя.
      *
      * @param userId идентификатор пользователя
-     * @return список адресов
+     * @return список неудаленных адресов
      * @throws NotFoundException если пользователь не найден
      */
     @Transactional(readOnly = true)
@@ -121,7 +121,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
     /**
-     * Удаляет адрес пользователя.
+     * Изменяет статус адреса на удален.
      *
      * @param addressId     идентификатор адреса
      * @param currentUserId идентификатор текущего пользователя

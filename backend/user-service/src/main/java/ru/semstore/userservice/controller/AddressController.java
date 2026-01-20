@@ -168,7 +168,7 @@ public class AddressController {
     }
 
     /**
-     * Удаляет адрес пользователя по идентификатору.
+     * Изменят статус адреса на удален.
      *
      * @param userDetails данные текущего пользователя из security context
      * @param addressId идентификатор адреса
