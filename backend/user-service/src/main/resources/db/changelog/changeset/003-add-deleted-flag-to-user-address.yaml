@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-deleted-flag-to-user-address
+      author: semyon
+      changes:
+        - addColumn:
+            tableName: user_address
+            columns:
+              - column:
+                  name: deleted
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
