@@ -16,6 +16,7 @@ import ru.semstore.userservice.exception.ErrorCode;
 import ru.semstore.userservice.exception.NotFoundException;
 import ru.semstore.userservice.mapper.UserMapper;
 import ru.semstore.userservice.model.User;
+import ru.semstore.userservice.model.UserRole;
 import ru.semstore.userservice.repository.UserRepository;
 import ru.semstore.userservice.security.jwt.JwtService;
 import ru.semstore.userservice.service.UserService;
@@ -54,6 +55,7 @@ public class UserServiceImpl implements UserService {
                     ErrorCode.USER_ALREADY_EXISTS);
         }
         User user = userMapper.toEntity(dto, passwordEncoder);
+        user.setRole(UserRole.ROLE_USER);
         user = userRepository.save(user);
         log.debug("Saved user={}", user);
         return userMapper.toDto(user);

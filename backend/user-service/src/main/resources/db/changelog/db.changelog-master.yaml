@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/changeset/002-create-user-address-table.yaml
   - include:
       file: db/changelog/changeset/003-add-deleted-flag-to-user-address.yaml
+  - include:
+      file: db/changelog/changeset/004-add-user-roles.yaml
