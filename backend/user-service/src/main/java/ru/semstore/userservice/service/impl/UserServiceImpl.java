@@ -2,10 +2,15 @@ package ru.semstore.userservice.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
+import ru.semstore.userservice.dto.page.PageResponse;
 import ru.semstore.userservice.dto.user.*;
 import ru.semstore.userservice.exception.AuthException;
 import ru.semstore.userservice.exception.ConflictException;
@@ -167,6 +172,14 @@ public class UserServiceImpl implements UserService {
     public UserDtoWithRole getUserByIdWithRole(UUID userId) {
         User user = findUserByIdOrThrow(userId);
         return userMapper.toDtoWithRole(user);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public PageResponse<UserDtoWithRole> getAllUsersWithRole(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("email"));
+        Page<User> usersPage = userRepository.findAll(pageable);
+        return PageResponse.from(usersPage.map(userMapper::toDtoWithRole));
     }
 
     private User findUserByIdOrThrow(UUID userId) {

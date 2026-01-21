@@ -1,6 +1,7 @@
 package ru.semstore.userservice.service;
 
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
+import ru.semstore.userservice.dto.page.PageResponse;
 import ru.semstore.userservice.dto.user.*;
 
 import java.util.UUID;
@@ -59,4 +60,6 @@ public interface UserService {
     UserDto validateToken(String authHeader);
 
     UserDtoWithRole getUserByIdWithRole(UUID userId);
+
+    PageResponse<UserDtoWithRole> getAllUsersWithRole(int page, int size);
 }
