@@ -39,4 +39,9 @@ public class AdminOrderController {
     public OrderFullDto getOrderById(@PathVariable("orderId") UUID orderId) {
         return orderService.getOrderByIdForAdmin(orderId);
     }
+
+    @PatchMapping("/{orderId}")
+    public OrderFullDto submitOrderForPayment(@PathVariable("orderId") UUID orderId) {
+        return orderService.submitOrderForPayment(orderId);
+    }
 }

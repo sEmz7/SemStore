@@ -78,4 +78,6 @@ public interface OrderService {
                                                      LocalDateTime rangeStart, LocalDateTime rangeEnd);
 
     OrderFullDto getOrderByIdForAdmin(UUID orderId);
+
+    OrderFullDto submitOrderForPayment(UUID orderId);
 }

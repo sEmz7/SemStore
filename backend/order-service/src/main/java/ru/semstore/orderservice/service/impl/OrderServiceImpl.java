@@ -206,6 +206,22 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toFullDto(findOrderWithItemsByIdOrThrow(orderId));
     }
 
+    @Override
+    public OrderFullDto submitOrderForPayment(UUID orderId) {
+        Order order = findOrderWithItemsByIdOrThrow(orderId);
+        boolean allHavePrice = order.getItems().stream().allMatch(item -> item.getPrice() != null);
+
+        if (!allHavePrice) {
+            log.debug("Some items have no price. orderId={}", orderId);
+            throw new ConflictException("Some items have no price", ErrorCode.ITEMS_HAVE_NOT_PRICE);
+        }
+
+        order.setStatus(OrderStatus.AWAITING_PAYMENT);
+        orderRepository.save(order);
+        log.debug("Order status changed to={}. orderId={}", order.getStatus(), order.getId());
+        return orderMapper.toFullDto(order);
+    }
+
     /**
      * Возвращает заказ по идентификатору или выбрасывает исключение.
      *
