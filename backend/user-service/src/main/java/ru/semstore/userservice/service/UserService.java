@@ -62,4 +62,6 @@ public interface UserService {
     UserDtoWithRole getUserByIdWithRole(UUID userId);
 
     PageResponse<UserDtoWithRole> getAllUsersWithRole(int page, int size);
+
+    UserDtoWithRole updateUserRole(UUID userId, UserRoleUpdateDto dto);
 }

@@ -1,5 +1,6 @@
 package ru.semstore.userservice.controller;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +9,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.semstore.userservice.dto.page.PageResponse;
 import ru.semstore.userservice.dto.user.UserDtoWithRole;
+import ru.semstore.userservice.dto.user.UserRoleUpdateDto;
 import ru.semstore.userservice.service.UserService;
 
 import java.util.UUID;
@@ -30,5 +32,11 @@ public class AdminUserController {
             @PositiveOrZero @RequestParam(name ="page", defaultValue = "0") int page,
             @Positive @RequestParam(name = "size", defaultValue = "10") int size) {
         return userService.getAllUsersWithRole(page, size);
+    }
+
+    @PatchMapping("/{userId}")
+    public UserDtoWithRole updateUserRole(@PathVariable("userId") UUID userId,
+                                             @Valid @RequestBody UserRoleUpdateDto dto) {
+        return userService.updateUserRole(userId, dto);
     }
 }

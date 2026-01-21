@@ -182,6 +182,15 @@ public class UserServiceImpl implements UserService {
         return PageResponse.from(usersPage.map(userMapper::toDtoWithRole));
     }
 
+    @Override
+    public UserDtoWithRole updateUserRole(UUID userId, UserRoleUpdateDto dto) {
+       User user = findUserByIdOrThrow(userId);
+       user.setRole(dto.newRole());
+       userRepository.save(user);
+       log.debug("User role updated. userId={}", user.getId());
+       return userMapper.toDtoWithRole(user);
+    }
+
     private User findUserByIdOrThrow(UUID userId) {
         return userRepository.findById(userId).orElseThrow(() -> {
             log.warn("User with id={} not found", userId);
