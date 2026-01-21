@@ -6,10 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
-import ru.semstore.userservice.dto.user.ChangePasswordDto;
-import ru.semstore.userservice.dto.user.UserCreateDto;
-import ru.semstore.userservice.dto.user.UserCredentialsDto;
-import ru.semstore.userservice.dto.user.UserDto;
+import ru.semstore.userservice.dto.user.*;
 import ru.semstore.userservice.exception.AuthException;
 import ru.semstore.userservice.exception.ConflictException;
 import ru.semstore.userservice.exception.ErrorCode;
@@ -127,10 +124,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void changePassword(UUID userId, ChangePasswordDto dto) {
-        User user = userRepository.findById(userId).orElseThrow(() -> {
-            log.warn("User with id={} not found", userId);
-            return new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND);
-        });
+        User user = findUserByIdOrThrow(userId);
         if (!passwordEncoder.matches(dto.oldPassword(), user.getPassword())) {
             throw new ConflictException("Old password is not correct", ErrorCode.INVALID_PASSWORD);
         }
@@ -166,5 +160,19 @@ public class UserServiceImpl implements UserService {
             return new NotFoundException("User not found. userEmail" + email, ErrorCode.USER_NOT_FOUND);
         });
         return userMapper.toDto(user);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public UserDtoWithRole getUserByIdWithRole(UUID userId) {
+        User user = findUserByIdOrThrow(userId);
+        return userMapper.toDtoWithRole(user);
+    }
+
+    private User findUserByIdOrThrow(UUID userId) {
+        return userRepository.findById(userId).orElseThrow(() -> {
+            log.warn("User with id={} not found", userId);
+            return new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND);
+        });
     }
 }
