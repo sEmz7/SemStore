@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.semstore.orderservice.dto.orderItem.ItemPriceUpdateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemCreateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemUpdateDto;
@@ -152,6 +153,16 @@ public class OrderItemServiceImpl implements OrderItemService {
 
         itemRepository.save(item);
         log.debug("Item updated. userId={}, orderId={}, itemId={}", userId, orderId, itemId);
+        return itemMapper.toDto(item);
+    }
+
+    @Override
+    public OrderItemDto updateItemPrice(UUID orderId, UUID itemId, ItemPriceUpdateDto dto) {
+        OrderItem item = findItemByIdWithOrderOrThrow(itemId);
+        validateItemBelongsToOrder(item, orderId);
+        item.setPrice(dto.price());
+        itemRepository.save(item);
+        log.debug("Item price updated to={}. orderId-{}, itemId={}", dto.price(), orderId, itemId);
         return itemMapper.toDto(item);
     }
 
