@@ -1,4 +1,4 @@
-package ru.semstore.userservice.controller;
+package ru.semstore.userservice.controller.user;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,6 +16,7 @@ import ru.semstore.userservice.dto.jwt.JwtAuthDto;
 import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
 import ru.semstore.userservice.dto.user.UserDto;
+import ru.semstore.userservice.dto.user.UserDtoWithRole;
 import ru.semstore.userservice.exception.ErrorResponse;
 import ru.semstore.userservice.service.UserService;
 
@@ -143,7 +144,7 @@ public class AuthController {
      * @return данные пользователя, извлечённые из токена
      */
     @PostMapping("/validateToken")
-    public UserDto validateToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+    public UserDtoWithRole validateToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         return userService.validateToken(authHeader);
     }
 

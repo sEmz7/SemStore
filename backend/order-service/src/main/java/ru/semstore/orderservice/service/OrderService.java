@@ -73,4 +73,9 @@ public interface OrderService {
      * @return заказ в виде {@link OrderFullDto} с обновленным статусом
      */
     OrderFullDto confirmOrder(UUID orderId, UUID userId);
+
+    PageResponse<OrderShortDto> getAllOrdersForCheck(int page, int size, OrderStatus status,
+                                                     LocalDateTime rangeStart, LocalDateTime rangeEnd);
+
+    OrderFullDto getOrderByIdForAdmin(UUID orderId);
 }

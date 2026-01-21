@@ -1,4 +1,4 @@
-package ru.semstore.userservice.controller;
+package ru.semstore.userservice.controller.admin;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;

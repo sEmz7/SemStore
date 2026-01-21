@@ -29,7 +29,13 @@ spring:
           predicates:
             - Path=/orders/**
           filters:
-            - AuthFilter
+            - AuthFilter=false
+        - id: order-service-admin
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/admin/orders/**
+          filters:
+            AuthFilter=true
         - id: user-service-swagger-redirect
           uri: no://op
           predicates:

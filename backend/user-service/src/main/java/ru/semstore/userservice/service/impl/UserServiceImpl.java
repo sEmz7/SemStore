@@ -150,7 +150,7 @@ public class UserServiceImpl implements UserService {
      */
     @Transactional(readOnly = true)
     @Override
-    public UserDto validateToken(String authHeader) {
+    public UserDtoWithRole validateToken(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new AuthException("Invalid token", ErrorCode.INVALID_TOKEN);
         }
@@ -164,7 +164,7 @@ public class UserServiceImpl implements UserService {
             log.warn("User not found by email={}", email);
             return new NotFoundException("User not found. userEmail" + email, ErrorCode.USER_NOT_FOUND);
         });
-        return userMapper.toDto(user);
+        return userMapper.toDtoWithRole(user);
     }
 
     @Transactional(readOnly = true)

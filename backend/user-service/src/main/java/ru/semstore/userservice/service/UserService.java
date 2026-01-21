@@ -57,7 +57,7 @@ public interface UserService {
      * @param authHeader HTTP заголовок Authorization
      * @return пользователь
      */
-    UserDto validateToken(String authHeader);
+    UserDtoWithRole validateToken(String authHeader);
 
     UserDtoWithRole getUserByIdWithRole(UUID userId);
 

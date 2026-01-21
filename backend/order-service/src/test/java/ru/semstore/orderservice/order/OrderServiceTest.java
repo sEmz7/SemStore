@@ -206,7 +206,7 @@ public class OrderServiceTest {
     @Test
     @DisplayName("Получение всех заказов пользователя")
     void getAll_ShouldReturn() {
-        when(orderRepository.findAllBySort(
+        when(orderRepository.findAllBySortAndUserId(
                 any(Pageable.class), eq(userId), eq(OrderStatus.PENDING), isNull(), isNull()
         )).thenReturn(new PageImpl<>(List.of(order)));
 

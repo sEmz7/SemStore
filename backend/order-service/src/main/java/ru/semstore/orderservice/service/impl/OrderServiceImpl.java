@@ -156,7 +156,7 @@ public class OrderServiceImpl implements OrderService {
     public PageResponse<OrderShortDto> getAll(UUID userId, int page, int size, OrderStatus status, LocalDateTime rangeStart,
                                               LocalDateTime rangeEnd) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdDate").descending());
-        Page<Order> ordersPage = orderRepository.findAllBySort(pageable, userId, status, rangeStart, rangeEnd);
+        Page<Order> ordersPage = orderRepository.findAllBySortAndUserId(pageable, userId, status, rangeStart, rangeEnd);
         return PageResponse.from(ordersPage.map(orderMapper::toShortDto));
     }
 
@@ -188,6 +188,22 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.IN_CHECK);
         orderRepository.save(order);
         return orderMapper.toFullDto(order);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public PageResponse<OrderShortDto> getAllOrdersForCheck(int page, int size, OrderStatus status,
+                                                            LocalDateTime rangeStart, LocalDateTime rangeEnd) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdDate").descending());
+        status = status == null ? OrderStatus.IN_CHECK : status;
+        Page<Order> ordersPage = orderRepository.finaAllBySort(pageable, status, rangeStart, rangeEnd);
+        return PageResponse.from(ordersPage.map(orderMapper::toShortDto));
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public OrderFullDto getOrderByIdForAdmin(UUID orderId) {
+        return orderMapper.toFullDto(findOrderWithItemsByIdOrThrow(orderId));
     }
 
     /**
