@@ -26,7 +26,7 @@ public class AdminOrderController {
     private final String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
     @GetMapping
-    public PageResponse<OrderShortDto> getAllOrdersForCheck(
+    public PageResponse<OrderShortDto> getAllOrdersForAdmin(
             @PositiveOrZero @RequestParam(defaultValue = "0") int page,
             @Positive @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) OrderStatus status,
@@ -40,7 +40,7 @@ public class AdminOrderController {
         return orderService.getOrderByIdForAdmin(orderId);
     }
 
-    @PatchMapping("/{orderId}")
+    @PatchMapping("/{orderId}/submit")
     public OrderFullDto submitOrderForPayment(@PathVariable("orderId") UUID orderId) {
         return orderService.submitOrderForPayment(orderId);
     }

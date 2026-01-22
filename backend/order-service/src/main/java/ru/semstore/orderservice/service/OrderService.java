@@ -1,9 +1,6 @@
 package ru.semstore.orderservice.service;
 
-import ru.semstore.orderservice.dto.order.OrderCreateDto;
-import ru.semstore.orderservice.dto.order.OrderFullDto;
-import ru.semstore.orderservice.dto.order.OrderShortDto;
-import ru.semstore.orderservice.dto.order.OrderUpdateDto;
+import ru.semstore.orderservice.dto.order.*;
 import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.model.OrderStatus;
 

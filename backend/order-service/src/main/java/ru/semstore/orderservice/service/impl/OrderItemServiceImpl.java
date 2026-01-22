@@ -160,6 +160,12 @@ public class OrderItemServiceImpl implements OrderItemService {
     public OrderItemDto updateItemPrice(UUID orderId, UUID itemId, ItemPriceUpdateDto dto) {
         OrderItem item = findItemByIdWithOrderOrThrow(itemId);
         validateItemBelongsToOrder(item, orderId);
+        if (!item.getOrder().getStatus().equals(OrderStatus.IN_CHECK)) {
+            log.warn("Order status must be IN_CHECK before pricing. orderId={}, orderStatus={}",
+                    orderId, item.getOrder().getStatus());
+            throw new ConflictException("Order status must be IN_CHECK before pricing.",
+                    ErrorCode.ORDER_STATUS_NOT_IN_CHECK);
+        }
         item.setPrice(dto.price());
         itemRepository.save(item);
         log.debug("Item price updated to={}. orderId-{}, itemId={}", dto.price(), orderId, itemId);

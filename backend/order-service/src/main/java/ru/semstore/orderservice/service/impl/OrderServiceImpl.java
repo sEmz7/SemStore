@@ -8,10 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.semstore.orderservice.dto.order.OrderCreateDto;
-import ru.semstore.orderservice.dto.order.OrderFullDto;
-import ru.semstore.orderservice.dto.order.OrderShortDto;
-import ru.semstore.orderservice.dto.order.OrderUpdateDto;
+import ru.semstore.orderservice.dto.order.*;
 import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
 import ru.semstore.orderservice.errors.exceptions.ErrorCode;
@@ -19,10 +16,12 @@ import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
 import ru.semstore.orderservice.kafka.producer.KafkaProducer;
 import ru.semstore.orderservice.mapper.OrderMapper;
 import ru.semstore.orderservice.model.Order;
+import ru.semstore.orderservice.model.OrderItem;
 import ru.semstore.orderservice.model.OrderStatus;
 import ru.semstore.orderservice.repository.OrderRepository;
 import ru.semstore.orderservice.service.OrderService;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.UUID;
@@ -209,14 +208,22 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderFullDto submitOrderForPayment(UUID orderId) {
         Order order = findOrderWithItemsByIdOrThrow(orderId);
-        boolean allHavePrice = order.getItems().stream().allMatch(item -> item.getPrice() != null);
+        if (!order.getStatus().equals(OrderStatus.IN_CHECK)) {
+            log.warn("The order status must be IN_CHECK. orderId={}, orderStatus={}", orderId, order.getStatus());
+            throw new ConflictException("The order status must be IN_CHECK.", ErrorCode.ORDER_STATUS_NOT_IN_CHECK);
+        }
 
-        if (!allHavePrice) {
-            log.debug("Some items have no price. orderId={}", orderId);
-            throw new ConflictException("Some items have no price", ErrorCode.ITEMS_HAVE_NOT_PRICE);
+        BigDecimal totalPrice = new BigDecimal(0);
+        for(OrderItem item: order.getItems()) {
+            if (item.getPrice() == null) {
+                log.warn("All items must have a price. orderId={}", order.getId());
+                throw new ConflictException("All items must have a price.", ErrorCode.ITEMS_HAVE_NOT_PRICE);
+            }
+            totalPrice = totalPrice.add(item.getPrice());
         }
 
         order.setStatus(OrderStatus.AWAITING_PAYMENT);
+        order.setTotalPrice(totalPrice);
         orderRepository.save(order);
         log.debug("Order status changed to={}. orderId={}", order.getStatus(), order.getId());
         return orderMapper.toFullDto(order);
