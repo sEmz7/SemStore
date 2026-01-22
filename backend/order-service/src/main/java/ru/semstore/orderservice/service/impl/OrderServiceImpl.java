@@ -8,7 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.semstore.orderservice.dto.order.*;
+import ru.semstore.orderservice.dto.order.OrderCreateDto;
+import ru.semstore.orderservice.dto.order.OrderFullDto;
+import ru.semstore.orderservice.dto.order.OrderShortDto;
+import ru.semstore.orderservice.dto.order.OrderUpdateDto;
 import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
 import ru.semstore.orderservice.errors.exceptions.ErrorCode;
@@ -18,7 +21,9 @@ import ru.semstore.orderservice.mapper.OrderMapper;
 import ru.semstore.orderservice.model.Order;
 import ru.semstore.orderservice.model.OrderItem;
 import ru.semstore.orderservice.model.OrderStatus;
+import ru.semstore.orderservice.model.OutboxEvent;
 import ru.semstore.orderservice.repository.OrderRepository;
+import ru.semstore.orderservice.repository.OutboxRepository;
 import ru.semstore.orderservice.service.OrderService;
 
 import java.math.BigDecimal;
@@ -35,6 +40,7 @@ import java.util.UUID;
 @Slf4j
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
+    private final OutboxRepository outboxRepository;
     private final OrderMapper orderMapper;
     private final KafkaProducer kafka;
 
@@ -226,6 +232,30 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalPrice(totalPrice);
         orderRepository.save(order);
         log.debug("Order status changed to={}. orderId={}", order.getStatus(), order.getId());
+        return orderMapper.toFullDto(order);
+    }
+
+    @Override
+    public OrderFullDto completeOrder(UUID orderId) {
+        Order order = findOrderByIdOrThrow(orderId);
+        if (!order.getStatus().equals(OrderStatus.DELIVERING)) {
+            log.warn("Order must be delivered before complete. orderId={}, orderStatus={}", orderId, order.getStatus());
+            throw new ConflictException("Order must be delivered before complete.",
+                    ErrorCode.ORDER_STATUS_NOT_DELIVERING);
+        }
+        order.setStatus(OrderStatus.COMPLETED);
+        orderRepository.save(order);
+
+        int ordersCountWithSameAddress = orderRepository.findCountByAddressIdAndStatusNot(order.getAddressId(),
+                OrderStatus.COMPLETED);
+        if (ordersCountWithSameAddress == 0) {
+            OutboxEvent outboxEvent = OutboxEvent.newEvent(
+                    "order-completed",
+                    order.getAddressId().toString()
+            );
+            outboxRepository.save(outboxEvent);
+        }
+
         return orderMapper.toFullDto(order);
     }
 

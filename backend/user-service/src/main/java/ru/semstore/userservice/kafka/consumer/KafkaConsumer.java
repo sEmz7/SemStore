@@ -10,6 +10,8 @@ import ru.semstore.userservice.kafka.producer.KafkaProducer;
 import ru.semstore.userservice.repository.AddressRepository;
 import ru.semstore.userservice.repository.UserRepository;
 
+import java.util.UUID;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -27,5 +29,23 @@ public class KafkaConsumer {
 
         var checkedOrder = new OrderCheckedEvent(event.getOrderId(), userExists && addressExists);
         kafka.sendCheckedOrder(checkedOrder);
+    }
+
+    @KafkaListener(topics = "order-completed")
+    public void listenCompletedOrder(String payload) {
+        log.debug("Address id received for complete, addressId={}", payload);
+        UUID addressId;
+        try {
+            addressId = UUID.fromString(payload);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid addressId payload: {}", payload);
+            return;
+        }
+
+        addressRepository.findById(addressId).ifPresent(address -> {
+            if (address.isDeleted()) {
+                addressRepository.deleteById(address.getId());
+            }
+        });
     }
 }

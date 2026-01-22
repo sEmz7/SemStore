@@ -77,4 +77,6 @@ public interface OrderService {
     OrderFullDto getOrderByIdForAdmin(UUID orderId);
 
     OrderFullDto submitOrderForPayment(UUID orderId);
+
+    OrderFullDto completeOrder(UUID orderId);
 }

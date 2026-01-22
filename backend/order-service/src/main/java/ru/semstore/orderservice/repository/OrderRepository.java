@@ -38,4 +38,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                               @Param("status") OrderStatus status,
                               @Param("rangeStart") LocalDateTime rangeStart,
                               @Param("rangeEnd") LocalDateTime rangeEnd);
+
+    @Query("SELECT COUNT(*) FROM Order o " +
+            "WHERE o.addressId = :addressId " +
+            "AND o.status != :status")
+    int findCountByAddressIdAndStatusNot(UUID addressId, OrderStatus status);
 }

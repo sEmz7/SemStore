@@ -44,4 +44,9 @@ public class AdminOrderController {
     public OrderFullDto submitOrderForPayment(@PathVariable("orderId") UUID orderId) {
         return orderService.submitOrderForPayment(orderId);
     }
+
+    @PatchMapping("/{orderId}/complete")
+    public OrderFullDto completeOrder(@PathVariable("orderId") UUID orderId) {
+        return orderService.completeOrder(orderId);
+    }
 }
