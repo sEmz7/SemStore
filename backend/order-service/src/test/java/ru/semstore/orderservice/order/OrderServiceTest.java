@@ -71,7 +71,8 @@ public class OrderServiceTest {
                         "size", "configuration", null)));
 
         orderDto = new OrderShortDto(orderId, name, userId, addressId, OrderStatus.PENDING, null);
-        orderFullDto = new OrderFullDto(orderId, name, userId, addressId, OrderStatus.PENDING, null, null);
+        orderFullDto = new OrderFullDto(orderId, name, userId, addressId, OrderStatus.PENDING, null,
+                null, null);
     }
 
     @Test
@@ -228,7 +229,7 @@ public class OrderServiceTest {
         when(orderRepository.findOrderByIdWithItems(orderId)).thenReturn(Optional.of(order));
 
         OrderFullDto orderFullDto = new OrderFullDto(orderId, name, userId, addressId, OrderStatus.IN_CHECK,
-                null, null);
+                null, null, null);
         when(orderMapper.toFullDto(any())).thenReturn(orderFullDto);
 
         OrderFullDto dto = orderService.confirmOrder(orderId, userId);
