@@ -24,10 +24,12 @@ public class KafkaConsumer {
     public void listenCreatedOrder(OrderCreatedEvent event) {
         log.debug("Order received for check, orderId={}", event.getOrderId());
         boolean userExists = userRepository.existsById(event.getUserId());
-        boolean addressExists = addressRepository.existsById(event.getAddressId());
-        log.debug("User exists={}, address exists={}", userExists, addressExists);
+        boolean addressExistsAndNotDeletedAndOwned =
+                addressRepository.existsActiveOwned(event.getAddressId(), event.getUserId());
+        log.debug("User exists={}, address exists={}", userExists, addressExistsAndNotDeletedAndOwned);
 
-        var checkedOrder = new OrderCheckedEvent(event.getOrderId(), userExists && addressExists);
+        var checkedOrder = new OrderCheckedEvent(event.getOrderId(),
+                userExists && addressExistsAndNotDeletedAndOwned);
         kafka.sendCheckedOrder(checkedOrder);
     }
 
