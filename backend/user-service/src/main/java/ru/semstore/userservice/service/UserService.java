@@ -59,9 +59,29 @@ public interface UserService {
      */
     UserDtoWithRole validateToken(String authHeader);
 
+    /**
+     * Возвращает пользователя по идентификатору с информацией о роли.
+     *
+     * @param userId идентификатор пользователя
+     * @return пользователь с ролью
+     */
     UserDtoWithRole getUserByIdWithRole(UUID userId);
 
+    /**
+     * Возвращает постраничный список всех пользователей с ролями.
+     *
+     * @param page номер страницы (начиная с 0)
+     * @param size размер страницы
+     * @return страница пользователей с ролями
+     */
     PageResponse<UserDtoWithRole> getAllUsersWithRole(int page, int size);
 
+    /**
+     * Обновляет роль пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @param dto    DTO с новой ролью
+     * @return пользователь с обновлённой ролью
+     */
     UserDtoWithRole updateUserRole(UUID userId, UserRoleUpdateDto dto);
 }

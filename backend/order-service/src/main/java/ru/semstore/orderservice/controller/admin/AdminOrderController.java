@@ -27,6 +27,19 @@ import ru.semstore.orderservice.service.OrderService;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * REST-контроллер для управления заказами администратором.
+ *
+ * <p>Контроллер предоставляет API для:
+ * <ul>
+ *     <li>Просмотра всех заказов в системе</li>
+ *     <li>Получения детальной информации о заказе</li>
+ *     <li>Перевода заказов между статусами</li>
+ *     <li>Завершения жизненного цикла заказа</li>
+ * </ul>
+ *
+ * <p>Все эндпоинты доступны только пользователям с правами администратора.</p>
+ */
 @Tag(name = "admin: Заказы", description = "API для управления заказами для админа")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -41,6 +54,19 @@ public class AdminOrderController {
      */
     private final String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
+    /**
+     * Возвращает список всех заказов в системе.
+     *
+     * <p>Поддерживается фильтрация по статусу заказа и
+     * диапазону дат создания, а также пагинация.</p>
+     *
+     * @param page       номер страницы (начиная с 0)
+     * @param size       размер страницы
+     * @param status     фильтр по статусу заказа (необязательный, дефолтное значение IN_CHECK)
+     * @param rangeStart начало диапазона дат создания (необязательный)
+     * @param rangeEnd   конец диапазона дат создания (необязательный)
+     * @return страница заказов
+     */
     @Operation(
             summary = "Получить все заказы",
             description = "Возвращает все заказы в системе с пагинацией и фильтрацией по статусу и/или дате",
@@ -84,6 +110,12 @@ public class AdminOrderController {
         return orderService.getAllOrdersForCheck(page, size, status, rangeStart, rangeEnd);
     }
 
+    /**
+     * Возвращает подробную информацию о заказе по идентификатору.
+     *
+     * @param orderId идентификатор заказа
+     * @return заказ с полной информацией
+     */
     @Operation(
             summary = "Получить заказ по ID", description = "Возвращает заказ по ID",
             responses = {
@@ -108,6 +140,15 @@ public class AdminOrderController {
         return orderService.getOrderByIdForAdmin(orderId);
     }
 
+    /**
+     * Выставляет заказ на оплату.
+     *
+     * <p>Метод рассчитывает итоговую стоимость заказа
+     * и переводит его в статус ожидания оплаты.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @return заказ с обновлённым статусом
+     */
     @Operation(
             summary = "Выставить заказ на оплату",
             description = "Считает стоимость товаров в заказе и выставляет статус для оплаты.",
@@ -136,6 +177,15 @@ public class AdminOrderController {
         return orderService.submitOrderForPayment(orderId);
     }
 
+    /**
+     * Завершает заказ.
+     *
+     * <p>Переводит заказ в финальный завершённый статус.
+     * Используется после успешного прохождения всех этапов заказа.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @return завершённый заказ
+     */
     @Operation(
             summary = "Завершить заказ",
             description = "Переводит статус заказа в завершенный.",

@@ -52,5 +52,13 @@ public interface OrderItemService {
      */
     OrderItemDto update(UUID userId, UUID orderId, UUID itemId, OrderItemUpdateDto dto);
 
+    /**
+     * Обновляет цену товара в заказе администратором.
+     *
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор товара в заказе
+     * @param dto     DTO с новой ценой товара
+     * @return товар заказа с обновлённой ценой
+     */
     OrderItemDto updateItemPrice(UUID orderId, UUID itemId, ItemPriceUpdateDto dto);
 }

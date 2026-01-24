@@ -11,12 +11,31 @@ import ru.semstore.orderservice.repository.OrderRepository;
 
 import java.util.Optional;
 
+/**
+ * Kafka-консьюмер для обработки событий, связанных с заказами.
+ *
+ * <p>Слушает события проверки заказа, поступающие из user-service,
+ * и обновляет статус заказа в зависимости от результата проверки.</p>
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class KafkaConsumer {
     private final OrderRepository orderRepository;
 
+    /**
+     * Обрабатывает событие проверки заказа.
+     *
+     * <p>Получает событие {@link OrderCheckedEvent} и обновляет статус заказа:
+     * <ul>
+     *     <li>{@link OrderStatus#CREATED} — если заказ прошёл проверку</li>
+     *     <li>{@link OrderStatus#CANCELED} — если проверка не пройдена</li>
+     * </ul>
+     *
+     * <p>Если заказ с указанным идентификатором не найден, событие игнорируется.</p>
+     *
+     * @param checkedOrder событие с результатом проверки заказа
+     */
     @KafkaListener(topics = "order-checked")
     public void orderCheckedListen(OrderCheckedEvent checkedOrder) {
         log.debug("Received checked order, orderId={}", checkedOrder.getOrderId());

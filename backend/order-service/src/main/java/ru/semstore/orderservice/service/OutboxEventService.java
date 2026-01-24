@@ -11,6 +11,16 @@ import ru.semstore.orderservice.repository.OutboxRepository;
 
 import java.util.List;
 
+/**
+ * Сервис для обработки outbox-событий и отправки их в Kafka.
+ *
+ * <p>Реализует паттерн Outbox для гарантированной доставки событий
+ * при асинхронном взаимодействии между сервисами.</p>
+ *
+ * <p>Сервис периодически выбирает новые события из базы данных,
+ * отправляет их в Kafka и обновляет их статус в зависимости
+ * от результата отправки.</p>
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -18,6 +28,14 @@ public class OutboxEventService {
     private final OutboxRepository outboxRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
+    /**
+     * Обрабатывает outbox-события со статусом {@link OutboxEventStatus#NEW}.
+     *
+     * <p>Метод выполняется каждые 10 минут, отправляет события в Kafka
+     * и помечает их как {@link OutboxEventStatus#SENT} в случае успеха.
+     * При ошибке увеличивает счётчик попыток и переводит событие
+     * в статус {@link OutboxEventStatus#FAILED} при превышении лимита.</p>
+     */
     @Scheduled(fixedDelay = 600000)
     public void processOrderCompletedOutboxEvent() {
         List<OutboxEvent> outboxEvents = outboxRepository.findAllByStatus(OutboxEventStatus.NEW);

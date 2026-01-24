@@ -23,6 +23,19 @@ import ru.semstore.userservice.service.UserService;
 
 import java.util.UUID;
 
+/**
+ * REST-контроллер для административного управления пользователями.
+ *
+ * <p>Контроллер предоставляет API для:
+ * <ul>
+ *     <li>Получения пользователя по идентификатору</li>
+ *     <li>Просмотра списка всех пользователей с пагинацией</li>
+ *     <li>Обновления роли пользователя</li>
+ * </ul>
+ *
+ * <p>Все эндпоинты доступны только пользователям с ролью ADMIN
+ * и защищены JWT-аутентификацией.</p>
+ */
 @Tag(name = "admin: Пользователи", description = "API для операций с пользователями для админа")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -33,6 +46,12 @@ import java.util.UUID;
 public class AdminUserController {
     private final UserService userService;
 
+    /**
+     * Возвращает пользователя по идентификатору.
+     *
+     * @param userId идентификатор пользователя
+     * @return пользователь с информацией о роли
+     */
     @Operation(summary = "Получить пользователя по ID", description = "Возвращает пользователя по указанному ID",
             responses = {@ApiResponse(responseCode = "200", description = "(OK) Пользователь возвращен",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -55,6 +74,15 @@ public class AdminUserController {
         return userService.getUserByIdWithRole(userId);
     }
 
+    /**
+     * Возвращает постраничный список всех пользователей.
+     *
+     * <p>Результат включает информацию о роли каждого пользователя.</p>
+     *
+     * @param page номер страницы (начиная с 0)
+     * @param size размер страницы
+     * @return страница пользователей
+     */
     @Operation(summary = "Получить всех пользователей", description = "Возвращает всех пользователей с пагинацией",
             responses = {
                     @ApiResponse(responseCode = "200", description = "(OK) Пользователи возвращены",
@@ -77,6 +105,16 @@ public class AdminUserController {
         return userService.getAllUsersWithRole(page, size);
     }
 
+    /**
+     * Обновляет роль пользователя.
+     *
+     * <p>Метод используется для административного управления
+     * правами доступа пользователей.</p>
+     *
+     * @param userId идентификатор пользователя
+     * @param dto    DTO с новой ролью пользователя
+     * @return пользователь с обновлённой ролью
+     */
     @Operation(summary = "Обновить роль пользователя по ID",
             description = "Обновляет роль пользователя по ID и возвращает его",
             responses = {

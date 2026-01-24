@@ -167,6 +167,13 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDtoWithRole(user);
     }
 
+    /**
+     * Возвращает пользователя по идентификатору с информацией о роли.
+     *
+     * @param userId идентификатор пользователя
+     * @return пользователь с ролью
+     * @throws NotFoundException если пользователь не найден
+     */
     @Transactional(readOnly = true)
     @Override
     public UserDtoWithRole getUserByIdWithRole(UUID userId) {
@@ -174,6 +181,15 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDtoWithRole(user);
     }
 
+    /**
+     * Возвращает постраничный список всех пользователей с ролями.
+     *
+     * <p>Сортировка выполняется по email пользователя.</p>
+     *
+     * @param page номер страницы
+     * @param size размер страницы
+     * @return страница пользователей с ролями
+     */
     @Transactional(readOnly = true)
     @Override
     public PageResponse<UserDtoWithRole> getAllUsersWithRole(int page, int size) {
@@ -182,6 +198,17 @@ public class UserServiceImpl implements UserService {
         return PageResponse.from(usersPage.map(userMapper::toDtoWithRole));
     }
 
+    /**
+     * Обновляет роль пользователя.
+     *
+     * <p>Метод используется администратором
+     * для управления правами доступа пользователей.</p>
+     *
+     * @param userId идентификатор пользователя
+     * @param dto    DTO с новой ролью пользователя
+     * @return пользователь с обновлённой ролью
+     * @throws NotFoundException если пользователь не найден
+     */
     @Override
     public UserDtoWithRole updateUserRole(UUID userId, UserRoleUpdateDto dto) {
        User user = findUserByIdOrThrow(userId);
@@ -191,6 +218,14 @@ public class UserServiceImpl implements UserService {
        return userMapper.toDtoWithRole(user);
     }
 
+    /**
+     * Возвращает пользователя по идентификатору
+     * или выбрасывает исключение, если пользователь не найден.
+     *
+     * @param userId идентификатор пользователя
+     * @return пользователь
+     * @throws NotFoundException если пользователь не найден
+     */
     private User findUserByIdOrThrow(UUID userId) {
         return userRepository.findById(userId).orElseThrow(() -> {
             log.warn("User with id={} not found", userId);

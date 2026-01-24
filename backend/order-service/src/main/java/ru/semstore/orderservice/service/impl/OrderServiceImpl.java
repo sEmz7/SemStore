@@ -195,6 +195,20 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toFullDto(order);
     }
 
+    /**
+     * Возвращает постраничную выборку заказов для проверки администратором.
+     *
+     * <p>Если статус не указан, по умолчанию используется {@link OrderStatus#IN_CHECK}.
+     * Поддерживается фильтрация по статусу и диапазону дат.
+     * Сортировка выполняется по дате создания по убыванию.</p>
+     *
+     * @param page       номер страницы
+     * @param size       размер страницы
+     * @param status     фильтр по статусу (если {@code null}, используется {@link OrderStatus#IN_CHECK})
+     * @param rangeStart начало диапазона дат (может быть {@code null})
+     * @param rangeEnd   конец диапазона дат (может быть {@code null})
+     * @return страница заказов
+     */
     @Transactional(readOnly = true)
     @Override
     public PageResponse<OrderShortDto> getAllOrdersForCheck(int page, int size, OrderStatus status,
@@ -205,12 +219,34 @@ public class OrderServiceImpl implements OrderService {
         return PageResponse.from(ordersPage.map(orderMapper::toShortDto));
     }
 
+    /**
+     * Возвращает заказ по идентификатору для администратора.
+     *
+     * <p>Загружает заказ вместе с товарами.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @return заказ с полной информацией
+     * @throws OrderNotFoundException если заказ не найден
+     */
     @Transactional(readOnly = true)
     @Override
     public OrderFullDto getOrderByIdForAdmin(UUID orderId) {
         return orderMapper.toFullDto(findOrderWithItemsByIdOrThrow(orderId));
     }
 
+    /**
+     * Выставляет заказ на оплату.
+     *
+     * <p>Метод доступен только для заказов в статусе {@link OrderStatus#IN_CHECK}.
+     * Проверяет, что у всех товаров указана цена, рассчитывает итоговую стоимость
+     * и переводит заказ в статус {@link OrderStatus#AWAITING_PAYMENT}.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @return заказ с обновлённым статусом и рассчитанной итоговой стоимостью
+     * @throws OrderNotFoundException если заказ не найден
+     * @throws ConflictException      если заказ не в статусе {@link OrderStatus#IN_CHECK}
+     *                               или не у всех товаров указана цена
+     */
     @Override
     public OrderFullDto submitOrderForPayment(UUID orderId) {
         Order order = findOrderWithItemsByIdOrThrow(orderId);
@@ -235,6 +271,21 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toFullDto(order);
     }
 
+    /**
+     * Завершает заказ.
+     *
+     * <p>Метод доступен только для заказов в статусе {@link OrderStatus#DELIVERING}.
+     * Переводит заказ в статус {@link OrderStatus#COMPLETED} и сохраняет изменения.</p>
+     *
+     * <p>После завершения выполняется проверка: есть ли другие незавершённые заказы
+     * с тем же адресом доставки. Если таких заказов нет, создаётся outbox-событие
+     * для удаления адреса в user service.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @return завершённый заказ
+     * @throws OrderNotFoundException если заказ не найден
+     * @throws ConflictException      если заказ не в статусе {@link OrderStatus#DELIVERING}
+     */
     @Override
     public OrderFullDto completeOrder(UUID orderId) {
         Order order = findOrderByIdOrThrow(orderId);

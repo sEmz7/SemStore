@@ -18,6 +18,16 @@ import ru.semstore.orderservice.service.OrderItemService;
 
 import java.util.UUID;
 
+/**
+ * REST-контроллер для управления товарами в заказе администратором.
+ *
+ * <p>Контроллер предоставляет API для:
+ * <ul>
+ *     <li>Обновления цены товаров в заказе</li>
+ * </ul>
+ *
+ * <p>Все эндпоинты доступны только пользователям с правами администратора.</p>
+ */
 @Tag(name = "admin: Товары заказа", description = "API для управления товарами в заказе для админа")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -27,6 +37,17 @@ import java.util.UUID;
 public class AdminOrderItemController {
     private final OrderItemService itemService;
 
+    /**
+     * Обновляет цену товара в заказе.
+     *
+     * <p>Метод используется администратором для установки
+     * финальной стоимости товара в рамках заказа.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор товара в заказе
+     * @param dto     DTO с новой ценой товара
+     * @return обновлённый товар заказа
+     */
     @Operation(
             summary = "Обновить цену товара",
             description = "Обновляет цену товара в заказе и возвращает товар",
@@ -42,10 +63,10 @@ public class AdminOrderItemController {
                                     schema = @Schema(implementation = ErrorResponse.class))),
                     @ApiResponse(responseCode = "403", description = "(FORBIDDEN) Доступ запрещен",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class))),
+                                    schema = @Schema(implementation = ErrorResponse.class))),
                     @ApiResponse(responseCode = "404", description = "(NOT FOUND) Заказ или товар не найден",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ErrorResponse.class))),
+                                    schema = @Schema(implementation = ErrorResponse.class))),
                     @ApiResponse(responseCode = "409", description = "(CONFLICT) Конфликт бизнес логики",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = ErrorResponse.class)))

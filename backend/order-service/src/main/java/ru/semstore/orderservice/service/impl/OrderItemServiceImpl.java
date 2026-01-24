@@ -156,6 +156,21 @@ public class OrderItemServiceImpl implements OrderItemService {
         return itemMapper.toDto(item);
     }
 
+    /**
+     * Обновляет цену товара в заказе администратором.
+     *
+     * <p>Загружает товар вместе с заказом, проверяет принадлежность товара указанному заказу
+     * и проверяет, что заказ находится в статусе {@link OrderStatus#IN_CHECK}.
+     * После успешной проверки сохраняет новую цену товара.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор товара в заказе
+     * @param dto     DTO с новой ценой товара
+     * @return товар заказа с обновлённой ценой
+     * @throws ItemNotFoundException если товар не найден
+     * @throws ConflictException     если товар не принадлежит заказу
+     *                               или заказ не в статусе {@link OrderStatus#IN_CHECK}
+     */
     @Override
     public OrderItemDto updateItemPrice(UUID orderId, UUID itemId, ItemPriceUpdateDto dto) {
         OrderItem item = findItemByIdWithOrderOrThrow(itemId);
