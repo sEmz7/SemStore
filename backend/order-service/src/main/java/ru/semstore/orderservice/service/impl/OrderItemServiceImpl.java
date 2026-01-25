@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.semstore.orderservice.dto.orderItem.ItemPriceUpdateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemCreateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemUpdateDto;
 import ru.semstore.orderservice.errors.exceptions.ConflictException;
+import ru.semstore.orderservice.errors.exceptions.ErrorCode;
 import ru.semstore.orderservice.errors.exceptions.ItemNotFoundException;
 import ru.semstore.orderservice.errors.exceptions.OrderNotFoundException;
 import ru.semstore.orderservice.mapper.OrderItemMapper;
@@ -37,7 +39,8 @@ public class OrderItemServiceImpl implements OrderItemService {
      * Набор статусов заказа, при которых изменение его содержимого запрещено.
      */
     private static final EnumSet<OrderStatus> NOT_MODIFIABLE_STATUSES =
-            EnumSet.of(OrderStatus.PAID, OrderStatus.ORDERED, OrderStatus.CANCELED);
+            EnumSet.of(OrderStatus.PAID, OrderStatus.IN_CHECK, OrderStatus.CANCELED, OrderStatus.AWAITING_PAYMENT,
+                    OrderStatus.DELIVERING, OrderStatus.COMPLETED);
 
     /**
      * Добавляет новый товар в заказ пользователя.
@@ -154,6 +157,37 @@ public class OrderItemServiceImpl implements OrderItemService {
     }
 
     /**
+     * Обновляет цену товара в заказе администратором.
+     *
+     * <p>Загружает товар вместе с заказом, проверяет принадлежность товара указанному заказу
+     * и проверяет, что заказ находится в статусе {@link OrderStatus#IN_CHECK}.
+     * После успешной проверки сохраняет новую цену товара.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор товара в заказе
+     * @param dto     DTO с новой ценой товара
+     * @return товар заказа с обновлённой ценой
+     * @throws ItemNotFoundException если товар не найден
+     * @throws ConflictException     если товар не принадлежит заказу
+     *                               или заказ не в статусе {@link OrderStatus#IN_CHECK}
+     */
+    @Override
+    public OrderItemDto updateItemPrice(UUID orderId, UUID itemId, ItemPriceUpdateDto dto) {
+        OrderItem item = findItemByIdWithOrderOrThrow(itemId);
+        validateItemBelongsToOrder(item, orderId);
+        if (!item.getOrder().getStatus().equals(OrderStatus.IN_CHECK)) {
+            log.warn("Order status must be IN_CHECK before pricing. orderId={}, orderStatus={}",
+                    orderId, item.getOrder().getStatus());
+            throw new ConflictException("Order status must be IN_CHECK before pricing.",
+                    ErrorCode.ORDER_STATUS_NOT_IN_CHECK);
+        }
+        item.setPrice(dto.price());
+        itemRepository.save(item);
+        log.debug("Item price updated to={}. orderId-{}, itemId={}", dto.price(), orderId, itemId);
+        return itemMapper.toDto(item);
+    }
+
+    /**
      * Возвращает товар по идентификатору вместе с его заказом
      * или выбрасывает исключение, если товар не найден.
      *
@@ -164,7 +198,7 @@ public class OrderItemServiceImpl implements OrderItemService {
     private OrderItem findItemByIdWithOrderOrThrow(UUID itemId) {
         return itemRepository.findItemByIdWithOrder(itemId).orElseThrow(() -> {
             log.warn("Item not found. itemId={}", itemId);
-            return new ItemNotFoundException("Item not found");
+            return new ItemNotFoundException("Item not found", ErrorCode.ITEM_NOT_FOUND);
         });
     }
 
@@ -179,7 +213,7 @@ public class OrderItemServiceImpl implements OrderItemService {
     private Order findOrderByIdOrThrow(UUID orderId) {
         return orderRepository.findById(orderId).orElseThrow(()-> {
             log.warn("Order not found. orderId={}", orderId);
-            return new OrderNotFoundException("Order not found. orderId=" + orderId);
+            return new OrderNotFoundException("Order not found. orderId=" + orderId, ErrorCode.ORDER_NOT_FOUND);
         });
     }
 
@@ -194,7 +228,7 @@ public class OrderItemServiceImpl implements OrderItemService {
         if (!order.getUserId().equals(userId)) {
             log.warn("Only order owner can access/modify items. orderId={}, userId={}",
                     order.getId(), userId);
-            throw new ConflictException("Only order owner can get order info");
+            throw new ConflictException("Only order owner can get order info", ErrorCode.ORDER_OWNER_CONFLICT);
         }
     }
 
@@ -210,7 +244,8 @@ public class OrderItemServiceImpl implements OrderItemService {
             log.warn("The order cannot be modified due to its status. orderId={}, orderStatus={}, userId={}",
                     order.getId(), order.getStatus(), userId);
             throw new ConflictException(
-                    "The order cannot be modified due to its status. orderStatus=" + order.getStatus()
+                    "The order cannot be modified due to its status. orderStatus=" + order.getStatus(),
+                    ErrorCode.ORDER_STATUS_NOT_MODIFIABLE
             );
         }
     }
@@ -227,7 +262,7 @@ public class OrderItemServiceImpl implements OrderItemService {
         if (!orderId.equals(actualOrderId)) {
             log.warn("Item does not belong to this order. expectedOrderId={}, actualOrderId={}, itemId={}",
                     orderId, actualOrderId, item.getId());
-            throw new ConflictException("Item does not belong to this order");
+            throw new ConflictException("Item does not belong to this order", ErrorCode.ITEM_NOT_IN_ORDER);
         }
     }
 }

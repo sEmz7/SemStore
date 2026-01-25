@@ -1,7 +1,7 @@
 package ru.semstore.userservice.exception;
 
-public class ConflictException extends RuntimeException {
-    public ConflictException(String message) {
-        super(message);
+public class ConflictException extends AppException {
+    public ConflictException(String message, ErrorCode code) {
+        super(message, code);
     }
 }

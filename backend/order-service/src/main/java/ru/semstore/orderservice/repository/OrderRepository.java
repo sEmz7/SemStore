@@ -19,7 +19,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             "AND (:status IS NULL OR r.status = :status) " +
             "AND (cast(:rangeStart as date) IS NULL OR r.createdDate >= :rangeStart) " +
             "AND (cast(:rangeEnd as date) IS NULL OR r.createdDate <= :rangeEnd)")
-    Page<Order> findAllBySort(Pageable pageable,
+    Page<Order> findAllBySortAndUserId(Pageable pageable,
                               @Param("userId") UUID userId,
                               @Param("status") OrderStatus status,
                               @Param("rangeStart") LocalDateTime rangeStart,
@@ -29,4 +29,18 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             "LEFT JOIN FETCH o.items " +
             "WHERE o.id = :id")
     Optional<Order> findOrderByIdWithItems(UUID id);
+
+    @Query("SELECT r FROM Order r " +
+            "WHERE (:status IS NULL OR r.status = :status) " +
+            "AND (cast(:rangeStart as date) IS NULL OR r.createdDate >= :rangeStart) " +
+            "AND (cast(:rangeEnd as date) IS NULL OR r.createdDate <= :rangeEnd)")
+    Page<Order> finaAllBySort(Pageable pageable,
+                              @Param("status") OrderStatus status,
+                              @Param("rangeStart") LocalDateTime rangeStart,
+                              @Param("rangeEnd") LocalDateTime rangeEnd);
+
+    @Query("SELECT COUNT(*) FROM Order o " +
+            "WHERE o.addressId = :addressId " +
+            "AND o.status != :status")
+    int findCountByAddressIdAndStatusNot(UUID addressId, OrderStatus status);
 }

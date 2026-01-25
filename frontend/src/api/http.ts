@@ -1,3 +1,4 @@
+// src/api/http.ts
 import axios, { AxiosError } from "axios";
 import { tokenStorage } from "./tokenStorage";
 
@@ -28,13 +29,27 @@ export function getUserIdFromAccessToken(): string | null {
   if (!token) return null;
 
   try {
-    const payloadPart = token.split(".")[1];
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+
+    const payloadPart = parts[1];
+
     let base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
     while (base64.length % 4 !== 0) base64 += "=";
 
     const json = atob(base64);
-    const payload = JSON.parse(json);
-    return payload?.id ?? null;
+    const payload = JSON.parse(json) as Record<string, unknown>;
+
+    const id = payload["id"];
+    if (typeof id === "string" && id.trim()) return id;
+
+    const sub = payload["sub"];
+    if (typeof sub === "string" && sub.trim()) return sub;
+
+    const userId = payload["userId"];
+    if (typeof userId === "string" && userId.trim()) return userId;
+
+    return null;
   } catch {
     return null;
   }
@@ -71,6 +86,7 @@ function notify(token: string | null) {
 
 async function refreshAccessToken(): Promise<string> {
   const resp = await refreshApi.post("/auth/refresh");
+
   const bodyToken = (resp.data as any)?.token;
   const headerAuth = (resp.headers as any)?.authorization ?? (resp.headers as any)?.Authorization;
 

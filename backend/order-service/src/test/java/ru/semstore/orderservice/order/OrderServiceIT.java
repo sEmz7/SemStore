@@ -70,7 +70,7 @@ public class OrderServiceIT {
     void update_ShouldUpdate() {
         OrderUpdateDto dto = new OrderUpdateDto(name, UUID.fromString("08acd0a9-b1f8-40ab-a69a-efec2ab7fda6"));
 
-        orderService.update(dto, orderId);
+        orderService.update(dto, orderId, userId);
 
         Order order = orderRepository.findAll().getFirst();
 
@@ -111,5 +111,15 @@ public class OrderServiceIT {
         assertNotNull(orderDtos);
         assertEquals(10, orderDtos.size());
         assertTrue(orderDtos.stream().allMatch(orderDto -> userId.equals(orderDto.getUserId())));
+    }
+
+    @Test
+    @DisplayName("Подтверждение заказа пользователем")
+    @Sql({"/data/cleanUp.sql", "/data/insertOrderWithItem.sql"})
+    void confirmOrder_ShouldConfirm() {
+        OrderFullDto dto = orderService.confirmOrder(orderId, userId);
+
+        assertNotNull(dto);
+        assertEquals(OrderStatus.IN_CHECK, dto.status());
     }
 }

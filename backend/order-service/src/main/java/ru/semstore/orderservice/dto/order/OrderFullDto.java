@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
 import ru.semstore.orderservice.model.OrderStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -28,7 +29,10 @@ public record OrderFullDto(
         @Schema(description = "Дата создания заказа", example = "2025-12-17T21:03:50.599901")
         LocalDateTime createdDate,
 
-        @Schema(description = "Товары заказа")
-        List<OrderItemDto> items
+        @Schema(description = "Товары заказа", nullable = true)
+        List<OrderItemDto> items,
+
+        @Schema(description = "Общая стоимость заказа", example = "1500.50", nullable = true)
+        BigDecimal totalPrice
 ) {
 }

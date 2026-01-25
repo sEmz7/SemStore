@@ -3,6 +3,7 @@ package ru.semstore.orderservice.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +64,15 @@ public class Order {
     @Column(name = "created_date", nullable = false)
     private LocalDateTime createdDate;
 
+    /**
+     * Товары заказа.
+     */
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     private List<OrderItem> items = new ArrayList<>();
+
+    /**
+     * Итоговая цена заказа.
+     */
+    @Column(name = "total_price", precision = 9, scale = 2)
+    private BigDecimal totalPrice;
 }

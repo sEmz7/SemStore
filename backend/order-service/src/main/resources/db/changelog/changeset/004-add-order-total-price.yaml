@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-add-order-total-price
+      author: semyon
+      changes:
+        - addColumn:
+            tableName: orders
+            columns:
+              - column:
+                  name: total_price
+                  type: NUMERIC(9,2)
+                  constraints:
+                    nullable: true

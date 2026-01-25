@@ -80,4 +80,10 @@ public class Address {
      */
     @Column(name = "postal_code", nullable = false, length = 100)
     private String postalCode;
+
+    /**
+     * Флаг удаления адреса.
+     */
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
 }

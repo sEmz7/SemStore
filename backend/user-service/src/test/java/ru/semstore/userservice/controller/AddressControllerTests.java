@@ -20,6 +20,7 @@ import ru.semstore.userservice.repository.UserRepository;
 import ru.semstore.userservice.security.jwt.JwtService;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -72,7 +73,7 @@ public class AddressControllerTests {
                     .content(objectMapper.writeValueAsString(createDto)))
                 .andExpect(status().isCreated());
 
-        List<Address> addresses = addressRepository.findAllByUserId(user.getId());
+        List<Address> addresses = addressRepository.findAllByUserIdAndDeleted(user.getId(), false);
 
         assertNotNull(addresses);
         assertEquals(user.getId(), addresses.getFirst().getUser().getId());
@@ -93,7 +94,7 @@ public class AddressControllerTests {
     @Sql(scripts = {"/data/cleanUp.sql", "/data/insert.sql", "/data/address_insert.sql"})
     @DisplayName("Успешное получение адреса по ID")
     void positiveGetAddressById() throws Exception {
-        Address address = addressRepository.findAllByUserId(user.getId()).getFirst();
+        Address address = addressRepository.findAllByUserIdAndDeleted(user.getId(), false).getFirst();
 
         mvc.perform(get("/users/address/{id}", address.getId())
                         .header(HEADER_AUTH_NAME, HEADER_BEARER + jwt))
@@ -105,7 +106,7 @@ public class AddressControllerTests {
     @Sql(scripts = {"/data/cleanUp.sql", "/data/insert.sql", "/data/address_insert.sql"})
     @DisplayName("Успешное обновление адреса")
     void positiveUpdateAddress() throws Exception {
-        Address address = addressRepository.findAllByUserId(user.getId()).getFirst();
+        Address address = addressRepository.findAllByUserIdAndDeleted(user.getId(), false).getFirst();
 
         AddressUpdateDto updateDto = new AddressUpdateDto();
         updateDto.setCity("Санкт-Петербург");
@@ -127,12 +128,15 @@ public class AddressControllerTests {
     @Sql(scripts = {"/data/cleanUp.sql", "/data/insert.sql", "/data/address_insert.sql"})
     @DisplayName("Успешное удаление адреса")
     void positiveDeleteAddress() throws Exception {
-        Address address = addressRepository.findAllByUserId(user.getId()).getFirst();
+        Address address = addressRepository.findAllByUserIdAndDeleted(user.getId(), false).getFirst();
 
         mvc.perform(delete("/users/address/{id}", address.getId())
                         .header(HEADER_AUTH_NAME, HEADER_BEARER + jwt))
                 .andExpect(status().isNoContent());
 
-        assertFalse(addressRepository.existsById(address.getId()));
+        Optional<Address> optionalAddress = addressRepository.findById(address.getId());
+
+        assertTrue(optionalAddress.isPresent());
+        assertTrue(optionalAddress.get().isDeleted());
     }
 }
