@@ -5,6 +5,7 @@ import java.util.UUID;
 public class UserDto {
     private UUID id;
     private String email;
+    private UserRole role;
 
     public UserDto() {
     }
@@ -28,5 +29,13 @@ public class UserDto {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
     }
 }

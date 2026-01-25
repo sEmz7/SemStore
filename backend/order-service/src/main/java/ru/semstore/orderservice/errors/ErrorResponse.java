@@ -17,6 +17,7 @@ public class ErrorResponse {
     @JsonFormat(pattern = "YYYY-MM-dd HH:mm:ss")
     private LocalDateTime date;
 
+    @Schema(description = "Код ошибки", example = "ITEM_NOT_FOUND")
     private ErrorCode code;
 
     public ErrorResponse(String message, ErrorCode code) {

@@ -71,7 +71,8 @@ public class OrderServiceTest {
                         "size", "configuration", null)));
 
         orderDto = new OrderShortDto(orderId, name, userId, addressId, OrderStatus.PENDING, null);
-        orderFullDto = new OrderFullDto(orderId, name, userId, addressId, OrderStatus.PENDING, null, null);
+        orderFullDto = new OrderFullDto(orderId, name, userId, addressId, OrderStatus.PENDING, null,
+                null, null);
     }
 
     @Test
@@ -206,7 +207,7 @@ public class OrderServiceTest {
     @Test
     @DisplayName("Получение всех заказов пользователя")
     void getAll_ShouldReturn() {
-        when(orderRepository.findAllBySort(
+        when(orderRepository.findAllBySortAndUserId(
                 any(Pageable.class), eq(userId), eq(OrderStatus.PENDING), isNull(), isNull()
         )).thenReturn(new PageImpl<>(List.of(order)));
 
@@ -228,7 +229,7 @@ public class OrderServiceTest {
         when(orderRepository.findOrderByIdWithItems(orderId)).thenReturn(Optional.of(order));
 
         OrderFullDto orderFullDto = new OrderFullDto(orderId, name, userId, addressId, OrderStatus.IN_CHECK,
-                null, null);
+                null, null, null);
         when(orderMapper.toFullDto(any())).thenReturn(orderFullDto);
 
         OrderFullDto dto = orderService.confirmOrder(orderId, userId);

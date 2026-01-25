@@ -1,9 +1,6 @@
 package ru.semstore.orderservice.service;
 
-import ru.semstore.orderservice.dto.order.OrderCreateDto;
-import ru.semstore.orderservice.dto.order.OrderFullDto;
-import ru.semstore.orderservice.dto.order.OrderShortDto;
-import ru.semstore.orderservice.dto.order.OrderUpdateDto;
+import ru.semstore.orderservice.dto.order.*;
 import ru.semstore.orderservice.dto.page.PageResponse;
 import ru.semstore.orderservice.model.OrderStatus;
 
@@ -73,4 +70,51 @@ public interface OrderService {
      * @return заказ в виде {@link OrderFullDto} с обновленным статусом
      */
     OrderFullDto confirmOrder(UUID orderId, UUID userId);
+
+    /**
+     * Возвращает постраничную выборку всех заказов в системе для администратора.
+     *
+     * <p>Поддерживается фильтрация по статусу заказа
+     * и диапазону дат создания.</p>
+     *
+     * @param page       номер страницы (0...N)
+     * @param size       размер страницы
+     * @param status     фильтр по статусу заказа (может быть {@code null})
+     * @param rangeStart начало диапазона дат создания (может быть {@code null})
+     * @param rangeEnd   конец диапазона дат создания (может быть {@code null})
+     * @return страница заказов в сокращённом виде
+     */
+    PageResponse<OrderShortDto> getAllOrdersForCheck(int page, int size, OrderStatus status,
+                                                     LocalDateTime rangeStart, LocalDateTime rangeEnd);
+
+
+    /**
+     * Возвращает заказ по идентификатору для администратора.
+     *
+     * @param orderId идентификатор заказа
+     * @return заказ с полной информацией
+     */
+    OrderFullDto getOrderByIdForAdmin(UUID orderId);
+
+    /**
+     * Выставляет заказ на оплату.
+     *
+     * <p>Рассчитывает итоговую стоимость заказа
+     * и переводит его в статус ожидания оплаты.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @return заказ с обновлённым статусом
+     */
+    OrderFullDto submitOrderForPayment(UUID orderId);
+
+    /**
+     * Завершает заказ.
+     *
+     * <p>Переводит заказ в финальный завершённый статус
+     * после успешного прохождения всех этапов обработки.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @return завершённый заказ
+     */
+    OrderFullDto completeOrder(UUID orderId);
 }

@@ -21,6 +21,7 @@ import ru.semstore.gateway.dto.UserDto;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 
 @Component
@@ -70,13 +71,21 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
                     .onErrorMap(WebClientRequestException.class,
                             ex -> new ResponseStatusException(
                                     HttpStatus.SERVICE_UNAVAILABLE, "User service unreachable"))
-                    .map(user -> {
+                    .flatMap(user -> {
+                        if (config.isRequireAdmin() && !"ROLE_ADMIN".equalsIgnoreCase(user.getRole().name())) {
+                            return handleException(exchange, new ResponseStatusException(
+                                    HttpStatus.FORBIDDEN, "Admin role required"));
+                        }
+
                         ServerHttpRequest.Builder builder = exchange.getRequest().mutate();
-                        builder.headers(http -> http.remove("X-User-Id"));
+                        builder.headers(http -> {
+                            http.remove("X-User-Id");
+                        });
                         builder.header("X-User-Id", String.valueOf(user.getId()));
-                        return exchange.mutate().request(builder.build()).build();
+
+                        ServerWebExchange mutated = exchange.mutate().request(builder.build()).build();
+                        return chain.filter(mutated);
                     })
-                    .flatMap(chain::filter)
                     .onErrorResume(ex -> handleException(exchange, ex));
         };
     }
@@ -119,5 +128,19 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
         return response.writeWith(Mono.just(buffer));
     }
 
-    public static class Config {}
+    @Override
+    public List<String> shortcutFieldOrder() {
+        return List.of("requireAdmin");
+    }
+
+    public static class Config {
+        private boolean requireAdmin = false;
+
+        public boolean isRequireAdmin() {
+            return requireAdmin;
+        }
+        public void setRequireAdmin(boolean requireAdmin) {
+            this.requireAdmin = requireAdmin;
+        }
+    }
 }

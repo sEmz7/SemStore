@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.semstore.orderservice.dto.orderItem.ItemPriceUpdateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemCreateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemUpdateDto;
@@ -152,6 +153,37 @@ public class OrderItemServiceImpl implements OrderItemService {
 
         itemRepository.save(item);
         log.debug("Item updated. userId={}, orderId={}, itemId={}", userId, orderId, itemId);
+        return itemMapper.toDto(item);
+    }
+
+    /**
+     * Обновляет цену товара в заказе администратором.
+     *
+     * <p>Загружает товар вместе с заказом, проверяет принадлежность товара указанному заказу
+     * и проверяет, что заказ находится в статусе {@link OrderStatus#IN_CHECK}.
+     * После успешной проверки сохраняет новую цену товара.</p>
+     *
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор товара в заказе
+     * @param dto     DTO с новой ценой товара
+     * @return товар заказа с обновлённой ценой
+     * @throws ItemNotFoundException если товар не найден
+     * @throws ConflictException     если товар не принадлежит заказу
+     *                               или заказ не в статусе {@link OrderStatus#IN_CHECK}
+     */
+    @Override
+    public OrderItemDto updateItemPrice(UUID orderId, UUID itemId, ItemPriceUpdateDto dto) {
+        OrderItem item = findItemByIdWithOrderOrThrow(itemId);
+        validateItemBelongsToOrder(item, orderId);
+        if (!item.getOrder().getStatus().equals(OrderStatus.IN_CHECK)) {
+            log.warn("Order status must be IN_CHECK before pricing. orderId={}, orderStatus={}",
+                    orderId, item.getOrder().getStatus());
+            throw new ConflictException("Order status must be IN_CHECK before pricing.",
+                    ErrorCode.ORDER_STATUS_NOT_IN_CHECK);
+        }
+        item.setPrice(dto.price());
+        itemRepository.save(item);
+        log.debug("Item price updated to={}. orderId-{}, itemId={}", dto.price(), orderId, itemId);
         return itemMapper.toDto(item);
     }
 

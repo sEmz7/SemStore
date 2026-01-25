@@ -7,6 +7,7 @@ import org.mapstruct.ReportingPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserDto;
+import ru.semstore.userservice.dto.user.UserDtoWithRole;
 import ru.semstore.userservice.model.User;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -16,4 +17,6 @@ public interface UserMapper {
     User toEntity(UserCreateDto dto, @Context PasswordEncoder passwordEncoder);
 
     UserDto toDto(User entity);
+
+    UserDtoWithRole toDtoWithRole(User entity);
 }

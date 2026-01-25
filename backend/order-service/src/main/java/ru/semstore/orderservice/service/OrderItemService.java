@@ -1,5 +1,6 @@
 package ru.semstore.orderservice.service;
 
+import ru.semstore.orderservice.dto.orderItem.ItemPriceUpdateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemCreateDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemDto;
 import ru.semstore.orderservice.dto.orderItem.OrderItemUpdateDto;
@@ -50,4 +51,14 @@ public interface OrderItemService {
      * @return обновлённый товар
      */
     OrderItemDto update(UUID userId, UUID orderId, UUID itemId, OrderItemUpdateDto dto);
+
+    /**
+     * Обновляет цену товара в заказе администратором.
+     *
+     * @param orderId идентификатор заказа
+     * @param itemId  идентификатор товара в заказе
+     * @param dto     DTO с новой ценой товара
+     * @return товар заказа с обновлённой ценой
+     */
+    OrderItemDto updateItemPrice(UUID orderId, UUID itemId, ItemPriceUpdateDto dto);
 }

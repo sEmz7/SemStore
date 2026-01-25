@@ -1,4 +1,4 @@
-package ru.semstore.orderservice.controller;
+package ru.semstore.orderservice.controller.user;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,6 +39,7 @@ import java.util.UUID;
  *     <li>Создания заказов</li>
  *     <li>Обновления и удаления заказов</li>
  *     <li>Получения одного заказа или списка заказов с фильтрацией</li>
+ *     <li>Подтверждение заказа</li>
  * </ul>
  *
  * <p>Идентификатор пользователя передаётся через HTTP-заголовок {@code X-User-Id},

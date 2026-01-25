@@ -1,10 +1,8 @@
 package ru.semstore.userservice.service;
 
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
-import ru.semstore.userservice.dto.user.ChangePasswordDto;
-import ru.semstore.userservice.dto.user.UserCreateDto;
-import ru.semstore.userservice.dto.user.UserCredentialsDto;
-import ru.semstore.userservice.dto.user.UserDto;
+import ru.semstore.userservice.dto.page.PageResponse;
+import ru.semstore.userservice.dto.user.*;
 
 import java.util.UUID;
 
@@ -59,5 +57,31 @@ public interface UserService {
      * @param authHeader HTTP заголовок Authorization
      * @return пользователь
      */
-    UserDto validateToken(String authHeader);
+    UserDtoWithRole validateToken(String authHeader);
+
+    /**
+     * Возвращает пользователя по идентификатору с информацией о роли.
+     *
+     * @param userId идентификатор пользователя
+     * @return пользователь с ролью
+     */
+    UserDtoWithRole getUserByIdWithRole(UUID userId);
+
+    /**
+     * Возвращает постраничный список всех пользователей с ролями.
+     *
+     * @param page номер страницы (начиная с 0)
+     * @param size размер страницы
+     * @return страница пользователей с ролями
+     */
+    PageResponse<UserDtoWithRole> getAllUsersWithRole(int page, int size);
+
+    /**
+     * Обновляет роль пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @param dto    DTO с новой ролью
+     * @return пользователь с обновлённой ролью
+     */
+    UserDtoWithRole updateUserRole(UUID userId, UserRoleUpdateDto dto);
 }

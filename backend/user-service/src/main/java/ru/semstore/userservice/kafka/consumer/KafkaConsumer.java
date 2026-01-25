@@ -10,6 +10,8 @@ import ru.semstore.userservice.kafka.producer.KafkaProducer;
 import ru.semstore.userservice.repository.AddressRepository;
 import ru.semstore.userservice.repository.UserRepository;
 
+import java.util.UUID;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -22,10 +24,30 @@ public class KafkaConsumer {
     public void listenCreatedOrder(OrderCreatedEvent event) {
         log.debug("Order received for check, orderId={}", event.getOrderId());
         boolean userExists = userRepository.existsById(event.getUserId());
-        boolean addressExists = addressRepository.existsById(event.getAddressId());
-        log.debug("User exists={}, address exists={}", userExists, addressExists);
+        boolean addressExistsAndNotDeletedAndOwned =
+                addressRepository.existsActiveOwned(event.getAddressId(), event.getUserId());
+        log.debug("User exists={}, address exists={}", userExists, addressExistsAndNotDeletedAndOwned);
 
-        var checkedOrder = new OrderCheckedEvent(event.getOrderId(), userExists && addressExists);
+        var checkedOrder = new OrderCheckedEvent(event.getOrderId(),
+                userExists && addressExistsAndNotDeletedAndOwned);
         kafka.sendCheckedOrder(checkedOrder);
+    }
+
+    @KafkaListener(topics = "order-completed")
+    public void listenCompletedOrder(String payload) {
+        log.debug("Address id received for complete, addressId={}", payload);
+        UUID addressId;
+        try {
+            addressId = UUID.fromString(payload);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid addressId payload: {}", payload);
+            return;
+        }
+
+        addressRepository.findById(addressId).ifPresent(address -> {
+            if (address.isDeleted()) {
+                addressRepository.deleteById(address.getId());
+            }
+        });
     }
 }
