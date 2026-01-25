@@ -1,4 +1,9 @@
 # SemStore
+---
+## Ссылка на сайт
+
+http://semstore-poizon.ru
+---
 
 ## О проекте
 
@@ -207,11 +212,6 @@ CI/CD позволяет быстро и безопасно доставлять
 - JUnit
 - Mockito
 - MockMvc
-
----
-## Ссылка на сайт
-
-http://semstore-poizon.ru
 
 ---
 
