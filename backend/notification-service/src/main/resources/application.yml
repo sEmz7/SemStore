@@ -16,6 +16,20 @@ spring:
             trusted:
               packages:
                 ru.semstore.common.dto
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    protocol: ${MAIL_PROTOCOL}
+    properties:
+      mail:
+        debug: true
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+            trust: ${MAIL_HOST}
 eureka:
   client:
     service-url:
