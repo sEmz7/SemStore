@@ -30,6 +30,10 @@ spring:
           ssl:
             enable: true
             trust: ${MAIL_HOST}
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
 eureka:
   client:
     service-url:
