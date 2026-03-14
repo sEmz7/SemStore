@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -15,6 +16,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import ru.semstore.userservice.dto.auth.JwtAuthDto;
 import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
+import ru.semstore.userservice.kafka.producer.KafkaProducer;
 import ru.semstore.userservice.model.User;
 import ru.semstore.userservice.repository.UserRepository;
 import ru.semstore.userservice.security.jwt.JwtService;
@@ -29,6 +31,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 class AuthControllerTests {
+
+    @MockBean
+    private KafkaProducer kafkaProducer;
 
     @Autowired
     private MockMvc mvc;
