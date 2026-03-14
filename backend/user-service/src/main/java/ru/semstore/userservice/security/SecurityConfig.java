@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/auth/register", "/auth/login", "/auth/refresh",
-                                        "/auth/validateToken", "/auth/logout",
+                                        "/auth/validateToken", "/auth/logout", "/auth/verify-email",
                                         "/actuator/health/**", "/actuator/info/**")
                                 .permitAll()
                                 .requestMatchers(WHITELIST).permitAll()

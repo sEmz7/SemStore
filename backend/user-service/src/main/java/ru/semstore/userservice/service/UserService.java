@@ -1,6 +1,6 @@
 package ru.semstore.userservice.service;
 
-import ru.semstore.userservice.dto.jwt.JwtAuthDto;
+import ru.semstore.userservice.dto.auth.JwtAuthDto;
 import ru.semstore.userservice.dto.page.PageResponse;
 import ru.semstore.userservice.dto.user.*;
 

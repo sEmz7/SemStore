@@ -9,7 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.semstore.userservice.dto.jwt.JwtAuthDto;
+import ru.semstore.userservice.dto.auth.JwtAuthDto;
 import ru.semstore.userservice.dto.page.PageResponse;
 import ru.semstore.userservice.dto.user.*;
 import ru.semstore.userservice.exception.*;

@@ -11,14 +11,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.semstore.userservice.dto.jwt.AccessTokenDto;
-import ru.semstore.userservice.dto.jwt.JwtAuthDto;
+import ru.semstore.userservice.dto.auth.AccessTokenDto;
+import ru.semstore.userservice.dto.auth.JwtAuthDto;
+import ru.semstore.userservice.dto.auth.VerifyEmailDto;
 import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
 import ru.semstore.userservice.dto.user.UserDto;
 import ru.semstore.userservice.dto.user.UserDtoWithRole;
 import ru.semstore.userservice.exception.ErrorResponse;
 import ru.semstore.userservice.service.UserService;
+import ru.semstore.userservice.service.VerificationService;
 
 /**
  * REST-контроллер для аутентификации пользователей.
@@ -39,6 +41,7 @@ import ru.semstore.userservice.service.UserService;
 @Validated
 public class AuthController {
     private final UserService userService;
+    private final VerificationService verificationService;
 
     /**
      * Регистрирует нового пользователя.
@@ -168,5 +171,11 @@ public class AuthController {
         return ResponseEntity.noContent()
                 .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
                 .build();
+    }
+
+    @PostMapping("/verify-email")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void verifyEmail(@RequestBody @Valid VerifyEmailDto dto) {
+        verificationService.verifyEmail(dto);
     }
 }
