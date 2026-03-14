@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import ru.semstore.common.dto.OrderCheckedEvent;
+import ru.semstore.common.dto.VerificationCodeEvent;
 import ru.semstore.notificationservice.service.EmailService;
 
 import java.util.Map;
@@ -33,6 +34,18 @@ public class KafkaConsumer {
                 subject,
                 "order-created",
                 Map.of("orderId", event.getOrderId())
+        );
+    }
+
+    @KafkaListener(topics = "email-verification-requested")
+    public void emailVerificationCodeNotification(VerificationCodeEvent codeEvent) {
+        log.debug("Received event");
+        String subject = "Код подтверждения";
+        emailService.sendHtmlMessage(
+                codeEvent.email(),
+                subject,
+                "verification-code",
+                Map.of("code", codeEvent.code())
         );
     }
 }

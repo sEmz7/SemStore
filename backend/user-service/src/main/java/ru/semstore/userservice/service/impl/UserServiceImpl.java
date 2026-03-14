@@ -22,6 +22,7 @@ import ru.semstore.userservice.model.UserRole;
 import ru.semstore.userservice.repository.UserRepository;
 import ru.semstore.userservice.security.jwt.JwtService;
 import ru.semstore.userservice.service.UserService;
+import ru.semstore.userservice.service.VerificationService;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -41,6 +42,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final VerificationService verificationService;
 
     /**
      * Регистрирует нового пользователя.
@@ -60,6 +62,8 @@ public class UserServiceImpl implements UserService {
         user.setRole(UserRole.ROLE_USER);
         user = userRepository.save(user);
         log.debug("Saved user={}", user);
+
+        verificationService.createVerificationCode(user);
         return userMapper.toDto(user);
     }
 
