@@ -12,10 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.semstore.userservice.dto.jwt.JwtAuthDto;
 import ru.semstore.userservice.dto.page.PageResponse;
 import ru.semstore.userservice.dto.user.*;
-import ru.semstore.userservice.exception.AuthException;
-import ru.semstore.userservice.exception.ConflictException;
-import ru.semstore.userservice.exception.ErrorCode;
-import ru.semstore.userservice.exception.NotFoundException;
+import ru.semstore.userservice.exception.*;
 import ru.semstore.userservice.mapper.UserMapper;
 import ru.semstore.userservice.model.User;
 import ru.semstore.userservice.model.UserRole;
@@ -79,14 +76,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public JwtAuthDto logIn(UserCredentialsDto dto) {
         Optional<User> optionalUser = userRepository.findByEmail(dto.email());
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            if (passwordEncoder.matches(dto.password(), user.getPassword())) {
-                return jwtService.generateAuthToken(user);
-            }
+        if (optionalUser.isEmpty()) {
+            throw new NotFoundException("User with email=" + dto.email() + " not found", ErrorCode.USER_NOT_FOUND);
+        }
+        User user = optionalUser.get();
+        if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
             throw new AuthException("Invalid password", ErrorCode.INVALID_PASSWORD);
         }
-        throw new NotFoundException("User with email=" + dto.email() + " not found", ErrorCode.USER_NOT_FOUND);
+        if (!user.isEmailVerified()) {
+            throw new ForbiddenException("Email not verified", ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+        return jwtService.generateAuthToken(user);
     }
 
     /**
