@@ -13,6 +13,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.semstore.userservice.dto.auth.AccessTokenDto;
 import ru.semstore.userservice.dto.auth.JwtAuthDto;
+import ru.semstore.userservice.dto.auth.ResendVerificationCodeDto;
 import ru.semstore.userservice.dto.auth.VerifyEmailDto;
 import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
@@ -177,5 +178,11 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void verifyEmail(@RequestBody @Valid VerifyEmailDto dto) {
         verificationService.verifyEmail(dto);
+    }
+
+    @PostMapping("/resend-verification-code")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resendVerificationCode(@RequestBody @Valid ResendVerificationCodeDto dto) {
+        verificationService.resendVerificationCode(dto);
     }
 }

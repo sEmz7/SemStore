@@ -1,15 +1,16 @@
 package ru.semstore.userservice.service.impl;
 
-import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.semstore.common.dto.VerificationCodeEvent;
+import ru.semstore.userservice.dto.auth.ResendVerificationCodeDto;
 import ru.semstore.userservice.dto.auth.VerifyEmailDto;
 import ru.semstore.userservice.exception.ConflictException;
 import ru.semstore.userservice.exception.ErrorCode;
+import ru.semstore.userservice.exception.NotFoundException;
 import ru.semstore.userservice.kafka.producer.KafkaProducer;
 import ru.semstore.userservice.model.User;
 import ru.semstore.userservice.model.VerificationCode;
@@ -51,12 +52,12 @@ public class VerificationServiceImpl implements VerificationService {
     @Override
     public void verifyEmail(VerifyEmailDto dto) {
         User user = userRepository.findByEmail(dto.email())
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND));
         if (user.isEmailVerified()) {
             throw new ConflictException("User already verified", ErrorCode.USER_ALREADY_VERIFIED);
         }
         VerificationCode code = codeRepository.findVerificationCodeByUserId(user.getId())
-                .orElseThrow(() -> new NotFoundException("Code not found"));
+                .orElseThrow(() -> new NotFoundException("Code not found", ErrorCode.CODE_NOT_FOUND));
         if (code.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new ConflictException("Verification code expired", ErrorCode.VERIFICATION_CODE_EXPIRED);
         }
@@ -72,6 +73,21 @@ public class VerificationServiceImpl implements VerificationService {
         user.setEmailVerified(true);
         userRepository.save(user);
         codeRepository.delete(code);
+    }
+
+    @Override
+    public void resendVerificationCode(ResendVerificationCodeDto dto) {
+        User user = userRepository.findByEmail(dto.email())
+                .orElseThrow(() -> new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND));
+        if (user.isEmailVerified()) {
+            throw new ConflictException("User already verified", ErrorCode.USER_ALREADY_VERIFIED);
+        }
+        VerificationCode code = codeRepository.findVerificationCodeByUserId(user.getId())
+                .orElseThrow(() -> new NotFoundException("Code not found", ErrorCode.CODE_NOT_FOUND));
+        if (code.getCreatedAt().plusMinutes(1).isAfter(LocalDateTime.now())) {
+            throw new ConflictException("Wait 1 minute to resend the code", ErrorCode.WAIT_FOR_RESEND_CODE);
+        }
+        createVerificationCode(user);
     }
 
     private String generateCode() {

@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/auth/register", "/auth/login", "/auth/refresh",
                                         "/auth/validateToken", "/auth/logout", "/auth/verify-email",
+                                        "/auth/resend-verification-code",
                                         "/actuator/health/**", "/actuator/info/**")
                                 .permitAll()
                                 .requestMatchers(WHITELIST).permitAll()
