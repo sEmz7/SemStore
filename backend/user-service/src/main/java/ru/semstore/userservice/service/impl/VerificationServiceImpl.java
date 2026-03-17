@@ -16,6 +16,7 @@ import ru.semstore.userservice.model.User;
 import ru.semstore.userservice.model.VerificationCode;
 import ru.semstore.userservice.repository.UserRepository;
 import ru.semstore.userservice.repository.VerificationCodeRepository;
+import ru.semstore.userservice.service.VerificationCodeAttemptsService;
 import ru.semstore.userservice.service.VerificationService;
 
 import java.time.LocalDateTime;
@@ -33,7 +34,7 @@ public class VerificationServiceImpl implements VerificationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final KafkaProducer kafka;
-    private final VerificationCodeAttemptsServiceImpl verificationCodeAttemptsService;
+    private final VerificationCodeAttemptsService verificationCodeAttemptsService;
     private final int VERIFICATION_CODE_LIFETIME = 15;
     private final int MAX_ATTEMPTS_TO_VERIFY_EMAIL = 5;
 
