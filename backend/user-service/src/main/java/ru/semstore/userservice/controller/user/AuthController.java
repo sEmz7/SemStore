@@ -32,6 +32,9 @@ import ru.semstore.userservice.service.VerificationService;
  *   <li>авторизации и получения JWT токенов</li>
  *   <li>обновления access token по refresh token</li>
  *   <li>валидации JWT токена</li>
+ *   <li>Выход из системы</li>
+ *   <li>Подтверждения почты</li>
+ *   <li>Переотправка кода для подтверждения почты</li>
  * </ul>
  */
 
@@ -174,12 +177,22 @@ public class AuthController {
                 .build();
     }
 
+    /**
+     * Подтверждает email пользователя по коду подтверждения.
+     *
+     * @param dto данные с email пользователя и кодом подтверждения
+     */
     @PostMapping("/verify-email")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void verifyEmail(@RequestBody @Valid VerifyEmailDto dto) {
         verificationService.verifyEmail(dto);
     }
 
+    /**
+     * Повторно отправляет код подтверждения email пользователю.
+     *
+     * @param dto данные с email пользователя для повторной отправки кода
+     */
     @PostMapping("/resend-verification-code")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void resendVerificationCode(@RequestBody @Valid ResendVerificationCodeDto dto) {

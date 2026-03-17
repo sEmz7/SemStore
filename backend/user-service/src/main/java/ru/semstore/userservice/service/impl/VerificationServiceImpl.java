@@ -21,6 +21,9 @@ import ru.semstore.userservice.service.VerificationService;
 import java.time.LocalDateTime;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Реализация сервиса верификации пользователя.
+ */
 @Service
 @Transactional
 @Slf4j
@@ -34,6 +37,13 @@ public class VerificationServiceImpl implements VerificationService {
     private final int VERIFICATION_CODE_LIFETIME = 15;
     private final int MAX_ATTEMPTS_TO_VERIFY_EMAIL = 5;
 
+    /**
+     * Генерирует новый код подтверждения, сохраняет его и отправляет пользователю.
+     *
+     * <p>Предыдущий код удаляется перед созданием нового.</p>
+     *
+     * @param user пользователь, для которого создается код
+     */
     @Override
     public void createVerificationCode(User user) {
         codeRepository.deleteByUserId(user.getId());
@@ -50,6 +60,14 @@ public class VerificationServiceImpl implements VerificationService {
         kafka.sendVerificationCode(new VerificationCodeEvent(user.getEmail(), code));
     }
 
+    /**
+     * Подтверждает email пользователя по введенному коду.
+     *
+     * <p>При успешной проверке помечает email как подтвержденный
+     * и удаляет код.</p>
+     *
+     * @param dto данные с email и кодом подтверждения
+     */
     @Override
     public void verifyEmail(VerifyEmailDto dto) {
         User user = userRepository.findByEmail(dto.email())
@@ -75,6 +93,13 @@ public class VerificationServiceImpl implements VerificationService {
         codeRepository.delete(code);
     }
 
+    /**
+     * Повторно отправляет код подтверждения email пользователю.
+     *
+     * <p>При успешной проверке генерирует и отправляет новый код.</p>
+     *
+     * @param dto данные с email пользователя
+     */
     @Override
     public void resendVerificationCode(ResendVerificationCodeDto dto) {
         User user = userRepository.findByEmail(dto.email())
@@ -90,6 +115,9 @@ public class VerificationServiceImpl implements VerificationService {
         createVerificationCode(user);
     }
 
+    /**
+     * Генерирует случайный шестизначный код.
+     */
     private String generateCode() {
         return String.valueOf(ThreadLocalRandom.current().nextInt(100000, 999999));
     }

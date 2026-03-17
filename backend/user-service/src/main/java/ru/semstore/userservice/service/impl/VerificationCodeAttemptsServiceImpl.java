@@ -12,12 +12,23 @@ import ru.semstore.userservice.service.VerificationCodeAttemptsService;
 
 import java.util.UUID;
 
-
+/**
+ * Реализация сервиса для обновления кол-ва попыток верификации пользователя.
+ */
 @Service
 @RequiredArgsConstructor
 public class VerificationCodeAttemptsServiceImpl implements VerificationCodeAttemptsService {
     private final VerificationCodeRepository codeRepository;
 
+    /**
+     * Увеличивает счетчик попыток ввода кода подтверждения.
+     *
+     * <p>Выполняется в новой транзакции, чтобы изменение количества попыток
+     * сохранялось независимо от основной бизнес-логики.</p>
+     *
+     * @param codeId идентификатор кода подтверждения
+     * @throws NotFoundException если код не найден
+     */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void incrementAttempts(UUID codeId) {
