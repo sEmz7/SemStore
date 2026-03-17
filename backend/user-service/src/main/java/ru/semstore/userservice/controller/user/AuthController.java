@@ -182,6 +182,24 @@ public class AuthController {
      *
      * @param dto данные с email пользователя и кодом подтверждения
      */
+    @Operation(summary = "Подтверждение email",
+            description = "Подтверждает email пользователя с помощью кода подтверждения")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "(NO CONTENT) Email успешно подтвержден"),
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Неверные входные данные",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "(NOT FOUND) Пользователь или код подтверждения не найден",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409",
+                    description = "(CONFLICT) Email уже подтвержден, код истек или превышено количество попыток",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/verify-email")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void verifyEmail(@RequestBody @Valid VerifyEmailDto dto) {
@@ -193,6 +211,22 @@ public class AuthController {
      *
      * @param dto данные с email пользователя для повторной отправки кода
      */
+    @Operation(summary = "Повторная отправка кода подтверждения",
+            description = "Отправляет новый код подтверждения email пользователю")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204",
+                    description = "(NO CONTENT) Код подтверждения успешно отправлен повторно"),
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Неверные входные данные",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "(NOT FOUND) Пользователь не найден",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409",
+                    description = "(CONFLICT) Email уже подтвержден или код еще не требуется переотправлять",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/resend-verification-code")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void resendVerificationCode(@RequestBody @Valid ResendVerificationCodeDto dto) {
