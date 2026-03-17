@@ -1,7 +1,6 @@
 package ru.semstore.notificationservice.service.impl;
 
 import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,13 +15,18 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
+    private final String from;
 
-    @Value("${spring.mail.username}")
-    private String from;
+    public EmailServiceImpl(JavaMailSender mailSender,
+                            TemplateEngine templateEngine,
+                            @Value("${spring.mail.username}") String from) {
+        this.mailSender = mailSender;
+        this.templateEngine = templateEngine;
+        this.from = from;
+    }
 
     @Override
     public void sendHtmlMessage(String to, String subject, String templateName, Map<String, Object> variables) {
