@@ -15,6 +15,7 @@ import ru.semstore.userservice.model.User;
 import ru.semstore.userservice.model.VerificationCode;
 import ru.semstore.userservice.repository.UserRepository;
 import ru.semstore.userservice.repository.VerificationCodeRepository;
+import ru.semstore.userservice.service.impl.VerificationCodeAttemptsServiceImpl;
 import ru.semstore.userservice.service.impl.VerificationServiceImpl;
 
 import java.time.LocalDateTime;
@@ -37,6 +38,8 @@ public class VerificationServiceImplTest {
     PasswordEncoder passwordEncoder;
     @Mock
     KafkaProducer kafka;
+    @Mock
+    VerificationCodeAttemptsServiceImpl verificationCodeAttemptsService;
 
     @InjectMocks
     VerificationServiceImpl service;
