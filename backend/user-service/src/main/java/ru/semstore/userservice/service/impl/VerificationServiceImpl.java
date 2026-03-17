@@ -30,6 +30,7 @@ public class VerificationServiceImpl implements VerificationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final KafkaProducer kafka;
+    private final VerificationCodeAttemptsServiceImpl verificationCodeAttemptsService;
     private final int VERIFICATION_CODE_LIFETIME = 15;
     private final int MAX_ATTEMPTS_TO_VERIFY_EMAIL = 5;
 
@@ -64,9 +65,8 @@ public class VerificationServiceImpl implements VerificationService {
         if (code.getAttempts() >= MAX_ATTEMPTS_TO_VERIFY_EMAIL) {
             throw new ConflictException("Too many attempts", ErrorCode.TO_MANY_ATTEMPTS_TO_VERIFY_EMAIL);
         }
-        code.setAttempts(code.getAttempts() + 1);
         if (!passwordEncoder.matches(dto.code(), code.getCodeHash())) {
-            codeRepository.save(code);
+            verificationCodeAttemptsService.incrementAttempts(code.getId());
             throw new ConflictException("Invalid verification code", ErrorCode.INVALID_VERIFICATION_CODE);
         }
 
