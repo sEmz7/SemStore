@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-add-tracking-number-column
+      author: semyon
+      changes:
+        - addColumn:
+            tableName: orders
+            columns:
+              - column:
+                  name: tracking_number
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+                    unique: true

@@ -13,7 +13,7 @@ import java.util.UUID;
  * Сущность заказа.
  *
  * <p>Хранит основную информацию о заказе:
- * владельца, адрес доставки, статус и дату создания.</p>
+ * владельца, адрес доставки, статус, дату создания, трек номер.</p>
  */
 @Entity
 @Table(name = "orders")
@@ -75,4 +75,11 @@ public class Order {
      */
     @Column(name = "total_price", precision = 9, scale = 2)
     private BigDecimal totalPrice;
+
+    /**
+     * Трек номер заказа.
+     */
+    @EqualsAndHashCode.Include
+    @Column(name = "tracking_number", nullable = false, unique = true, length = 20)
+    private String trackingNumber;
 }
