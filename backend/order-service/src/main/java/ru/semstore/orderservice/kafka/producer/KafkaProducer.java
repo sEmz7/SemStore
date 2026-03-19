@@ -31,7 +31,7 @@ public class KafkaProducer {
      */
     public void sendOrderToCheck(Order order) {
         OrderCreatedEvent orderCreatedEvent = new OrderCreatedEvent(order.getId(), order.getUserId(),
-                order.getAddressId());
+                order.getAddressId(), order.getTrackingNumber());
 
         kafkaTemplate.send(ORDER_CREATED_TOPIC, orderCreatedEvent);
         log.debug("Order sent to kafka, orderId={}", order.getId());

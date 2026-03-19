@@ -14,4 +14,5 @@ public class OrderCreatedEvent {
     private UUID orderId;
     private UUID userId;
     private UUID addressId;
+    private String trackingNumber;
 }
