@@ -37,7 +37,8 @@ public class KafkaConsumer {
         var checkedOrder = new OrderCheckedEvent(
                 event.getOrderId(),
                 userExists && addressExistsAndNotDeletedAndOwned,
-                email
+                email,
+                event.getTrackingNumber()
         );
         kafka.sendCheckedOrder(checkedOrder);
     }

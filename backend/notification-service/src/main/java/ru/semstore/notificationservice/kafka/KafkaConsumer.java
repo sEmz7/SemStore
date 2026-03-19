@@ -28,12 +28,12 @@ public class KafkaConsumer {
             return;
         }
 
-        String subject = "Ваш заказ №" + event.getOrderId() + " создан";
+        String subject = "Создан новый заказ";
         emailService.sendHtmlMessage(
                 event.getUserEmail(),
                 subject,
                 "order-created",
-                Map.of("orderId", event.getOrderId())
+                Map.of("trackingNumber", event.getTrackingNumber())
         );
     }
 

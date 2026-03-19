@@ -13,4 +13,5 @@ public class OrderCheckedEvent {
     private UUID orderId;
     private Boolean valid;
     private String userEmail;
+    private String trackingNumber;
 }
