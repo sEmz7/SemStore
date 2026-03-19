@@ -14,6 +14,7 @@
     <module>discovery-server</module>
     <module>order-service</module>
     <module>common-dtos</module>
+    <module>notification-service</module>
   </modules>
 
   <properties>

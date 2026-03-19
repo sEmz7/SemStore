@@ -1,4 +1,4 @@
-package ru.semstore.userservice.dto.jwt;
+package ru.semstore.userservice.dto.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

@@ -11,14 +11,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.semstore.userservice.dto.jwt.AccessTokenDto;
-import ru.semstore.userservice.dto.jwt.JwtAuthDto;
+import ru.semstore.userservice.dto.auth.AccessTokenDto;
+import ru.semstore.userservice.dto.auth.JwtAuthDto;
+import ru.semstore.userservice.dto.auth.ResendVerificationCodeDto;
+import ru.semstore.userservice.dto.auth.VerifyEmailDto;
 import ru.semstore.userservice.dto.user.UserCreateDto;
 import ru.semstore.userservice.dto.user.UserCredentialsDto;
 import ru.semstore.userservice.dto.user.UserDto;
 import ru.semstore.userservice.dto.user.UserDtoWithRole;
 import ru.semstore.userservice.exception.ErrorResponse;
 import ru.semstore.userservice.service.UserService;
+import ru.semstore.userservice.service.VerificationService;
 
 /**
  * REST-контроллер для аутентификации пользователей.
@@ -29,6 +32,9 @@ import ru.semstore.userservice.service.UserService;
  *   <li>авторизации и получения JWT токенов</li>
  *   <li>обновления access token по refresh token</li>
  *   <li>валидации JWT токена</li>
+ *   <li>Выход из системы</li>
+ *   <li>Подтверждения почты</li>
+ *   <li>Переотправка кода для подтверждения почты</li>
  * </ul>
  */
 
@@ -39,6 +45,7 @@ import ru.semstore.userservice.service.UserService;
 @Validated
 public class AuthController {
     private final UserService userService;
+    private final VerificationService verificationService;
 
     /**
      * Регистрирует нового пользователя.
@@ -168,5 +175,61 @@ public class AuthController {
         return ResponseEntity.noContent()
                 .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
                 .build();
+    }
+
+    /**
+     * Подтверждает email пользователя по коду подтверждения.
+     *
+     * @param dto данные с email пользователя и кодом подтверждения
+     */
+    @Operation(summary = "Подтверждение email",
+            description = "Подтверждает email пользователя с помощью кода подтверждения")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "(NO CONTENT) Email успешно подтвержден"),
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Неверные входные данные",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "(NOT FOUND) Пользователь или код подтверждения не найден",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409",
+                    description = "(CONFLICT) Email уже подтвержден, код истек или превышено количество попыток",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping("/verify-email")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void verifyEmail(@RequestBody @Valid VerifyEmailDto dto) {
+        verificationService.verifyEmail(dto);
+    }
+
+    /**
+     * Повторно отправляет код подтверждения email пользователю.
+     *
+     * @param dto данные с email пользователя для повторной отправки кода
+     */
+    @Operation(summary = "Повторная отправка кода подтверждения",
+            description = "Отправляет новый код подтверждения email пользователю")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204",
+                    description = "(NO CONTENT) Код подтверждения успешно отправлен повторно"),
+            @ApiResponse(responseCode = "400", description = "(BAD REQUEST) Неверные входные данные",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "(NOT FOUND) Пользователь не найден",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409",
+                    description = "(CONFLICT) Email уже подтвержден или код еще не требуется переотправлять",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping("/resend-verification-code")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resendVerificationCode(@RequestBody @Valid ResendVerificationCodeDto dto) {
+        verificationService.resendVerificationCode(dto);
     }
 }

@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service;
 import ru.semstore.common.dto.OrderCheckedEvent;
 import ru.semstore.common.dto.OrderCreatedEvent;
 import ru.semstore.userservice.kafka.producer.KafkaProducer;
+import ru.semstore.userservice.model.User;
 import ru.semstore.userservice.repository.AddressRepository;
 import ru.semstore.userservice.repository.UserRepository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -23,13 +25,20 @@ public class KafkaConsumer {
     @KafkaListener(topics = "order-created")
     public void listenCreatedOrder(OrderCreatedEvent event) {
         log.debug("Order received for check, orderId={}", event.getOrderId());
-        boolean userExists = userRepository.existsById(event.getUserId());
+        Optional<User> user = userRepository.findById(event.getUserId());
+        boolean userExists = user.isPresent();
         boolean addressExistsAndNotDeletedAndOwned =
-                addressRepository.existsActiveOwned(event.getAddressId(), event.getUserId());
+                addressRepository.existsActiveOwned(
+                        event.getAddressId(),
+                        event.getUserId()
+                );
         log.debug("User exists={}, address exists={}", userExists, addressExistsAndNotDeletedAndOwned);
-
-        var checkedOrder = new OrderCheckedEvent(event.getOrderId(),
-                userExists && addressExistsAndNotDeletedAndOwned);
+        String email = user.map(User::getEmail).orElse(null);
+        var checkedOrder = new OrderCheckedEvent(
+                event.getOrderId(),
+                userExists && addressExistsAndNotDeletedAndOwned,
+                email
+        );
         kafka.sendCheckedOrder(checkedOrder);
     }
 

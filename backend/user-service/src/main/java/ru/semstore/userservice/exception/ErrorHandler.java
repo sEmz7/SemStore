@@ -60,4 +60,10 @@ public class ErrorHandler {
     public ErrorResponse handleMethodArgumentTypeMismatchException(final MethodArgumentTypeMismatchException e) {
         return new ErrorResponse(e.getMessage(), ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH);
     }
+
+    @ExceptionHandler(ForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleForbiddenException(final ForbiddenException e) {
+        return new ErrorResponse(e.getMessage(), e.getCode());
+    }
 }

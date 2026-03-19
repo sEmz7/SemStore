@@ -12,4 +12,5 @@ import java.util.UUID;
 public class OrderCheckedEvent {
     private UUID orderId;
     private Boolean valid;
+    private String userEmail;
 }

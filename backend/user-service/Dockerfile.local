@@ -6,6 +6,7 @@ COPY backend/discovery-server/pom.xml ./discovery-server/
 COPY backend/gateway/pom.xml ./gateway/
 COPY backend/order-service/pom.xml ./order-service/
 COPY backend/common-dtos/pom.xml ./common-dtos/
+COPY backend/notification-service/pom.xml ./notification-service/
 RUN mvn dependency:go-offline -B
 COPY backend/user-service/src ./user-service/src/
 COPY backend/common-dtos/src ./common-dtos/src/
