@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/changeset/003-add-deleted-flag-to-user-address.yaml
   - include:
       file: db/changelog/changeset/004-add-user-roles.yaml
+  - include:
+      file: db/changelog/changeset/005-add-email-verify.yaml

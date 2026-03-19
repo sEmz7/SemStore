@@ -35,6 +35,7 @@ jobs:
           - order-service
           - gateway
           - discovery-server
+          - notification-service
 
     steps:
       - uses: actions/checkout@v4
