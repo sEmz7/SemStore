@@ -54,7 +54,7 @@ public class OrderServiceImpl implements OrderService {
     /**
      * Создаёт новый заказ пользователя.
      *
-     * <p>Устанавливает владельца, статус {@link OrderStatus#PENDING} и дату создания.
+     * <p>Устанавливает владельца, статус {@link OrderStatus#PENDING}, дату создания и трек номер.
      * После сохранения отправляет заказ на проверку в user service через Kafka.</p>
      *
      * @param createDto данные для создания заказа
@@ -67,6 +67,7 @@ public class OrderServiceImpl implements OrderService {
         order.setUserId(userId);
         order.setStatus(OrderStatus.PENDING);
         order.setCreatedDate(LocalDateTime.now());
+        order.setTrackingNumber(generateTrackingNumber());
         Order savedOrder = orderRepository.save(order);
         log.debug("Saved order with id={}", savedOrder.getId());
 
@@ -365,5 +366,16 @@ public class OrderServiceImpl implements OrderService {
             throw new ConflictException("Order cannot be changed. orderId=" + order.getId(),
                     ErrorCode.ORDER_STATUS_NOT_MODIFIABLE);
         }
+    }
+
+    /**
+     * Генерирует трек номер для заказа.
+     */
+    private String generateTrackingNumber() {
+        return "ORD-" + UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 12)
+                .toUpperCase();
     }
 }
