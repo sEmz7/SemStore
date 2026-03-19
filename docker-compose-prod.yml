@@ -166,3 +166,26 @@ services:
     depends_on:
       gateway:
         condition: service_started
+
+  notification-service:
+    container_name: notification-service
+    image: ${DOCKERHUB_USERNAME}/notification-service:latest
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8083/actuator/health" ]
+      interval: 3s
+      timeout: 2s
+      retries: 20
