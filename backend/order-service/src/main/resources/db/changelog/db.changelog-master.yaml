@@ -9,3 +9,5 @@ databaseChangeLog:
       file: db/changelog/changeset/004-add-order-total-price.yaml
   - include:
       file: db/changelog/changeset/005-create-outbox-event-table.yaml
+  - include:
+      file: db/changelog/changeset/006-add-order-track-number.yaml
