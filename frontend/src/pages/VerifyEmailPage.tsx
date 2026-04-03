@@ -103,7 +103,6 @@ export function VerifyEmailPage() {
     } catch (e: any) {
       const status: number = e?.response?.status;
       const code: string = e?.response?.data?.code ?? "";
-      if (code === "WAIT_FOR_RESEND_CODE") setCooldown(RESEND_COOLDOWN);
       setError(localizeVerifyError(status, code, t));
     }
   }
