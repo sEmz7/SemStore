@@ -197,7 +197,8 @@ function localizeVerifyError(status: number, msg: string, t: import("i18next").T
     if (m.includes("ALREADY_VERIFIED")) return t("errors.emailAlreadyVerified");
     if (m.includes("TOO_MANY")) return t("errors.tooManyAttempts");
     if (m.includes("RESEND_TOO_EARLY") || m.includes("TOO_EARLY")) return t("errors.resendTooEarly");
-    return t("errors.verificationCodeInvalid");
+    if (m.includes("EXPIRED") || m.includes("NOT_FOUND")) return t("errors.verificationCodeInvalid");
+    return t("errors.authUnknown");
   }
   return t("errors.authUnknown");
 }
