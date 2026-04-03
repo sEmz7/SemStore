@@ -137,6 +137,8 @@ export function VerifyEmailPage() {
                 pattern="[0-9]"
                 maxLength={1}
                 value={digit}
+                autoFocus={i === 0}
+                autoComplete={i === 0 ? "one-time-code" : "off"}
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 onPaste={handlePaste}
@@ -176,7 +178,8 @@ export function VerifyEmailPage() {
             ) : (
               <button
                 onClick={handleResend}
-                className="font-semibold underline underline-offset-4 hover:opacity-80 text-slate-700 dark:text-slate-300"
+                disabled={loading}
+                className="font-semibold underline underline-offset-4 hover:opacity-80 text-slate-700 dark:text-slate-300 disabled:opacity-50"
               >
                 {t("verify.resend")}
               </button>
