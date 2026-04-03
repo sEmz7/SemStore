@@ -126,12 +126,23 @@ export const en = {
       copyEmail: "Copy email",
       copyId: "Copy id",
       rawJson: "Raw JSON",
-  
+
       copySuccessEmail: "Email copied",
       copySuccessId: "ID copied",
       copyFail: "Copy failed",
     },
-  
+
+    verify: {
+      title: "Email verification",
+      subtitle: "Enter the code sent to {{email}}",
+      submit: "Verify",
+      submitting: "Verifying...",
+      resend: "Resend code",
+      resendIn: "Resend in {{sec}}s",
+      success: "Email verified successfully!",
+      resendOk: "Code resent",
+    },
+
     errors: {
       fillAll: "Fill link / size / configuration",
       fillOrderAndAddress: "Fill order name and select address",
@@ -163,6 +174,10 @@ export const en = {
       passwordMinLength: "Password must be at least {{min}} characters",
       maxAddresses: "User can have only {{max}} addresses",
       noChangesToSave: "No changes — nothing to save",
+      verificationCodeInvalid: "Invalid or expired code",
+      emailAlreadyVerified: "Email already verified",
+      tooManyAttempts: "Too many attempts. Request a new code",
+      resendTooEarly: "Please wait before resending",
     },
   } as const;
   
