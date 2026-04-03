@@ -45,8 +45,8 @@ export function VerifyEmailPage() {
     } catch (e: any) {
       submitCalledRef.current = false;
       const status: number = e?.response?.status;
-      const msg: string = e?.response?.data?.message ?? "";
-      setError(localizeVerifyError(status, msg, t));
+      const code: string = e?.response?.data?.code ?? "";
+      setError(localizeVerifyError(status, code, t));
       setDigits(Array(CODE_LENGTH).fill(""));
       inputRefs.current[0]?.focus();
     } finally {
@@ -102,8 +102,9 @@ export function VerifyEmailPage() {
       setCooldown(RESEND_COOLDOWN);
     } catch (e: any) {
       const status: number = e?.response?.status;
-      const msg: string = e?.response?.data?.message ?? "";
-      setError(localizeVerifyError(status, msg, t));
+      const code: string = e?.response?.data?.code ?? "";
+      if (code === "WAIT_FOR_RESEND_CODE") setCooldown(RESEND_COOLDOWN);
+      setError(localizeVerifyError(status, code, t));
     }
   }
 
@@ -193,15 +194,15 @@ export function VerifyEmailPage() {
 
 export default VerifyEmailPage;
 
-function localizeVerifyError(status: number, msg: string, t: import("i18next").TFunction): string {
-  if (status === 404) return t("errors.verificationCodeInvalid");
-  if (status === 409) {
-    const m = msg.toUpperCase();
-    if (m.includes("ALREADY_VERIFIED")) return t("errors.emailAlreadyVerified");
-    if (m.includes("TOO_MANY")) return t("errors.tooManyAttempts");
-    if (m.includes("RESEND_TOO_EARLY") || m.includes("TOO_EARLY")) return t("errors.resendTooEarly");
-    if (m.includes("EXPIRED") || m.includes("NOT_FOUND")) return t("errors.verificationCodeInvalid");
-    return t("errors.authUnknown");
+function localizeVerifyError(status: number, code: string, t: import("i18next").TFunction): string {
+  switch (code) {
+    case "INVALID_VERIFICATION_CODE":
+    case "CODE_NOT_FOUND":
+    case "VERIFICATION_CODE_EXPIRED": return t("errors.verificationCodeInvalid");
+    case "USER_ALREADY_VERIFIED":     return t("errors.emailAlreadyVerified");
+    case "TO_MANY_ATTEMPTS_TO_VERIFY_EMAIL": return t("errors.tooManyAttempts");
+    case "WAIT_FOR_RESEND_CODE":      return t("errors.resendTooEarly");
   }
+  if (status === 404) return t("errors.verificationCodeInvalid");
   return t("errors.authUnknown");
 }
