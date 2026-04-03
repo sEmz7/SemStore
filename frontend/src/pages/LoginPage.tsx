@@ -50,7 +50,12 @@ export function LoginPage() {
       await login(emailTrim, password);
       nav("/", { replace: true });
     } catch (e: any) {
-      const msg = e?.response?.data?.message ?? e?.message;
+      const status: number = e?.response?.status;
+      const msg: string = e?.response?.data?.message ?? e?.message ?? "";
+      if (status === 403 && msg.toUpperCase().includes("EMAIL_NOT_VERIFIED")) {
+        nav("/verify-email", { state: { email: emailTrim } });
+        return;
+      }
       setErr(localizeLoginError(msg, t) ?? t("errors.authUnknown"));
     } finally {
       setLoading(false);
