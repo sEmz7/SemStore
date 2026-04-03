@@ -12,7 +12,13 @@ export const authApi = axios.create({ baseURL: authBaseURL, withCredentials: tru
 
 const refreshApi = axios.create({ baseURL: authBaseURL, withCredentials: true });
 
-const NO_BEARER_PATHS = new Set(["/auth/login", "/auth/register", "/auth/refresh"]);
+const NO_BEARER_PATHS = new Set([
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/verify-email",
+  "/auth/resend-verification-code",
+]);
 
 function normalizeUrl(u: string): string {
   const q = u.indexOf("?");
