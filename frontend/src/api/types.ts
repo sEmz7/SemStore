@@ -1,6 +1,7 @@
 export type UserDto = {
   id: string;
   email: string;
+  role: "ROLE_ADMIN" | "ROLE_USER";
 };
 
 export type JwtAuthDto = {
@@ -26,7 +27,16 @@ export type AddressDto = AddressCreateDto & {
   user: UserDto;
 };
 
-export type OrderStatus = "CREATED" | "IN_CHECK" | "PENDING" | "CANCELED" | "ORDERED" | "PAID";
+export type OrderStatus =
+  | "CREATED"
+  | "IN_CHECK"
+  | "PENDING"
+  | "CANCELED"
+  | "ORDERED"
+  | "PAID"
+  | "AWAITING_PAYMENT"
+  | "DELIVERING"
+  | "COMPLETED";
 
 export type OrderCreateDto = { name: string; addressId: string };
 export type OrderUpdateDto = { name: string; addressId: string };
@@ -48,4 +58,36 @@ export type OrderDto = {
   createdDate: string;
   trackingNumber?: string;
   items?: OrderItem[];
+};
+
+// Admin types
+export type OrderShortDto = {
+  id: string;
+  name: string;
+  userId: string;
+  addressId: string;
+  status: OrderStatus;
+  createdDate: string;
+  trackingNumber?: string;
+};
+
+export type OrderItemDto = {
+  id: string;
+  orderId: string;
+  link: string;
+  size: string;
+  configuration: string;
+  price?: number;
+};
+
+export type OrderFullDto = {
+  id: string;
+  name: string;
+  userId: string;
+  addressId: string;
+  status: OrderStatus;
+  createdDate: string;
+  trackingNumber?: string;
+  items: OrderItemDto[];
+  totalPrice?: number;
 };
