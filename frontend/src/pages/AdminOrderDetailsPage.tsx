@@ -85,7 +85,7 @@ export function AdminOrderDetailsPage() {
         <div className="flex gap-2 shrink-0">
           {isInCheck && (
             <button
-              disabled={!canSubmit}
+              disabled={submitting}
               onClick={() => {
                 if (!allPricesSet) {
                   setError(t("admin.allPricesRequired"));
