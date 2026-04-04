@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { addOrderItem, deleteOrderItem, getOrderById } from "../api/orders";
+import { addOrderItem, confirmOrder, deleteOrderItem, getOrderById } from "../api/orders";
 import type { OrderDto, OrderItem } from "../api/types";
 import { useTranslation } from "react-i18next";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -66,6 +66,7 @@ export function OrderDetailsPage() {
 
   const [serverErrors, setServerErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [saving, setSaving] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ itemId: string } | null>(null);
@@ -80,6 +81,8 @@ export function OrderDetailsPage() {
   );
 
   const items = useMemo<OrderItem[]>(() => (order?.items ?? []) as OrderItem[], [order]);
+
+  const isEditable = order?.status === "CREATED";
 
   function setField(key: FieldKey, value: string) {
     setForm((p) => ({ ...p, [key]: value }));
@@ -126,6 +129,20 @@ export function OrderDetailsPage() {
       setPageError(e?.response?.data?.message ?? t("errors.loadOrderFail"));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleConfirm() {
+    if (!id) return;
+    setConfirming(true);
+    try {
+      setPageError(null);
+      await confirmOrder(id);
+      await reload();
+    } catch (e: any) {
+      setPageError(e?.response?.data?.message ?? t("errors.loadOrderFail"));
+    } finally {
+      setConfirming(false);
     }
   }
 
@@ -226,19 +243,39 @@ export function OrderDetailsPage() {
           )}
         </div>
 
-        <button
-          onClick={reload}
-          className="w-full sm:w-auto px-3 py-2 rounded-xl text-sm font-medium border bg-white hover:bg-slate-50 transition
-                     dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
-        >
-          {loading ? t("common.loading") : t("common.refresh")}
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          {isEditable && items.length > 0 && (
+            <button
+              disabled={confirming}
+              onClick={handleConfirm}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition
+                         bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50
+                         dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+            >
+              {confirming ? t("order.confirming") : t("order.confirm")}
+            </button>
+          )}
+          <button
+            onClick={reload}
+            className="w-full sm:w-auto px-3 py-2 rounded-xl text-sm font-medium border bg-white hover:bg-slate-50 transition
+                       dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
+          >
+            {loading ? t("common.loading") : t("common.refresh")}
+          </button>
+        </div>
       </div>
 
       {pageError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
                         dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 break-words">
           {pageError}
+        </div>
+      )}
+
+      {!isEditable && order !== null && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800
+                        dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+          {t("order.editingLocked")}
         </div>
       )}
 
@@ -259,6 +296,7 @@ export function OrderDetailsPage() {
               placeholder={LIMITS.link.placeholder}
               maxLength={LIMITS.link.max}
               error={shownError("link")}
+              disabled={!isEditable}
             />
           </div>
 
@@ -271,6 +309,7 @@ export function OrderDetailsPage() {
               placeholder={LIMITS.size.placeholder}
               maxLength={LIMITS.size.max}
               error={shownError("size")}
+              disabled={!isEditable}
             />
           </div>
 
@@ -283,12 +322,13 @@ export function OrderDetailsPage() {
               placeholder={LIMITS.configuration.placeholder}
               maxLength={LIMITS.configuration.max}
               error={shownError("configuration")}
+              disabled={!isEditable}
             />
           </div>
 
           <div className="sm:col-span-3 flex justify-end">
             <button
-              disabled={!canSubmit}
+              disabled={!canSubmit || !isEditable}
               onClick={addItem}
               className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold
                          bg-slate-900 text-white hover:bg-slate-800 transition
@@ -367,7 +407,7 @@ export function OrderDetailsPage() {
                       </Link>
 
                       <button
-                        disabled={!canOpen || isDeleting}
+                        disabled={!canOpen || isDeleting || !isEditable}
                         onClick={() => {
                           if (!canOpen) {
                             setPageError(t("errors.noItemIdDelete"));
