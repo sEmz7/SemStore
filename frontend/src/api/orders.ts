@@ -70,7 +70,7 @@ export async function confirmOrder(orderId: string): Promise<OrderDto> {
   const userId = getUserIdFromAccessToken();
   const headers: Record<string, string> = {};
   if (userId) headers["X-User-Id"] = userId;
-  const { data } = await orderApi.post<OrderDto>(
+  const { data } = await orderApi.patch<OrderDto>(
     `/orders/${orderId}/confirm`,
     undefined,
     { baseURL: "", headers }
