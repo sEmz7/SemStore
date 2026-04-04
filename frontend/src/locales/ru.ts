@@ -72,6 +72,7 @@ export const ru = {
   
     orderStatus: {
       CREATED: "Создан",
+      IN_CHECK: "На проверке",
       ORDERED: "Оформлен",
       PAID: "Оплачен",
       CANCELED: "Отменён",
@@ -114,6 +115,9 @@ export const ru = {
       configuration: "конфигурация",
       price: "цена",
       created: "Создан",
+      confirm: "Оформить заказ",
+      confirming: "Оформляем...",
+      editingLocked: "Изменение недоступно для текущего статуса заказа",
     },
   
     item: {

@@ -72,6 +72,7 @@ export const en = {
   
     orderStatus: {
       CREATED: "Created",
+      IN_CHECK: "In review",
       ORDERED: "Ordered",
       PAID: "Paid",
       CANCELED: "Canceled",
@@ -110,6 +111,9 @@ export const en = {
       configuration: "configuration",
       price: "price",
       created: "Created",
+      confirm: "Confirm order",
+      confirming: "Confirming...",
+      editingLocked: "Editing is not available for the current order status",
     },
   
     item: {
