@@ -181,7 +181,7 @@ export const ru = {
       verificationCodeInvalid: "Неверный или истёкший код",
       emailAlreadyVerified: "Email уже подтверждён",
       tooManyAttempts: "Превышено количество попыток. Запросите новый код",
-      resendTooEarly: "Подождите перед повторной отправкой",
+      resendTooEarly: "Подождите минуту перед повторной отправкой",
     },
   } as const;
   

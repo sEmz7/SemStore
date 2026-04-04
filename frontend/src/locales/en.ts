@@ -177,7 +177,7 @@ export const en = {
       verificationCodeInvalid: "Invalid or expired code",
       emailAlreadyVerified: "Email already verified",
       tooManyAttempts: "Too many attempts. Request a new code",
-      resendTooEarly: "Please wait before resending",
+      resendTooEarly: "Please wait a minute before resending",
     },
   } as const;
   
