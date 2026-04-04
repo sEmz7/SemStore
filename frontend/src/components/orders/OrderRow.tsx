@@ -1,6 +1,7 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { copyToClipboard } from "../../utils/clipboard";
 import type { OrderDto } from "../../api/types";
 import { cn } from "../../utils/cn";
 import FormField from "../FormField";
@@ -66,7 +67,16 @@ const MENU_W_FALLBACK = 176;
 function OrderRow({ order, statusText, addressOptions, state, menu, actions, labels }: OrderRowProps) {
   const { isDeleting, isEditing, isUpdating, editName, editAddressId, editNameError, nameMaxLength, canSaveEdit } =
     state;
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
+  const [trackingCopied, setTrackingCopied] = useState(false);
+
+  async function handleCopyTracking(trackingNumber: string) {
+    const ok = await copyToClipboard(trackingNumber);
+    if (ok) {
+      setTrackingCopied(true);
+      setTimeout(() => setTrackingCopied(false), 2000);
+    }
+  }
 
   function formatDate(dateStr: string): string {
     try {
@@ -85,7 +95,19 @@ function OrderRow({ order, statusText, addressOptions, state, menu, actions, lab
             <>
               <div className="font-medium text-slate-900 break-all dark:text-slate-50">{order.name || order.id}</div>
               <div className="text-xs text-slate-500 mt-1 dark:text-slate-400 break-all">
-                {order.trackingNumber && <span>#{order.trackingNumber}{order.createdDate ? " • " : ""}</span>}
+                {order.trackingNumber && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyTracking(order.trackingNumber!)}
+                      title={t("order.copyTracking")}
+                      className="underline decoration-dotted underline-offset-2 cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                    >
+                      {trackingCopied ? t("order.trackingCopied") : order.trackingNumber}
+                    </button>
+                    {order.createdDate ? " • " : ""}
+                  </>
+                )}
                 {order.createdDate ? formatDate(order.createdDate) : ""}
               </div>
             </>
