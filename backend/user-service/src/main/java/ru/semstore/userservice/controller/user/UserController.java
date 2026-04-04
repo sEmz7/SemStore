@@ -15,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.semstore.userservice.dto.user.ChangePasswordDto;
 import ru.semstore.userservice.dto.user.UserDto;
+import ru.semstore.userservice.dto.user.UserDtoWithRole;
 import ru.semstore.userservice.exception.ErrorResponse;
 import ru.semstore.userservice.security.CustomUserDetails;
 import ru.semstore.userservice.service.UserService;
@@ -57,7 +58,7 @@ public class UserController {
                             schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping
-    public UserDto getCurrentUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public UserDtoWithRole getCurrentUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return userService.getById(userDetails.user().getId());
     }
 

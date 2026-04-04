@@ -41,7 +41,7 @@ public interface UserService {
      * @param userId идентификатор пользователя
      * @return пользователь
      */
-    UserDto getById(UUID userId);
+    UserDtoWithRole getById(UUID userId);
 
     /**
      * Изменяет пароль пользователя.
