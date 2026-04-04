@@ -71,6 +71,7 @@ export const ru = {
     },
   
     orderStatus: {
+      PENDING: "Ожидает",
       CREATED: "Создан",
       IN_CHECK: "На проверке",
       ORDERED: "Оформлен",

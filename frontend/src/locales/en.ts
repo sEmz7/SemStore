@@ -71,6 +71,7 @@ export const en = {
     },
   
     orderStatus: {
+      PENDING: "Pending",
       CREATED: "Created",
       IN_CHECK: "In review",
       ORDERED: "Ordered",

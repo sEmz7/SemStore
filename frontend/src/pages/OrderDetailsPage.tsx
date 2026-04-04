@@ -5,13 +5,11 @@ import type { OrderDto, OrderItem } from "../api/types";
 import { useTranslation } from "react-i18next";
 import ConfirmDialog from "../components/ConfirmDialog";
 import FormField from "../components/FormField";
+import StatusBadge from "../components/StatusBadge";
 import { localizeBackendLengthError } from "../utils/springValidation";
+import { cn } from "../utils/cn";
 
 type FieldKey = "link" | "size" | "configuration";
-
-function cn(...a: Array<string | false | null | undefined>) {
-  return a.filter(Boolean).join(" ");
-}
 
 const LIMITS: Record<FieldKey, { min: number; max: number; labelKey: string; placeholder: string }> = {
   link: { min: 2, max: 50, labelKey: "order.link", placeholder: "https://example.com/product/1" },
@@ -25,23 +23,6 @@ function validateLen(v: string, min: number, max: number) {
   if (s.length < min) return { ok: false as const, kind: "min" as const };
   if (s.length > max) return { ok: false as const, kind: "max" as const };
   return { ok: true as const };
-}
-
-function StatusBadge({ status, label }: { status: string; label: string }) {
-  const cls =
-    status === "PAID"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-200"
-      : status === "CANCELED"
-      ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200"
-      : status === "ORDERED"
-      ? "border-indigo-200 bg-indigo-50 text-indigo-800 dark:border-indigo-900/40 dark:bg-indigo-950/40 dark:text-indigo-200"
-      : "border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-100";
-
-  return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold", cls)}>
-      {label}
-    </span>
-  );
 }
 
 export function OrderDetailsPage() {
