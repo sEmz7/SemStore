@@ -161,6 +161,7 @@ export const en = {
       userAlreadyExists: "User with this email already exists",
       authUnknown: "Authentication error",
       loadOrderFail: "Failed to load order",
+      confirmOrderFail: "Failed to confirm order",
       addItemFail: "Failed to add item",
       deleteFail: "Delete failed",
       loadItemFail: "Failed to load item",

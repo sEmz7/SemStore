@@ -165,6 +165,7 @@ export const ru = {
       userAlreadyExists: "Пользователь с таким email уже существует",
       authUnknown: "Ошибка авторизации",
       loadOrderFail: "Не удалось загрузить заказ",
+      confirmOrderFail: "Не удалось оформить заказ",
       addItemFail: "Не удалось добавить товар",
       deleteFail: "Не удалось удалить",
       loadItemFail: "Не удалось загрузить товар",

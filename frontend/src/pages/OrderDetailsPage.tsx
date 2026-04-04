@@ -140,7 +140,7 @@ export function OrderDetailsPage() {
       await confirmOrder(id);
       await reload();
     } catch (e: any) {
-      setPageError(e?.response?.data?.message ?? t("errors.loadOrderFail"));
+      setPageError(e?.response?.data?.message ?? t("errors.confirmOrderFail"));
     } finally {
       setConfirming(false);
     }
@@ -256,8 +256,10 @@ export function OrderDetailsPage() {
             </button>
           )}
           <button
+            disabled={loading || confirming}
             onClick={reload}
             className="w-full sm:w-auto px-3 py-2 rounded-xl text-sm font-medium border bg-white hover:bg-slate-50 transition
+                       disabled:opacity-50
                        dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
           >
             {loading ? t("common.loading") : t("common.refresh")}
