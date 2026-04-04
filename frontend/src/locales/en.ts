@@ -115,7 +115,7 @@ export const en = {
       confirm: "Confirm order",
       confirming: "Confirming...",
       editingLocked: "Editing is not available for the current order status",
-      inCheckBanner: "Your order has been submitted for review. Once processed by a moderator, you will receive the total amount to pay.",
+      inCheckBanner: "Your order has been submitted for processing. Once the moderator has reviewed it, you will receive the total amount to pay.",
       confirmHint: "Add items and click «Confirm order» to submit your order for processing",
       trackingNumber: "Tracking number",
       copyTracking: "Copy tracking number",

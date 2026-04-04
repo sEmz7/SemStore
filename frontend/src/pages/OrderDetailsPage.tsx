@@ -241,14 +241,14 @@ export function OrderDetailsPage() {
           {order?.trackingNumber && (
             <div className="mt-2 flex items-center gap-2">
               <span className="text-xs text-slate-500 dark:text-slate-400">{t("order.trackingNumber")}:</span>
-              <span className="text-sm font-mono font-semibold break-all">{order.trackingNumber}</span>
               <button
                 onClick={() => copyTracking(order!.trackingNumber!)}
-                className="shrink-0 px-2 py-0.5 rounded-lg text-xs border transition
-                           bg-white hover:bg-slate-50 border-slate-200
-                           dark:bg-slate-950 dark:border-slate-700 dark:hover:bg-slate-900/60"
+                title={trackingCopied ? t("order.trackingCopied") : t("order.copyTracking")}
+                className="text-sm font-mono font-semibold break-all cursor-pointer
+                           underline decoration-dotted underline-offset-2
+                           hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
-                {trackingCopied ? t("order.trackingCopied") : t("order.copyTracking")}
+                {trackingCopied ? t("order.trackingCopied") : order.trackingNumber}
               </button>
             </div>
           )}
@@ -286,8 +286,9 @@ export function OrderDetailsPage() {
       )}
 
       {!isEditable && order !== null && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800
-                        dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+        <div className="rounded-xl border px-4 py-3 text-sm
+                        border-slate-200 bg-slate-50 text-slate-600
+                        dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
           {status === "IN_CHECK" ? t("order.inCheckBanner") : t("order.editingLocked")}
         </div>
       )}
