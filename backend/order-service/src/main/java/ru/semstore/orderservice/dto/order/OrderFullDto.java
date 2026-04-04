@@ -33,6 +33,9 @@ public record OrderFullDto(
         List<OrderItemDto> items,
 
         @Schema(description = "Общая стоимость заказа", example = "1500.50", nullable = true)
-        BigDecimal totalPrice
+        BigDecimal totalPrice,
+
+        @Schema(description = "Трек номер заказа", example = "ORD-B1334C36200A")
+        String trackingNumber
 ) {
 }

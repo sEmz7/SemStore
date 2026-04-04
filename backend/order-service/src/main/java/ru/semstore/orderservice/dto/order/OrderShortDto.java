@@ -31,4 +31,7 @@ public class OrderShortDto {
 
     @Schema(description = "Дата создания заказа", example = "2025-12-17T21:03:50.599901")
     private LocalDateTime createdDate;
+
+    @Schema(description = "Трек номер заказа", example = "ORD-B1334C36200A")
+    private String trackingNumber;
 }
