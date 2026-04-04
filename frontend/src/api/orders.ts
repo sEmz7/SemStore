@@ -1,4 +1,4 @@
-import { orderApi } from "./http";
+import { orderApi, getUserIdFromAccessToken } from "./http";
 import type { OrderCreateDto, OrderDto, OrderItem } from "./types";
 
 export type Paged<T> = {
@@ -67,6 +67,13 @@ export async function updateOrderItem(
 }
 
 export async function confirmOrder(orderId: string): Promise<OrderDto> {
-  const { data } = await orderApi.post<OrderDto>(`/${orderId}/confirm`);
+  const userId = getUserIdFromAccessToken();
+  const headers: Record<string, string> = {};
+  if (userId) headers["X-User-Id"] = userId;
+  const { data } = await orderApi.post<OrderDto>(
+    `/orders/${orderId}/confirm`,
+    undefined,
+    { baseURL: "", headers }
+  );
   return data;
 }
