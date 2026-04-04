@@ -272,8 +272,12 @@ export default function OrderItemPage() {
 
                   nav(`/orders/${orderId}`, { replace: true });
                 } catch (e: any) {
-                  const msg: string = e?.response?.data?.message ?? e?.message ?? "";
-                  setErr(msg || t("errors.updateItemFail"));
+                  const code = e?.response?.data?.code;
+                  if (code === "ORDER_STATUS_NOT_MODIFIABLE") {
+                    setErr(t("errors.orderCannotBeModified"));
+                  } else {
+                    setErr(t("errors.updateItemFail"));
+                  }
                 } finally {
                   setSaving(false);
                 }
