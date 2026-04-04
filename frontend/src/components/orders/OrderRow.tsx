@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { OrderDto } from "../../api/types";
 import { cn } from "../../utils/cn";
@@ -65,6 +66,15 @@ const MENU_W_FALLBACK = 176;
 function OrderRow({ order, statusText, addressOptions, state, menu, actions, labels }: OrderRowProps) {
   const { isDeleting, isEditing, isUpdating, editName, editAddressId, editNameError, nameMaxLength, canSaveEdit } =
     state;
+  const { i18n } = useTranslation();
+
+  function formatDate(dateStr: string): string {
+    try {
+      return new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "long", year: "numeric" }).format(new Date(dateStr));
+    } catch {
+      return dateStr;
+    }
+  }
 
   return (
     <li className="p-4 hover:bg-slate-50 transition dark:hover:bg-slate-900/40">
@@ -75,8 +85,8 @@ function OrderRow({ order, statusText, addressOptions, state, menu, actions, lab
             <>
               <div className="font-medium text-slate-900 break-all dark:text-slate-50">{order.name || order.id}</div>
               <div className="text-xs text-slate-500 mt-1 dark:text-slate-400 break-all">
-                id: {order.id}
-                {order.createdDate ? ` • ${order.createdDate}` : ""}
+                {order.trackingNumber && <span>#{order.trackingNumber}{order.createdDate ? " • " : ""}</span>}
+                {order.createdDate ? formatDate(order.createdDate) : ""}
               </div>
             </>
           ) : (
