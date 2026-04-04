@@ -51,7 +51,7 @@ export function RegisterPage() {
     setLoading(true);
     try {
       await register(emailTrim, password);
-      nav("/login", { replace: true });
+      nav("/verify-email", { replace: true, state: { email: emailTrim } });
     } catch (e: any) {
       setErr(localizeRegisterError(e, t, emailTrim));
     } finally {

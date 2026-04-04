@@ -20,3 +20,11 @@ export async function getMe(): Promise<UserDto> {
 export async function logout(): Promise<void> {
   await authApi.post("/auth/logout");
 }
+
+export async function verifyEmail(email: string, code: string): Promise<void> {
+  await authApi.post("/auth/verify-email", { email, code });
+}
+
+export async function resendVerificationCode(email: string): Promise<void> {
+  await authApi.post("/auth/resend-verification-code", { email });
+}
