@@ -210,7 +210,7 @@ export function OrderDetailsPage() {
 
   if (!id) return null;
 
-  const title = order?.name?.trim() ? order!.name : id;
+  const title = order ? (order.name?.trim() || id) : "";
   const status = order?.status ?? "";
   const statusLabel = status ? t(`orderStatus.${status}`, { defaultValue: status }) : "";
 
