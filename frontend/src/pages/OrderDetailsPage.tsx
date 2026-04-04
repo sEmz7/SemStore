@@ -293,7 +293,11 @@ export function OrderDetailsPage() {
       {!isEditable && order !== null && (
         <div className="rounded-3xl border bg-white px-4 py-3 text-sm shadow-sm text-slate-600
                         dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400">
-          {status === "IN_CHECK" ? t("order.inCheckBanner") : t("order.editingLocked")}
+          {status === "IN_CHECK"
+            ? t("order.inCheckBanner")
+            : status === "AWAITING_PAYMENT"
+            ? t("order.awaitingPaymentBanner")
+            : t("order.editingLocked")}
         </div>
       )}
 
