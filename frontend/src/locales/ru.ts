@@ -176,6 +176,7 @@ export const ru = {
       confirmOrderFail: "Не удалось оформить заказ",
       addItemFail: "Не удалось добавить товар",
       deleteFail: "Не удалось удалить",
+      orderCannotBeModified: "Нельзя изменить заказ с текущим статусом",
       loadItemFail: "Не удалось загрузить товар",
       updateItemFail: "Не удалось обновить товар",
       noItemIdOpen: "У товара нет id — нельзя открыть",

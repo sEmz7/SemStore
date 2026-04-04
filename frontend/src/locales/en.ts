@@ -172,6 +172,7 @@ export const en = {
       confirmOrderFail: "Failed to confirm order",
       addItemFail: "Failed to add item",
       deleteFail: "Delete failed",
+      orderCannotBeModified: "The order cannot be modified in its current status",
       loadItemFail: "Failed to load item",
       updateItemFail: "Failed to update item",
       noItemIdOpen: "Item has no id — cannot open",

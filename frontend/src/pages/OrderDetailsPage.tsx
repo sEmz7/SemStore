@@ -197,7 +197,12 @@ export function OrderDetailsPage() {
       await deleteOrderItem(id, itemId);
       await reload();
     } catch (e: any) {
-      setPageError(e?.response?.data?.message ?? t("errors.deleteFail"));
+      const code = e?.response?.data?.code;
+      if (code === "ORDER_STATUS_NOT_MODIFIABLE") {
+        setPageError(t("errors.orderCannotBeModified"));
+      } else {
+        setPageError(t("errors.deleteFail"));
+      }
     } finally {
       setDeletingItemId(null);
     }
