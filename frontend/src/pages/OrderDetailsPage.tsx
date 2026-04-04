@@ -229,7 +229,7 @@ export function OrderDetailsPage() {
             <button
               disabled={confirming}
               onClick={handleConfirm}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition
+              className="w-full sm:w-auto px-6 py-3 rounded-xl text-base font-semibold transition
                          bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50
                          dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
             >
@@ -267,6 +267,11 @@ export function OrderDetailsPage() {
         <div>
           <div className="text-sm font-semibold">{t("order.addItem")}</div>
           <div className="text-xs text-slate-500 dark:text-slate-400">{t("order.hint")}</div>
+          {isEditable && (
+            <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+              {t("order.confirmHint")}
+            </div>
+          )}
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">

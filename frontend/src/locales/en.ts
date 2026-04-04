@@ -115,6 +115,7 @@ export const en = {
       confirm: "Confirm order",
       confirming: "Confirming...",
       editingLocked: "Editing is not available for the current order status",
+      confirmHint: "Add items and click «Confirm order» to submit your order for processing",
     },
   
     item: {
