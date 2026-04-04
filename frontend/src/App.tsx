@@ -1,6 +1,7 @@
 // src/App.tsx
 import { Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminRoute } from "./components/AdminRoute";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { VerifyEmailPage } from "./pages/VerifyEmailPage";
@@ -9,6 +10,8 @@ import { AddressesPage } from "./pages/AddressesPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { OrderDetailsPage } from "./pages/OrderDetailsPage";
 import OrderItemPage from "./pages/OrderItemPage";
+import { AdminOrdersPage } from "./pages/AdminOrdersPage";
+import { AdminOrderDetailsPage } from "./pages/AdminOrderDetailsPage";
 import { Layout } from "./components/Layout";
 
 export default function App() {
@@ -57,6 +60,24 @@ export default function App() {
             <ProtectedRoute>
               <ProfilePage />
             </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminOrdersPage />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/orders/:id"
+          element={
+            <AdminRoute>
+              <AdminOrderDetailsPage />
+            </AdminRoute>
           }
         />
 
