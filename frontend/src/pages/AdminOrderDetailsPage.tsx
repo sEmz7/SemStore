@@ -19,7 +19,6 @@ export function AdminOrderDetailsPage() {
     saveItemPrice,
     submitting,
     handleSubmit,
-    canSubmit,
     allPricesSet,
     reload,
   } = useAdminOrderDetails(id, t);
