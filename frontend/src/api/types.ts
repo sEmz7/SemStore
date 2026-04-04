@@ -46,5 +46,6 @@ export type OrderDto = {
   addressId: string;
   status: OrderStatus;
   createdDate: string;
+  trackingNumber?: string;
   items?: OrderItem[];
 };

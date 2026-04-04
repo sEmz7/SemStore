@@ -73,7 +73,7 @@ export const en = {
     orderStatus: {
       PENDING: "Pending",
       CREATED: "Created",
-      IN_CHECK: "In review",
+      IN_CHECK: "In progress",
       ORDERED: "Ordered",
       PAID: "Paid",
       CANCELED: "Canceled",
@@ -116,6 +116,11 @@ export const en = {
       confirming: "Confirming...",
       editingLocked: "Editing is not available for the current order status",
       confirmHint: "Add items and click «Confirm order» to submit your order for processing",
+      trackingNumber: "Tracking number",
+      copyTracking: "Copy tracking number",
+      trackingCopied: "Tracking number copied",
+      confirmDialogTitle: "Confirm order?",
+      confirmDialogDescription: "After confirming, the order will move to \"In progress\" status. You won't be able to add or edit items.",
     },
   
     item: {

@@ -73,7 +73,7 @@ export const ru = {
     orderStatus: {
       PENDING: "Ожидает",
       CREATED: "Создан",
-      IN_CHECK: "На проверке",
+      IN_CHECK: "В обработке",
       ORDERED: "Оформлен",
       PAID: "Оплачен",
       CANCELED: "Отменён",
@@ -120,6 +120,11 @@ export const ru = {
       confirming: "Оформляем...",
       editingLocked: "Изменение недоступно для текущего статуса заказа",
       confirmHint: "Добавьте товары и нажмите «Оформить заказ» для отправки заказа на обработку",
+      trackingNumber: "Трек-номер",
+      copyTracking: "Скопировать трек-номер",
+      trackingCopied: "Трек-номер скопирован",
+      confirmDialogTitle: "Оформить заказ?",
+      confirmDialogDescription: "После оформления заказ перейдёт в статус «В обработке». Добавлять и изменять товары станет невозможно.",
     },
   
     item: {

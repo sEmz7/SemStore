@@ -4,6 +4,7 @@ import { addOrderItem, confirmOrder, deleteOrderItem, getOrderById } from "../ap
 import type { OrderDto, OrderItem } from "../api/types";
 import { useTranslation } from "react-i18next";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { copyToClipboard } from "../utils/clipboard";
 import FormField from "../components/FormField";
 import StatusBadge from "../components/StatusBadge";
 import { localizeBackendLengthError } from "../utils/springValidation";
@@ -26,7 +27,7 @@ function validateLen(v: string, min: number, max: number) {
 }
 
 export function OrderDetailsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
 
   const [order, setOrder] = useState<OrderDto | null>(null);
@@ -51,6 +52,8 @@ export function OrderDetailsPage() {
 
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ itemId: string } | null>(null);
+  const [confirmOrderOpen, setConfirmOrderOpen] = useState(false);
+  const [trackingCopied, setTrackingCopied] = useState(false);
 
   const labels = useMemo<Record<FieldKey, string>>(
     () => ({
@@ -98,6 +101,22 @@ export function OrderDetailsPage() {
 
   function shownError(key: FieldKey) {
     return serverErrors[key] ?? (touched[key] ? clientErrors[key] : null);
+  }
+
+  function formatDate(dateStr: string): string {
+    try {
+      return new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "long", year: "numeric" }).format(new Date(dateStr));
+    } catch {
+      return dateStr;
+    }
+  }
+
+  async function copyTracking(trackingNumber: string) {
+    const ok = await copyToClipboard(trackingNumber);
+    if (ok) {
+      setTrackingCopied(true);
+      setTimeout(() => setTrackingCopied(false), 2000);
+    }
   }
 
   async function reload() {
@@ -213,13 +232,24 @@ export function OrderDetailsPage() {
             {status && <StatusBadge status={status} label={statusLabel} />}
           </div>
 
-          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400 break-all">
-            {t("orders.id")}: {id}
-          </div>
-
           {order?.createdDate && (
             <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {t("order.created")}: {order.createdDate}
+              {t("order.created")}: {formatDate(order.createdDate)}
+            </div>
+          )}
+
+          {order?.trackingNumber && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t("order.trackingNumber")}:</span>
+              <span className="text-sm font-mono font-semibold break-all">{order.trackingNumber}</span>
+              <button
+                onClick={() => copyTracking(order!.trackingNumber!)}
+                className="shrink-0 px-2 py-0.5 rounded-lg text-xs border transition
+                           bg-white hover:bg-slate-50 border-slate-200
+                           dark:bg-slate-950 dark:border-slate-700 dark:hover:bg-slate-900/60"
+              >
+                {trackingCopied ? t("order.trackingCopied") : t("order.copyTracking")}
+              </button>
             </div>
           )}
         </div>
@@ -228,7 +258,7 @@ export function OrderDetailsPage() {
           {isEditable && items.length > 0 && (
             <button
               disabled={confirming}
-              onClick={handleConfirm}
+              onClick={() => setConfirmOrderOpen(true)}
               className="w-full sm:w-auto px-6 py-3 rounded-xl text-base font-semibold transition
                          bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50
                          dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
@@ -266,7 +296,6 @@ export function OrderDetailsPage() {
       <div className="rounded-3xl border bg-white p-4 sm:p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
         <div>
           <div className="text-sm font-semibold">{t("order.addItem")}</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">{t("order.hint")}</div>
           {isEditable && (
             <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
               {t("order.confirmHint")}
@@ -431,6 +460,20 @@ export function OrderDetailsPage() {
           const itemId = confirmDelete.itemId;
           await doDeleteItem(itemId);
           setConfirmDelete(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmOrderOpen}
+        title={t("order.confirmDialogTitle")}
+        description={t("order.confirmDialogDescription")}
+        confirmText={t("order.confirm")}
+        cancelText={t("common.cancel")}
+        loading={confirming}
+        onClose={() => setConfirmOrderOpen(false)}
+        onConfirm={async () => {
+          setConfirmOrderOpen(false);
+          await handleConfirm();
         }}
       />
     </div>
