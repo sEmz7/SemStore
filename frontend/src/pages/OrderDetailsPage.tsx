@@ -240,12 +240,10 @@ export function OrderDetailsPage() {
 
           {order?.trackingNumber && (
             <div className="mt-2 flex items-center gap-2">
-              {!trackingCopied && (
-                <span className="text-xs text-slate-500 dark:text-slate-400">{t("order.trackingNumber")}:</span>
-              )}
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t("order.trackingNumber")}:</span>
               <button
                 onClick={() => copyTracking(order!.trackingNumber!)}
-                title={trackingCopied ? t("order.trackingCopied") : t("order.copyTracking")}
+                title={t("order.copyTracking")}
                 className="text-sm font-mono font-semibold break-all cursor-pointer
                            underline decoration-dotted underline-offset-2
                            hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
