@@ -26,7 +26,7 @@ export type AddressDto = AddressCreateDto & {
   user: UserDto;
 };
 
-export type OrderStatus = "CREATED" | "PENDING" | "CANCELED" | "ORDERED" | "PAID";
+export type OrderStatus = "CREATED" | "IN_CHECK" | "PENDING" | "CANCELED" | "ORDERED" | "PAID";
 
 export type OrderCreateDto = { name: string; addressId: string };
 export type OrderUpdateDto = { name: string; addressId: string };
@@ -46,5 +46,6 @@ export type OrderDto = {
   addressId: string;
   status: OrderStatus;
   createdDate: string;
+  trackingNumber?: string;
   items?: OrderItem[];
 };

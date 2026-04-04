@@ -71,7 +71,9 @@ export const en = {
     },
   
     orderStatus: {
+      PENDING: "Pending",
       CREATED: "Created",
+      IN_CHECK: "In progress",
       ORDERED: "Ordered",
       PAID: "Paid",
       CANCELED: "Canceled",
@@ -110,6 +112,16 @@ export const en = {
       configuration: "configuration",
       price: "price",
       created: "Created",
+      confirm: "Confirm order",
+      confirming: "Confirming...",
+      editingLocked: "Editing is not available for the current order status",
+      inCheckBanner: "Your order has been submitted for processing. Once the moderator has reviewed it, you will receive the total amount to pay.",
+      confirmHint: "Add items and click «Confirm order» to submit your order for processing",
+      trackingNumber: "Tracking number",
+      copyTracking: "Copy tracking number",
+      trackingCopied: "Tracking number copied",
+      confirmDialogTitle: "Confirm order?",
+      confirmDialogDescription: "After confirming, the order will move to \"In progress\" status. You won't be able to add or edit items.",
     },
   
     item: {
@@ -126,12 +138,23 @@ export const en = {
       copyEmail: "Copy email",
       copyId: "Copy id",
       rawJson: "Raw JSON",
-  
+
       copySuccessEmail: "Email copied",
       copySuccessId: "ID copied",
       copyFail: "Copy failed",
     },
-  
+
+    verify: {
+      title: "Email verification",
+      subtitle: "Enter the code sent to {{email}}",
+      submit: "Verify",
+      submitting: "Verifying...",
+      resend: "Resend code",
+      resendIn: "Resend in {{sec}}s",
+      success: "Email verified successfully!",
+      resendOk: "Code resent",
+    },
+
     errors: {
       fillAll: "Fill link / size / configuration",
       fillOrderAndAddress: "Fill order name and select address",
@@ -146,8 +169,10 @@ export const en = {
       userAlreadyExists: "User with this email already exists",
       authUnknown: "Authentication error",
       loadOrderFail: "Failed to load order",
+      confirmOrderFail: "Failed to confirm order",
       addItemFail: "Failed to add item",
       deleteFail: "Delete failed",
+      orderCannotBeModified: "The order cannot be modified in its current status",
       loadItemFail: "Failed to load item",
       updateItemFail: "Failed to update item",
       noItemIdOpen: "Item has no id — cannot open",
@@ -163,6 +188,10 @@ export const en = {
       passwordMinLength: "Password must be at least {{min}} characters",
       maxAddresses: "User can have only {{max}} addresses",
       noChangesToSave: "No changes — nothing to save",
+      verificationCodeInvalid: "Invalid or expired code",
+      emailAlreadyVerified: "Email already verified",
+      tooManyAttempts: "Too many attempts. Request a new code",
+      resendTooEarly: "Please wait a minute before resending",
     },
   } as const;
   

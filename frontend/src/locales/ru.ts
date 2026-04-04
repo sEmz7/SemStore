@@ -71,7 +71,9 @@ export const ru = {
     },
   
     orderStatus: {
+      PENDING: "Ожидает",
       CREATED: "Создан",
+      IN_CHECK: "В обработке",
       ORDERED: "Оформлен",
       PAID: "Оплачен",
       CANCELED: "Отменён",
@@ -114,6 +116,16 @@ export const ru = {
       configuration: "конфигурация",
       price: "цена",
       created: "Создан",
+      confirm: "Оформить заказ",
+      confirming: "Оформляем...",
+      editingLocked: "Изменение недоступно для текущего статуса заказа",
+      inCheckBanner: "Заказ передан на обработку модератору. После обработки вам будет рассчитана итоговая стоимость для оплаты.",
+      confirmHint: "Добавьте товары и нажмите «Оформить заказ» для отправки заказа на обработку",
+      trackingNumber: "Трек-номер",
+      copyTracking: "Скопировать трек-номер",
+      trackingCopied: "Трек-номер скопирован",
+      confirmDialogTitle: "Оформить заказ?",
+      confirmDialogDescription: "После оформления заказ перейдёт в статус «В обработке». Добавлять и изменять товары станет невозможно.",
     },
   
     item: {
@@ -130,12 +142,23 @@ export const ru = {
       copyEmail: "Скопировать email",
       copyId: "Скопировать id",
       rawJson: "Raw JSON",
-  
+
       copySuccessEmail: "Email скопирован",
       copySuccessId: "ID скопирован",
       copyFail: "Не удалось скопировать",
     },
-  
+
+    verify: {
+      title: "Подтверждение email",
+      subtitle: "Введите код, отправленный на {{email}}",
+      submit: "Подтвердить",
+      submitting: "Проверяем...",
+      resend: "Отправить повторно",
+      resendIn: "Повторно через {{sec}} сек",
+      success: "Email успешно подтверждён!",
+      resendOk: "Код отправлен повторно",
+    },
+
     errors: {
       fillAll: "Заполни link / size / configuration",
       fillOrderAndAddress: "Заполни имя заказа и выбери адрес",
@@ -150,8 +173,10 @@ export const ru = {
       userAlreadyExists: "Пользователь с таким email уже существует",
       authUnknown: "Ошибка авторизации",
       loadOrderFail: "Не удалось загрузить заказ",
+      confirmOrderFail: "Не удалось оформить заказ",
       addItemFail: "Не удалось добавить товар",
       deleteFail: "Не удалось удалить",
+      orderCannotBeModified: "Нельзя изменить заказ с текущим статусом",
       loadItemFail: "Не удалось загрузить товар",
       updateItemFail: "Не удалось обновить товар",
       noItemIdOpen: "У товара нет id — нельзя открыть",
@@ -167,6 +192,10 @@ export const ru = {
       passwordMinLength: "Пароль должен быть минимум {{min}} символа(ов)",
       maxAddresses: "Можно добавить максимум {{max}} адресов",
       noChangesToSave: "Нет изменений — нечего сохранять",
+      verificationCodeInvalid: "Неверный или истёкший код",
+      emailAlreadyVerified: "Email уже подтверждён",
+      tooManyAttempts: "Превышено количество попыток. Запросите новый код",
+      resendTooEarly: "Подождите минуту перед повторной отправкой",
     },
   } as const;
   

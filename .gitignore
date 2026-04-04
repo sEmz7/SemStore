@@ -15,3 +15,5 @@ Thumbs.db
 *.iml
 
 body.json
+.superpowers/
+frontend/CLAUDE.md

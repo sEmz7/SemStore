@@ -12,7 +12,13 @@ export const authApi = axios.create({ baseURL: authBaseURL, withCredentials: tru
 
 const refreshApi = axios.create({ baseURL: authBaseURL, withCredentials: true });
 
-const NO_BEARER_PATHS = new Set(["/auth/login", "/auth/register", "/auth/refresh"]);
+const NO_BEARER_PATHS = new Set([
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/verify-email",
+  "/auth/resend-verification-code",
+]);
 
 function normalizeUrl(u: string): string {
   const q = u.indexOf("?");
@@ -24,36 +30,6 @@ function shouldSkipBearer(config: any): boolean {
   return NO_BEARER_PATHS.has(url);
 }
 
-export function getUserIdFromAccessToken(): string | null {
-  const token = tokenStorage.get()?.accessToken;
-  if (!token) return null;
-
-  try {
-    const parts = token.split(".");
-    if (parts.length < 2) return null;
-
-    const payloadPart = parts[1];
-
-    let base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
-    while (base64.length % 4 !== 0) base64 += "=";
-
-    const json = atob(base64);
-    const payload = JSON.parse(json) as Record<string, unknown>;
-
-    const id = payload["id"];
-    if (typeof id === "string" && id.trim()) return id;
-
-    const sub = payload["sub"];
-    if (typeof sub === "string" && sub.trim()) return sub;
-
-    const userId = payload["userId"];
-    if (typeof userId === "string" && userId.trim()) return userId;
-
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 function attachAuth(config: any) {
   const tokens = tokenStorage.get();
@@ -61,14 +37,6 @@ function attachAuth(config: any) {
   if (tokens?.accessToken && !shouldSkipBearer(config)) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${tokens.accessToken}`;
-  }
-
-  if (config.baseURL === orderBaseURL) {
-    const userId = getUserIdFromAccessToken();
-    if (userId) {
-      config.headers = config.headers ?? {};
-      config.headers["X-User-Id"] = userId;
-    }
   }
 
   return config;
@@ -137,11 +105,6 @@ async function handle401(error: AxiosError) {
         original.headers = original.headers ?? {};
         original.headers.Authorization = `Bearer ${token}`;
 
-        if (original.baseURL === orderBaseURL) {
-          const userId = getUserIdFromAccessToken();
-          if (userId) original.headers["X-User-Id"] = userId;
-        }
-
         resolve(pickInstance(original)(original));
       });
     });
@@ -154,11 +117,6 @@ async function handle401(error: AxiosError) {
 
     original.headers = original.headers ?? {};
     original.headers.Authorization = `Bearer ${newToken}`;
-
-    if (original.baseURL === orderBaseURL) {
-      const userId = getUserIdFromAccessToken();
-      if (userId) original.headers["X-User-Id"] = userId;
-    }
 
     return pickInstance(original)(original);
   } catch {

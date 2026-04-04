@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { addOrderItem, deleteOrderItem, getOrderById } from "../api/orders";
+import { addOrderItem, confirmOrder, deleteOrderItem, getOrderById } from "../api/orders";
 import type { OrderDto, OrderItem } from "../api/types";
 import { useTranslation } from "react-i18next";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { copyToClipboard } from "../utils/clipboard";
 import FormField from "../components/FormField";
+import StatusBadge from "../components/StatusBadge";
 import { localizeBackendLengthError } from "../utils/springValidation";
+import { cn } from "../utils/cn";
 
 type FieldKey = "link" | "size" | "configuration";
-
-function cn(...a: Array<string | false | null | undefined>) {
-  return a.filter(Boolean).join(" ");
-}
 
 const LIMITS: Record<FieldKey, { min: number; max: number; labelKey: string; placeholder: string }> = {
   link: { min: 2, max: 50, labelKey: "order.link", placeholder: "https://example.com/product/1" },
@@ -27,25 +26,8 @@ function validateLen(v: string, min: number, max: number) {
   return { ok: true as const };
 }
 
-function StatusBadge({ status, label }: { status: string; label: string }) {
-  const cls =
-    status === "PAID"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-200"
-      : status === "CANCELED"
-      ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200"
-      : status === "ORDERED"
-      ? "border-indigo-200 bg-indigo-50 text-indigo-800 dark:border-indigo-900/40 dark:bg-indigo-950/40 dark:text-indigo-200"
-      : "border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-100";
-
-  return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold", cls)}>
-      {label}
-    </span>
-  );
-}
-
 export function OrderDetailsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
 
   const [order, setOrder] = useState<OrderDto | null>(null);
@@ -66,9 +48,12 @@ export function OrderDetailsPage() {
 
   const [serverErrors, setServerErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [saving, setSaving] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ itemId: string } | null>(null);
+  const [confirmOrderOpen, setConfirmOrderOpen] = useState(false);
+  const [trackingCopied, setTrackingCopied] = useState(false);
 
   const labels = useMemo<Record<FieldKey, string>>(
     () => ({
@@ -80,6 +65,8 @@ export function OrderDetailsPage() {
   );
 
   const items = useMemo<OrderItem[]>(() => (order?.items ?? []) as OrderItem[], [order]);
+
+  const isEditable = order?.status === "CREATED";
 
   function setField(key: FieldKey, value: string) {
     setForm((p) => ({ ...p, [key]: value }));
@@ -116,6 +103,22 @@ export function OrderDetailsPage() {
     return serverErrors[key] ?? (touched[key] ? clientErrors[key] : null);
   }
 
+  function formatDate(dateStr: string): string {
+    try {
+      return new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(dateStr));
+    } catch {
+      return dateStr;
+    }
+  }
+
+  async function copyTracking(trackingNumber: string) {
+    const ok = await copyToClipboard(trackingNumber);
+    if (ok) {
+      setTrackingCopied(true);
+      setTimeout(() => setTrackingCopied(false), 2000);
+    }
+  }
+
   async function reload() {
     if (!id) return;
     setLoading(true);
@@ -126,6 +129,20 @@ export function OrderDetailsPage() {
       setPageError(e?.response?.data?.message ?? t("errors.loadOrderFail"));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleConfirm() {
+    if (!id) return;
+    setConfirming(true);
+    try {
+      setPageError(null);
+      await confirmOrder(id);
+      await reload();
+    } catch (e: any) {
+      setPageError(e?.response?.data?.message ?? t("errors.confirmOrderFail"));
+    } finally {
+      setConfirming(false);
     }
   }
 
@@ -180,7 +197,12 @@ export function OrderDetailsPage() {
       await deleteOrderItem(id, itemId);
       await reload();
     } catch (e: any) {
-      setPageError(e?.response?.data?.message ?? t("errors.deleteFail"));
+      const code = e?.response?.data?.code;
+      if (code === "ORDER_STATUS_NOT_MODIFIABLE") {
+        setPageError(t("errors.orderCannotBeModified"));
+      } else {
+        setPageError(t("errors.deleteFail"));
+      }
     } finally {
       setDeletingItemId(null);
     }
@@ -193,7 +215,7 @@ export function OrderDetailsPage() {
 
   if (!id) return null;
 
-  const title = order?.name?.trim() ? order!.name : id;
+  const title = order ? (order.name?.trim() || id) : "";
   const status = order?.status ?? "";
   const statusLabel = status ? t(`orderStatus.${status}`, { defaultValue: status }) : "";
 
@@ -215,24 +237,50 @@ export function OrderDetailsPage() {
             {status && <StatusBadge status={status} label={statusLabel} />}
           </div>
 
-          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400 break-all">
-            {t("orders.id")}: {id}
-          </div>
-
           {order?.createdDate && (
             <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {t("order.created")}: {order.createdDate}
+              {t("order.created")}: {formatDate(order.createdDate)}
+            </div>
+          )}
+
+          {order?.trackingNumber && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t("order.trackingNumber")}:</span>
+              <button
+                onClick={() => copyTracking(order!.trackingNumber!)}
+                title={t("order.copyTracking")}
+                className="text-sm font-mono font-semibold break-all cursor-pointer
+                           underline decoration-dotted underline-offset-2
+                           hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
+                {trackingCopied ? t("order.trackingCopied") : order.trackingNumber}
+              </button>
             </div>
           )}
         </div>
 
-        <button
-          onClick={reload}
-          className="w-full sm:w-auto px-3 py-2 rounded-xl text-sm font-medium border bg-white hover:bg-slate-50 transition
-                     dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
-        >
-          {loading ? t("common.loading") : t("common.refresh")}
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          {isEditable && items.length > 0 && (
+            <button
+              disabled={confirming}
+              onClick={() => setConfirmOrderOpen(true)}
+              className="w-full sm:w-auto px-6 py-3 rounded-xl text-base font-semibold transition
+                         bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50
+                         dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+            >
+              {confirming ? t("order.confirming") : t("order.confirm")}
+            </button>
+          )}
+          <button
+            disabled={loading || confirming}
+            onClick={reload}
+            className="w-full sm:w-auto px-3 py-2 rounded-xl text-sm font-medium border bg-white hover:bg-slate-50 transition
+                       disabled:opacity-50
+                       dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900/60"
+          >
+            {loading ? t("common.loading") : t("common.refresh")}
+          </button>
+        </div>
       </div>
 
       {pageError && (
@@ -242,11 +290,22 @@ export function OrderDetailsPage() {
         </div>
       )}
 
+      {!isEditable && order !== null && (
+        <div className="rounded-3xl border bg-white px-4 py-3 text-sm shadow-sm text-slate-600
+                        dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400">
+          {status === "IN_CHECK" ? t("order.inCheckBanner") : t("order.editingLocked")}
+        </div>
+      )}
+
       {/* add item */}
       <div className="rounded-3xl border bg-white p-4 sm:p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
         <div>
           <div className="text-sm font-semibold">{t("order.addItem")}</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">{t("order.hint")}</div>
+          {isEditable && (
+            <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+              {t("order.confirmHint")}
+            </div>
+          )}
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -259,6 +318,7 @@ export function OrderDetailsPage() {
               placeholder={LIMITS.link.placeholder}
               maxLength={LIMITS.link.max}
               error={shownError("link")}
+              disabled={!isEditable}
             />
           </div>
 
@@ -271,6 +331,7 @@ export function OrderDetailsPage() {
               placeholder={LIMITS.size.placeholder}
               maxLength={LIMITS.size.max}
               error={shownError("size")}
+              disabled={!isEditable}
             />
           </div>
 
@@ -283,12 +344,13 @@ export function OrderDetailsPage() {
               placeholder={LIMITS.configuration.placeholder}
               maxLength={LIMITS.configuration.max}
               error={shownError("configuration")}
+              disabled={!isEditable}
             />
           </div>
 
           <div className="sm:col-span-3 flex justify-end">
             <button
-              disabled={!canSubmit}
+              disabled={!canSubmit || !isEditable}
               onClick={addItem}
               className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold
                          bg-slate-900 text-white hover:bg-slate-800 transition
@@ -367,7 +429,7 @@ export function OrderDetailsPage() {
                       </Link>
 
                       <button
-                        disabled={!canOpen || isDeleting}
+                        disabled={!canOpen || isDeleting || !isEditable}
                         onClick={() => {
                           if (!canOpen) {
                             setPageError(t("errors.noItemIdDelete"));
@@ -403,6 +465,20 @@ export function OrderDetailsPage() {
           const itemId = confirmDelete.itemId;
           await doDeleteItem(itemId);
           setConfirmDelete(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmOrderOpen}
+        title={t("order.confirmDialogTitle")}
+        description={t("order.confirmDialogDescription")}
+        confirmText={t("order.confirm")}
+        cancelText={t("common.cancel")}
+        loading={confirming}
+        onClose={() => setConfirmOrderOpen(false)}
+        onConfirm={async () => {
+          setConfirmOrderOpen(false);
+          await handleConfirm();
         }}
       />
     </div>

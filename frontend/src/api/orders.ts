@@ -65,3 +65,8 @@ export async function updateOrderItem(
   const { data } = await orderApi.patch<OrderItem>(`/${orderId}/items/${itemId}`, dto);
   return data;
 }
+
+export async function confirmOrder(orderId: string): Promise<OrderDto> {
+  const { data } = await orderApi.patch<OrderDto>(`/${orderId}/confirm`);
+  return data;
+}
