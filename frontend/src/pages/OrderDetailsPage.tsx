@@ -105,7 +105,7 @@ export function OrderDetailsPage() {
 
   function formatDate(dateStr: string): string {
     try {
-      return new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "long", year: "numeric" }).format(new Date(dateStr));
+      return new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(dateStr));
     } catch {
       return dateStr;
     }
