@@ -87,17 +87,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {/* nav */}
               <nav className="flex flex-wrap items-center gap-1">
                 {user && !isAuthPage ? (
-                  <>
-                    <NavLink to="/" className={linkClass} end>
-                      {t("nav.orders")}
+                  user.role === "ROLE_ADMIN" ? (
+                    <NavLink to="/admin" className={linkClass}>
+                      {t("nav.adminPanel")}
                     </NavLink>
-                    <NavLink to="/addresses" className={linkClass}>
-                      {t("nav.addresses")}
-                    </NavLink>
-                    <NavLink to="/profile" className={linkClass}>
-                      {t("nav.profile")}
-                    </NavLink>
-                  </>
+                  ) : (
+                    <>
+                      <NavLink to="/" className={linkClass} end>
+                        {t("nav.orders")}
+                      </NavLink>
+                      <NavLink to="/addresses" className={linkClass}>
+                        {t("nav.addresses")}
+                      </NavLink>
+                      <NavLink to="/profile" className={linkClass}>
+                        {t("nav.profile")}
+                      </NavLink>
+                    </>
+                  )
                 ) : (
                   <>
                     <NavLink to="/login" className={linkClass}>
