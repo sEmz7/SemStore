@@ -135,7 +135,7 @@ export function PrivacyPage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: import("react").ReactNode }) {
   return (
     <section className="mb-6">
       <h2 className="text-lg font-semibold mb-3 text-slate-900 dark:text-slate-100">{title}</h2>
