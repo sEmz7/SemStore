@@ -86,7 +86,53 @@ export function PrivacyPage() {
       </Section>
 
       <Section title="6. Цели обработки персональных данных">
-        <p>Оператор обрабатывает персональные данные Пользователей в целях исполнения договора купли-продажи товаров, оказания услуг, а также для обеспечения обратной связи с Пользователями по вопросам, связанным с их заказами и аккаунтами на сайте http://semstore-poizon.ru.</p>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <tbody>
+              <tr className="border border-slate-300 dark:border-slate-600">
+                <td className="border border-slate-300 dark:border-slate-600 px-3 py-2 font-semibold bg-slate-50 dark:bg-slate-800 w-48 align-top">
+                  Цель обработки
+                </td>
+                <td className="border border-slate-300 dark:border-slate-600 px-3 py-2 align-top">
+                  Информирование Пользователя посредством отправки электронных писем
+                </td>
+              </tr>
+              <tr className="border border-slate-300 dark:border-slate-600">
+                <td className="border border-slate-300 dark:border-slate-600 px-3 py-2 font-semibold bg-slate-50 dark:bg-slate-800 align-top">
+                  Персональные данные
+                </td>
+                <td className="border border-slate-300 dark:border-slate-600 px-3 py-2 align-top">
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Фамилия, имя, отчество</li>
+                    <li>Электронный адрес</li>
+                    <li>Номера телефонов</li>
+                    <li>Адрес фактического места проживания и регистрации по месту жительства и/или по месту пребывания</li>
+                    <li>Почтовый индекс</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr className="border border-slate-300 dark:border-slate-600">
+                <td className="border border-slate-300 dark:border-slate-600 px-3 py-2 font-semibold bg-slate-50 dark:bg-slate-800 align-top">
+                  Правовые основания
+                </td>
+                <td className="border border-slate-300 dark:border-slate-600 px-3 py-2 align-top">
+                  Федеральный закон «Об информации, информационных технологиях и о защите информации» от 27.07.2006 № 149-ФЗ
+                </td>
+              </tr>
+              <tr className="border border-slate-300 dark:border-slate-600">
+                <td className="border border-slate-300 dark:border-slate-600 px-3 py-2 font-semibold bg-slate-50 dark:bg-slate-800 align-top">
+                  Виды обработки персональных данных
+                </td>
+                <td className="border border-slate-300 dark:border-slate-600 px-3 py-2 align-top">
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Сбор, запись, систематизация, накопление, хранение, уничтожение и обезличивание персональных данных</li>
+                    <li>Отправка информационных писем на адрес электронной почты</li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </Section>
 
       <Section title="7. Условия обработки персональных данных">
