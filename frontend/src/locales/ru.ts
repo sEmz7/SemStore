@@ -46,6 +46,8 @@ export const ru = {
       noAccount: "Нет аккаунта?",
       haveAccount: "Уже есть аккаунт?",
       passwordHint: "мин 4 символа",
+      privacyConsent: "Я соглашаюсь с",
+      privacyLink: "Политикой конфиденциальности",
     },
   
     addresses: {
@@ -222,6 +224,7 @@ export const ru = {
       submitOrderFail: "Не удалось выставить заказ на оплату",
       loadAdminOrdersFail: "Не удалось загрузить заказы",
       loadAdminOrderFail: "Не удалось загрузить заказ",
+      privacyRequired: "Необходимо принять политику конфиденциальности",
     },
   } as const;
   

@@ -46,6 +46,8 @@ export const en = {
       noAccount: "No account?",
       haveAccount: "Already have an account?",
       passwordHint: "min 4 chars",
+      privacyConsent: "I agree to the",
+      privacyLink: "Privacy Policy",
     },
   
     addresses: {
@@ -218,6 +220,7 @@ export const en = {
       submitOrderFail: "Failed to submit order for payment",
       loadAdminOrdersFail: "Failed to load orders",
       loadAdminOrderFail: "Failed to load order",
+      privacyRequired: "You must accept the privacy policy",
     },
   } as const;
   
