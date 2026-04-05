@@ -16,6 +16,7 @@ export function RegisterPage() {
 
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const [touched, setTouched] = useState({ email: false, password: false });
 
@@ -33,7 +34,7 @@ export function RegisterPage() {
       ? t("errors.passwordMinLength", { min: PASS_MIN })
       : null;
 
-  const canSubmit = emailOk && passOk && !loading;
+  const canSubmit = emailOk && passOk && agreed && !loading;
 
   async function submit() {
     setTouched({ email: true, password: true });
@@ -44,6 +45,11 @@ export function RegisterPage() {
     }
     if (!passOk) {
       setErr(t("errors.passwordMinLength", { min: PASS_MIN }));
+      return;
+    }
+
+    if (!agreed) {
+      setErr(t("errors.privacyRequired"));
       return;
     }
 
@@ -102,6 +108,30 @@ export function RegisterPage() {
             autoComplete="new-password"
             error={passError}
           />
+
+          <label className="flex items-start gap-2 cursor-pointer text-sm text-slate-600 dark:text-slate-300">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => {
+                setAgreed(e.target.checked);
+                setErr(null);
+              }}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-slate-900
+                         dark:accent-white dark:border-slate-600"
+            />
+            <span>
+              {t("auth.privacyConsent")}{" "}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold underline underline-offset-4 hover:opacity-80"
+              >
+                {t("auth.privacyLink")}
+              </a>
+            </span>
+          </label>
 
           <button
             disabled={!canSubmit}
