@@ -7,6 +7,7 @@ export const ru = {
       login: "Вход",
       register: "Регистрация",
       logout: "Выйти",
+      adminPanel: "Панель модератора",
       themeDark: "Тёмная",
       themeLight: "Светлая",
       language: "Язык",
@@ -45,6 +46,8 @@ export const ru = {
       noAccount: "Нет аккаунта?",
       haveAccount: "Уже есть аккаунт?",
       passwordHint: "мин 4 символа",
+      privacyConsent: "Я соглашаюсь с",
+      privacyLink: "Политикой конфиденциальности",
     },
   
     addresses: {
@@ -77,6 +80,9 @@ export const ru = {
       ORDERED: "Оформлен",
       PAID: "Оплачен",
       CANCELED: "Отменён",
+      AWAITING_PAYMENT: "Ожидает оплаты",
+      DELIVERING: "Доставляется",
+      COMPLETED: "Завершён",
     },
   
     orders: {
@@ -126,6 +132,8 @@ export const ru = {
       trackingCopied: "Трек-номер скопирован",
       confirmDialogTitle: "Оформить заказ?",
       confirmDialogDescription: "После оформления заказ перейдёт в статус «В обработке». Добавлять и изменять товары станет невозможно.",
+      awaitingPaymentBanner: "Ваш заказ готов к оплате. Пожалуйста, оплатите заказ.",
+      totalPrice: "Итого",
     },
   
     item: {
@@ -146,6 +154,23 @@ export const ru = {
       copySuccessEmail: "Email скопирован",
       copySuccessId: "ID скопирован",
       copyFail: "Не удалось скопировать",
+    },
+
+    admin: {
+      title: "Панель модератора",
+      filterByStatus: "Фильтр по статусу",
+      allStatuses: "Все статусы",
+      userId: "ID пользователя",
+      noOrders: "Нет заказов с выбранным статусом.",
+      totalPrice: "Итого",
+      setPrice: "Цена",
+      savePrice: "Сохранить",
+      savingPrice: "Сохраняем...",
+      submitOrder: "Выставить на оплату",
+      submitting: "Выставляем...",
+      submitDialogTitle: "Выставить заказ на оплату?",
+      submitDialogDescription: "Статус заказа изменится на «Ожидает оплаты». Пользователь получит уведомление для оплаты.",
+      allPricesRequired: "Выставьте цены всем товарам перед отправкой на оплату.",
     },
 
     verify: {
@@ -196,6 +221,11 @@ export const ru = {
       emailAlreadyVerified: "Email уже подтверждён",
       tooManyAttempts: "Превышено количество попыток. Запросите новый код",
       resendTooEarly: "Подождите минуту перед повторной отправкой",
+      setPriceFail: "Не удалось выставить цену",
+      submitOrderFail: "Не удалось выставить заказ на оплату",
+      loadAdminOrdersFail: "Не удалось загрузить заказы",
+      loadAdminOrderFail: "Не удалось загрузить заказ",
+      privacyRequired: "Необходимо принять политику конфиденциальности",
     },
   } as const;
   
