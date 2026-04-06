@@ -7,6 +7,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import { copyToClipboard } from "../utils/clipboard";
 import FormField from "../components/FormField";
 import StatusBadge from "../components/StatusBadge";
+import OrderStatusTracker from "../components/OrderStatusTracker";
 import { localizeBackendLengthError } from "../utils/springValidation";
 import { cn } from "../utils/cn";
 
@@ -282,6 +283,12 @@ export function OrderDetailsPage() {
           </button>
         </div>
       </div>
+
+      {order !== null && !["CANCELED", "PENDING", "ORDERED"].includes(order.status) && (
+        <div className="rounded-3xl border bg-white px-4 py-5 shadow-sm dark:bg-slate-950 dark:border-slate-800">
+          <OrderStatusTracker status={order.status} />
+        </div>
+      )}
 
       {pageError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700
