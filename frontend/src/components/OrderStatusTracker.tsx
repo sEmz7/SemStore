@@ -1,4 +1,5 @@
 // src/components/OrderStatusTracker.tsx
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { OrderStatus } from "../api/types";
 import { cn } from "../utils/cn";
@@ -8,7 +9,7 @@ type StepState = "done" | "active" | "pending";
 type Step = {
   status: OrderStatus;
   labelKey: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 };
 
 const FLOW: OrderStatus[] = [
