@@ -6,5 +6,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   if (isLoading) return <div style={{ padding: 16 }}>Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.role === "ROLE_ADMIN") return <Navigate to="/admin" replace />;
   return <>{children}</>;
 }
