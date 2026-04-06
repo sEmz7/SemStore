@@ -376,6 +376,13 @@ export function OrderDetailsPage() {
           </div>
         </div>
 
+        {order?.totalPrice != null && (
+          <div className="px-4 sm:px-6 py-4 border-b dark:border-slate-800 flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("order.totalPrice")}</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-50">{order.totalPrice} ₽</span>
+          </div>
+        )}
+
         {items.length === 0 ? (
           <div className="p-6 text-sm text-slate-500 dark:text-slate-400">{t("order.noItems")}</div>
         ) : (

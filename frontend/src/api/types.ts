@@ -58,6 +58,7 @@ export type OrderDto = {
   createdDate: string;
   trackingNumber?: string;
   items?: OrderItem[];
+  totalPrice?: number;
 };
 
 // Admin types

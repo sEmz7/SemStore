@@ -129,6 +129,7 @@ export const en = {
       confirmDialogTitle: "Confirm order?",
       confirmDialogDescription: "After confirming, the order will move to \"In progress\" status. You won't be able to add or edit items.",
       awaitingPaymentBanner: "Your order is ready for payment. Please proceed to pay.",
+      totalPrice: "Total",
     },
   
     item: {

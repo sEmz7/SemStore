@@ -133,6 +133,7 @@ export const ru = {
       confirmDialogTitle: "Оформить заказ?",
       confirmDialogDescription: "После оформления заказ перейдёт в статус «В обработке». Добавлять и изменять товары станет невозможно.",
       awaitingPaymentBanner: "Ваш заказ готов к оплате. Пожалуйста, оплатите заказ.",
+      totalPrice: "Итого",
     },
   
     item: {
