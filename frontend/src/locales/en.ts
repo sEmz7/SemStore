@@ -7,6 +7,7 @@ export const en = {
       login: "Login",
       register: "Register",
       logout: "Logout",
+      adminPanel: "Moderator Panel",
       themeDark: "Dark",
       themeLight: "Light",
       language: "Language",
@@ -45,6 +46,8 @@ export const en = {
       noAccount: "No account?",
       haveAccount: "Already have an account?",
       passwordHint: "min 4 chars",
+      privacyConsent: "I agree to the",
+      privacyLink: "Privacy Policy",
     },
   
     addresses: {
@@ -77,6 +80,9 @@ export const en = {
       ORDERED: "Ordered",
       PAID: "Paid",
       CANCELED: "Canceled",
+      AWAITING_PAYMENT: "Awaiting payment",
+      DELIVERING: "Delivering",
+      COMPLETED: "Completed",
     },
   
     orders: {
@@ -122,6 +128,8 @@ export const en = {
       trackingCopied: "Tracking number copied",
       confirmDialogTitle: "Confirm order?",
       confirmDialogDescription: "After confirming, the order will move to \"In progress\" status. You won't be able to add or edit items.",
+      awaitingPaymentBanner: "Your order is ready for payment. Please proceed to pay.",
+      totalPrice: "Total",
     },
   
     item: {
@@ -142,6 +150,23 @@ export const en = {
       copySuccessEmail: "Email copied",
       copySuccessId: "ID copied",
       copyFail: "Copy failed",
+    },
+
+    admin: {
+      title: "Moderator Panel",
+      filterByStatus: "Filter by status",
+      allStatuses: "All statuses",
+      userId: "User ID",
+      noOrders: "No orders with the selected status.",
+      totalPrice: "Total",
+      setPrice: "Price",
+      savePrice: "Save",
+      savingPrice: "Saving...",
+      submitOrder: "Submit for payment",
+      submitting: "Submitting...",
+      submitDialogTitle: "Submit order for payment?",
+      submitDialogDescription: "The order status will change to \"Awaiting payment\". The user will be notified to pay.",
+      allPricesRequired: "Set prices for all items before submitting for payment.",
     },
 
     verify: {
@@ -192,6 +217,11 @@ export const en = {
       emailAlreadyVerified: "Email already verified",
       tooManyAttempts: "Too many attempts. Request a new code",
       resendTooEarly: "Please wait a minute before resending",
+      setPriceFail: "Failed to set price",
+      submitOrderFail: "Failed to submit order for payment",
+      loadAdminOrdersFail: "Failed to load orders",
+      loadAdminOrderFail: "Failed to load order",
+      privacyRequired: "You must accept the privacy policy",
     },
   } as const;
   

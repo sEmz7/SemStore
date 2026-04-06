@@ -117,8 +117,8 @@ public class UserServiceImpl implements UserService {
      */
     @Transactional(readOnly = true)
     @Override
-    public UserDto getById(UUID userId) {
-        return userMapper.toDto(userRepository.findById(userId)
+    public UserDtoWithRole getById(UUID userId) {
+        return userMapper.toDtoWithRole(userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND)));
     }
 

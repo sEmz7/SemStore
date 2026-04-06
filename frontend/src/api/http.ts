@@ -5,10 +5,12 @@ import { tokenStorage } from "./tokenStorage";
 const userBaseURL = import.meta.env.VITE_USER_API_URL ?? "/api/users";
 const orderBaseURL = import.meta.env.VITE_ORDER_API_URL ?? "/api/orders";
 const authBaseURL = import.meta.env.VITE_AUTH_API_URL ?? "/api";
+const adminBaseURL = import.meta.env.VITE_ADMIN_API_URL ?? "/api/admin";
 
 export const userApi = axios.create({ baseURL: userBaseURL, withCredentials: true });
 export const orderApi = axios.create({ baseURL: orderBaseURL, withCredentials: true });
 export const authApi = axios.create({ baseURL: authBaseURL, withCredentials: true });
+export const adminApi = axios.create({ baseURL: adminBaseURL, withCredentials: true });
 
 const refreshApi = axios.create({ baseURL: authBaseURL, withCredentials: true });
 
@@ -42,7 +44,7 @@ function attachAuth(config: any) {
   return config;
 }
 
-[userApi, orderApi, authApi].forEach((api) => api.interceptors.request.use(attachAuth));
+[userApi, orderApi, authApi, adminApi].forEach((api) => api.interceptors.request.use(attachAuth));
 
 let isRefreshing = false;
 let pending: Array<(token: string | null) => void> = [];
@@ -74,6 +76,7 @@ async function refreshAccessToken(): Promise<string> {
 function pickInstance(cfg: any) {
   if (cfg?.baseURL === orderBaseURL) return orderApi;
   if (cfg?.baseURL === authBaseURL) return authApi;
+  if (cfg?.baseURL === adminBaseURL) return adminApi;
   return userApi;
 }
 
@@ -128,7 +131,7 @@ async function handle401(error: AxiosError) {
   }
 }
 
-[userApi, orderApi, authApi].forEach((api) => {
+[userApi, orderApi, authApi, adminApi].forEach((api) => {
   api.interceptors.response.use(
     (r) => r,
     async (err) => {
