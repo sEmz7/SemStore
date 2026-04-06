@@ -12,15 +12,6 @@ type Step = {
   icon: ReactNode;
 };
 
-const FLOW: OrderStatus[] = [
-  "CREATED",
-  "IN_CHECK",
-  "AWAITING_PAYMENT",
-  "PAID",
-  "DELIVERING",
-  "COMPLETED",
-];
-
 const STEPS: Step[] = [
   {
     status: "CREATED",
@@ -83,6 +74,8 @@ const STEPS: Step[] = [
   },
 ];
 
+const FLOW = STEPS.map((s) => s.status);
+
 const circleClass: Record<StepState, string> = {
   done: "bg-slate-900 border-slate-900 dark:bg-white dark:border-white",
   active:
@@ -134,6 +127,7 @@ export default function OrderStatusTracker({ status }: { status: OrderStatus }) 
                 )}
               >
                 <svg
+                  aria-hidden="true"
                   className={cn("w-5 h-5", iconClass[state])}
                   viewBox="0 0 24 24"
                   fill="none"
