@@ -22,6 +22,7 @@ databaseChangeLog:
                   type: uuid
                   constraints:
                     nullable: false
+                    unique: true
               - column:
                   name: discount_percent
                   type: int
