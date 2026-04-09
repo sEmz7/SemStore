@@ -20,10 +20,10 @@ public class KafkaProducer {
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     /** Топик для событий создания заказа */
-    private final String ORDER_CREATED_TOPIC = "order-created";
+    private static final String ORDER_CREATED_TOPIC = "order-created";
 
     /** Топик для событий завершения заказа */
-    private final String ORDER_COMPLETED_TOPIC = "order-completed";
+    private static final String ORDER_COMPLETED_TOPIC = "order-completed-analytics";
 
     /**
      * Отправляет событие создания заказа на проверку.

@@ -297,7 +297,7 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setStatus(OrderStatus.COMPLETED);
         orderRepository.save(order);
-        kafka.sendOrderCompleted(order);  // <-- new line
+        kafka.sendOrderCompleted(order);
 
         int ordersCountWithSameAddress = orderRepository.findCountByAddressIdAndStatusNot(order.getAddressId(),
                 OrderStatus.COMPLETED);
