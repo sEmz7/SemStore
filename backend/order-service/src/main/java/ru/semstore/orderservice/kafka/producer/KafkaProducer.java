@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import ru.semstore.common.dto.OrderCompletedEvent;
 import ru.semstore.common.dto.OrderCreatedEvent;
 import ru.semstore.orderservice.model.Order;
 
@@ -21,6 +22,9 @@ public class KafkaProducer {
     /** Топик для событий создания заказа */
     private final String ORDER_CREATED_TOPIC = "order-created";
 
+    /** Топик для событий завершения заказа */
+    private final String ORDER_COMPLETED_TOPIC = "order-completed";
+
     /**
      * Отправляет событие создания заказа на проверку.
      *
@@ -35,5 +39,20 @@ public class KafkaProducer {
 
         kafkaTemplate.send(ORDER_CREATED_TOPIC, orderCreatedEvent);
         log.debug("Order sent to kafka, orderId={}", order.getId());
+    }
+
+    /**
+     * Отправляет событие завершения заказа в analytics service.
+     *
+     * <p>Формирует событие {@link OrderCompletedEvent} и публикует его в Kafka
+     * для последующей обработки analytics-service.</p>
+     *
+     * @param order завершённый заказ
+     */
+    public void sendOrderCompleted(Order order) {
+        OrderCompletedEvent event = new OrderCompletedEvent(
+                order.getId(), order.getUserId(), order.getTotalPrice());
+        kafkaTemplate.send(ORDER_COMPLETED_TOPIC, event);
+        log.debug("Order completed event sent to kafka, orderId={}", order.getId());
     }
 }

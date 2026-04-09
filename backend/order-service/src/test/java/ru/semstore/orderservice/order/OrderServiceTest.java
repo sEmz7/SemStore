@@ -21,7 +21,10 @@ import ru.semstore.orderservice.mapper.OrderMapper;
 import ru.semstore.orderservice.model.Order;
 import ru.semstore.orderservice.model.OrderItem;
 import ru.semstore.orderservice.model.OrderStatus;
+import ru.semstore.orderservice.model.UserDiscount;
 import ru.semstore.orderservice.repository.OrderRepository;
+import ru.semstore.orderservice.repository.OutboxRepository;
+import ru.semstore.orderservice.repository.UserDiscountRepository;
 import ru.semstore.orderservice.service.impl.OrderServiceImpl;
 
 import java.time.LocalDateTime;
@@ -44,6 +47,12 @@ public class OrderServiceTest {
 
     @Mock
     private KafkaProducer kafka;
+
+    @Mock
+    private OutboxRepository outboxRepository;
+
+    @Mock
+    private UserDiscountRepository userDiscountRepository;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -220,6 +229,19 @@ public class OrderServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(orderId, result.getFirst().getId());
+    }
+
+    @Test
+    @DisplayName("Завершение заказа — отправка события в Kafka")
+    void completeOrder_ShouldSendOrderCompletedEvent() {
+        order.setStatus(OrderStatus.DELIVERING);
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findCountByAddressIdAndStatusNot(addressId, OrderStatus.COMPLETED)).thenReturn(1);
+        when(orderMapper.toFullDto(order)).thenReturn(orderFullDto);
+
+        orderService.completeOrder(orderId);
+
+        verify(kafka, times(1)).sendOrderCompleted(order);
     }
 
     @Test
