@@ -11,3 +11,5 @@ databaseChangeLog:
       file: db/changelog/changeset/005-create-outbox-event-table.yaml
   - include:
       file: db/changelog/changeset/006-add-order-track-number.yaml
+  - include:
+      file: db/changelog/changeset/007-create-users-discounts-table.yaml

@@ -29,5 +29,12 @@ public class KafkaTopicConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean NewTopic usersDiscountsTopic() {
+        return TopicBuilder.name("users-discounts")
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
 }
 
