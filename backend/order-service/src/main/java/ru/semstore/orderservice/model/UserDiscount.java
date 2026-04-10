@@ -32,7 +32,7 @@ public class UserDiscount {
     /**
      * Идентификатор пользователя.
      */
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = false, unique = true)
     private UUID userId;
 
     /**

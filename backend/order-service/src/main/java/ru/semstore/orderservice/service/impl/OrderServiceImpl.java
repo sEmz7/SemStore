@@ -274,7 +274,7 @@ public class OrderServiceImpl implements OrderService {
             int percent = discountOpt.get().getDiscountPercent();
             totalPrice = totalPrice
                     .multiply(BigDecimal.valueOf(100 - percent))
-                    .divide(BigDecimal.valueOf(100));
+                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
         }
 
         order.setStatus(OrderStatus.AWAITING_PAYMENT);

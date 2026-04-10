@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.semstore.common.dto.OrderCheckedEvent;
 import ru.semstore.common.dto.UserDiscountEvent;
 import ru.semstore.orderservice.model.Order;
@@ -61,6 +62,7 @@ public class KafkaConsumer {
      *
      * @param event событие со скидкой пользователя
      */
+    @Transactional
     @KafkaListener(topics = "users-discounts")
     public void userDiscountListen(UserDiscountEvent event) {
         log.debug("Received user discount event, userId={}", event.getUserId());
