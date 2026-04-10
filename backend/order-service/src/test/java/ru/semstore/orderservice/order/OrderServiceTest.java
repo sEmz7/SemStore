@@ -27,6 +27,7 @@ import ru.semstore.orderservice.repository.OutboxRepository;
 import ru.semstore.orderservice.repository.UserDiscountRepository;
 import ru.semstore.orderservice.service.impl.OrderServiceImpl;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -261,5 +262,45 @@ public class OrderServiceTest {
         verify(orderRepository, times(1)).findOrderByIdWithItems(orderId);
         verify(orderMapper, times(1)).toFullDto(order);
         assertEquals(OrderStatus.IN_CHECK, dto.status());
+    }
+
+    @Test
+    @DisplayName("submitOrderForPayment — скидка применяется к totalPrice")
+    void submitOrderForPayment_ShouldApplyDiscount() {
+        OrderItem item = new OrderItem(UUID.randomUUID(), order, "link", "size", "cfg",
+                new BigDecimal("100.00"));
+        order.setItems(List.of(item));
+        order.setStatus(OrderStatus.IN_CHECK);
+
+        UserDiscount discount = new UserDiscount();
+        discount.setUserId(userId);
+        discount.setDiscountPercent(10);
+
+        when(orderRepository.findOrderByIdWithItems(orderId)).thenReturn(Optional.of(order));
+        when(userDiscountRepository.findByUserId(userId)).thenReturn(Optional.of(discount));
+        when(orderRepository.save(order)).thenReturn(order);
+        when(orderMapper.toFullDto(order)).thenReturn(orderFullDto);
+
+        orderService.submitOrderForPayment(orderId);
+
+        assertEquals(new BigDecimal("90.00"), order.getTotalPrice());
+    }
+
+    @Test
+    @DisplayName("submitOrderForPayment — без скидки, totalPrice не меняется")
+    void submitOrderForPayment_ShouldNotApplyDiscount_WhenNoDiscount() {
+        OrderItem item = new OrderItem(UUID.randomUUID(), order, "link", "size", "cfg",
+                new BigDecimal("100.00"));
+        order.setItems(List.of(item));
+        order.setStatus(OrderStatus.IN_CHECK);
+
+        when(orderRepository.findOrderByIdWithItems(orderId)).thenReturn(Optional.of(order));
+        when(userDiscountRepository.findByUserId(userId)).thenReturn(Optional.empty());
+        when(orderRepository.save(order)).thenReturn(order);
+        when(orderMapper.toFullDto(order)).thenReturn(orderFullDto);
+
+        orderService.submitOrderForPayment(orderId);
+
+        assertEquals(new BigDecimal("100.00"), order.getTotalPrice());
     }
 }
