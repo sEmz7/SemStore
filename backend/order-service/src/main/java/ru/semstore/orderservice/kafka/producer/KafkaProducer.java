@@ -23,7 +23,7 @@ public class KafkaProducer {
     private static final String ORDER_CREATED_TOPIC = "order-created";
 
     /** Топик для событий завершения заказа */
-    private static final String ORDER_COMPLETED_TOPIC = "order-completed-analytics";
+    private static final String ORDER_COMPLETED_TOPIC = "q-completed-analytics";
 
     /**
      * Отправляет событие создания заказа на проверку.
@@ -54,5 +54,6 @@ public class KafkaProducer {
                 order.getId(), order.getUserId(), order.getTotalPrice());
         kafkaTemplate.send(ORDER_COMPLETED_TOPIC, event);
         log.debug("Order completed event sent to kafka, orderId={}", order.getId());
+        System.out.println("отправлен в аналитику после завершения заказа, orderId=" + event.getOrderId());
     }
 }

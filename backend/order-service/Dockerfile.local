@@ -7,7 +7,6 @@ COPY backend/gateway/pom.xml ./gateway/
 COPY backend/user-service/pom.xml ./user-service/
 COPY backend/common-dtos/pom.xml ./common-dtos/
 COPY backend/notification-service/pom.xml ./notification-service/
-RUN mvn dependency:go-offline -B
 COPY backend/order-service/src ./order-service/src/
 COPY backend/common-dtos/src ./common-dtos/src/
 RUN mvn package -pl order-service -am -DskipTests

@@ -66,6 +66,7 @@ public class KafkaConsumer {
     @KafkaListener(topics = "users-discounts")
     public void userDiscountListen(UserDiscountEvent event) {
         log.debug("Received user discount event, userId={}", event.getUserId());
+        System.out.println("получена скидка из аналитики, userId=" + event.getUserId() + " discount=" + event.getDiscountPercent());
         if (event.getDiscountPercent() == null || event.getDiscountPercent() < 0 || event.getDiscountPercent() > 100) {
             log.warn("Invalid discount percent in event, userId={}, percent={}", event.getUserId(), event.getDiscountPercent());
             return;
