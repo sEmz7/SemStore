@@ -63,7 +63,7 @@ public class KafkaConsumer {
      * @param event событие со скидкой пользователя
      */
     @Transactional
-    @KafkaListener(topics = "users-discounts")
+    @KafkaListener(topics = "users-discounts", containerFactory = "userDiscountKafkaListenerContainerFactory")
     public void userDiscountListen(UserDiscountEvent event) {
         log.debug("Received user discount event, userId={}", event.getUserId());
         System.out.println("получена скидка из аналитики, userId=" + event.getUserId() + " discount=" + event.getDiscountPercent());
@@ -74,7 +74,7 @@ public class KafkaConsumer {
         UserDiscount discount = userDiscountRepository.findByUserId(event.getUserId())
                 .orElseGet(UserDiscount::new);
         discount.setUserId(event.getUserId());
-        discount.setDiscountPercent(event.getDiscountPercent());
+        discount.setDiscountPercent(event.getDiscountPercent().intValue());
         userDiscountRepository.save(discount);
         log.debug("User discount saved, userId={}, percent={}", event.getUserId(), event.getDiscountPercent());
     }

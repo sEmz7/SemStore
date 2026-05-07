@@ -11,5 +11,5 @@ import java.util.UUID;
 @NoArgsConstructor
 public class UserDiscountEvent {
     private UUID userId;
-    private Integer discountPercent;
+    private Double discountPercent;
 }
