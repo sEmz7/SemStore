@@ -21,9 +21,13 @@ import ru.semstore.orderservice.mapper.OrderMapper;
 import ru.semstore.orderservice.model.Order;
 import ru.semstore.orderservice.model.OrderItem;
 import ru.semstore.orderservice.model.OrderStatus;
+import ru.semstore.orderservice.model.UserDiscount;
 import ru.semstore.orderservice.repository.OrderRepository;
+import ru.semstore.orderservice.repository.OutboxRepository;
+import ru.semstore.orderservice.repository.UserDiscountRepository;
 import ru.semstore.orderservice.service.impl.OrderServiceImpl;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +48,12 @@ public class OrderServiceTest {
 
     @Mock
     private KafkaProducer kafka;
+
+    @Mock
+    private OutboxRepository outboxRepository;
+
+    @Mock
+    private UserDiscountRepository userDiscountRepository;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -223,6 +233,19 @@ public class OrderServiceTest {
     }
 
     @Test
+    @DisplayName("Завершение заказа — отправка события в Kafka")
+    void completeOrder_ShouldSendOrderCompletedEvent() {
+        order.setStatus(OrderStatus.DELIVERING);
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findCountByAddressIdAndStatusNot(addressId, OrderStatus.COMPLETED)).thenReturn(1);
+        when(orderMapper.toFullDto(order)).thenReturn(orderFullDto);
+
+        orderService.completeOrder(orderId);
+
+        verify(kafka, times(1)).sendOrderCompleted(order);
+    }
+
+    @Test
     @DisplayName("Подтверждение заказа пользователем")
     void confirmOrder_ShouldConfirm() {
         order.setStatus(OrderStatus.CREATED);
@@ -239,5 +262,45 @@ public class OrderServiceTest {
         verify(orderRepository, times(1)).findOrderByIdWithItems(orderId);
         verify(orderMapper, times(1)).toFullDto(order);
         assertEquals(OrderStatus.IN_CHECK, dto.status());
+    }
+
+    @Test
+    @DisplayName("submitOrderForPayment — скидка применяется к totalPrice")
+    void submitOrderForPayment_ShouldApplyDiscount() {
+        OrderItem item = new OrderItem(UUID.randomUUID(), order, "link", "size", "cfg",
+                new BigDecimal("100.00"));
+        order.setItems(List.of(item));
+        order.setStatus(OrderStatus.IN_CHECK);
+
+        UserDiscount discount = new UserDiscount();
+        discount.setUserId(userId);
+        discount.setDiscountPercent(10);
+
+        when(orderRepository.findOrderByIdWithItems(orderId)).thenReturn(Optional.of(order));
+        when(userDiscountRepository.findByUserId(userId)).thenReturn(Optional.of(discount));
+        when(orderRepository.save(order)).thenReturn(order);
+        when(orderMapper.toFullDto(order)).thenReturn(orderFullDto);
+
+        orderService.submitOrderForPayment(orderId);
+
+        assertEquals(new BigDecimal("90.00"), order.getTotalPrice());
+    }
+
+    @Test
+    @DisplayName("submitOrderForPayment — без скидки, totalPrice не меняется")
+    void submitOrderForPayment_ShouldNotApplyDiscount_WhenNoDiscount() {
+        OrderItem item = new OrderItem(UUID.randomUUID(), order, "link", "size", "cfg",
+                new BigDecimal("100.00"));
+        order.setItems(List.of(item));
+        order.setStatus(OrderStatus.IN_CHECK);
+
+        when(orderRepository.findOrderByIdWithItems(orderId)).thenReturn(Optional.of(order));
+        when(userDiscountRepository.findByUserId(userId)).thenReturn(Optional.empty());
+        when(orderRepository.save(order)).thenReturn(order);
+        when(orderMapper.toFullDto(order)).thenReturn(orderFullDto);
+
+        orderService.submitOrderForPayment(orderId);
+
+        assertEquals(new BigDecimal("100.00"), order.getTotalPrice());
     }
 }

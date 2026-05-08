@@ -22,13 +22,16 @@ import ru.semstore.orderservice.model.Order;
 import ru.semstore.orderservice.model.OrderItem;
 import ru.semstore.orderservice.model.OrderStatus;
 import ru.semstore.orderservice.model.OutboxEvent;
+import ru.semstore.orderservice.model.UserDiscount;
 import ru.semstore.orderservice.repository.OrderRepository;
 import ru.semstore.orderservice.repository.OutboxRepository;
+import ru.semstore.orderservice.repository.UserDiscountRepository;
 import ru.semstore.orderservice.service.OrderService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -43,6 +46,7 @@ public class OrderServiceImpl implements OrderService {
     private final OutboxRepository outboxRepository;
     private final OrderMapper orderMapper;
     private final KafkaProducer kafka;
+    private final UserDiscountRepository userDiscountRepository;
 
     /**
      * Набор статусов заказа, при которых изменение его содержимого запрещено.
@@ -265,6 +269,14 @@ public class OrderServiceImpl implements OrderService {
             totalPrice = totalPrice.add(item.getPrice());
         }
 
+        Optional<UserDiscount> discountOpt = userDiscountRepository.findByUserId(order.getUserId());
+        if (discountOpt.isPresent()) {
+            int percent = discountOpt.get().getDiscountPercent();
+            totalPrice = totalPrice
+                    .multiply(BigDecimal.valueOf(100 - percent))
+                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+        }
+
         order.setStatus(OrderStatus.AWAITING_PAYMENT);
         order.setTotalPrice(totalPrice);
         orderRepository.save(order);
@@ -297,6 +309,7 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setStatus(OrderStatus.COMPLETED);
         orderRepository.save(order);
+        kafka.sendOrderCompleted(order);
 
         int ordersCountWithSameAddress = orderRepository.findCountByAddressIdAndStatusNot(order.getAddressId(),
                 OrderStatus.COMPLETED);

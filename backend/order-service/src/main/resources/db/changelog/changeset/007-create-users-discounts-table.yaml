@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-create-users-discounts-table
+      author: semyon
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: users_discounts
+      changes:
+        - createTable:
+            tableName: users_discounts
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: discount_percent
+                  type: int
+                  constraints:
+                    nullable: false

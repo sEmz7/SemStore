@@ -1,0 +1,1428 @@
+.
+├── .DS_Store
+├── .env
+├── .gitignore
+├── Dockerfile
+├── Makefile
+├── cmd
+│   ├── .DS_Store
+│   └── service
+│       └── main.go
+├── config
+│   └── config.go
+├── docker-compose.yml
+├── go.mod
+├── go.sum
+├── internal
+│   ├── .DS_Store
+│   ├── database
+│   │   └── database.go
+│   ├── dto
+│   │   ├── discount.go
+│   │   └── order_paid.go
+│   ├── handler
+│   │   └── queue
+│   │       ├── contract.go
+│   │       ├── mocks
+│   │       │   └── mocks.go
+│   │       ├── queue.go
+│   │       └── queue_test.go
+│   ├── integration
+│   │   ├── helpers_test.go
+│   │   └── repository_test.go
+│   ├── model
+│   │   └── order
+│   │       └── order.go
+│   ├── repository
+│   │   └── order
+│   │       └── order.go
+│   └── usecase
+│       ├── discount
+│       │   ├── contract.go
+│       │   └── discount.go
+│       └── order
+│           ├── contract.go
+│           └── order.go
+└── migrations
+    ├── 0001_create_orders.sql
+    └── 0002_user_spend.sql
+
+19 directories, 29 files
+
+
+
+=== ./cmd/service/main.go ===
+package main
+
+import (
+	"context"
+	"log"
+	"os"
+	"os/signal"
+
+	// "sync"
+	"syscall"
+	"time"
+
+	"analytics-service/config"
+	"analytics-service/internal/database"
+
+	// "analytics-service/internal/handler/queue"
+	orderRepo "analytics-service/internal/repository/order"
+	// discountUC "analytics-service/internal/usecase/discount"
+	// orderUC "analytics-service/internal/usecase/order"
+)
+
+func main() {
+	cfg := config.LoadConfig("")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	dbCtx, dbCancel := context.WithTimeout(ctx, 30*time.Second)
+	defer dbCancel()
+
+	db, err := database.NewDB(dbCtx, &cfg.Clickhouse)
+	if err != nil {
+		log.Fatalf("db connect: %v", err)
+	}
+	defer db.Close()
+
+	_ = orderRepo.NewRepository(db)
+
+	// orderUsecase := orderUC.NewOrderUsecase(repo)
+	// discountUsecase := discountUC.NewDiscountUsecase(repo)
+
+	// queueHandler, err := queue.NewHandler(
+	// 	&cfg.Kafka,
+	// 	orderUsecase,
+	// 	discountUsecase,
+	// )
+	// if err != nil {
+	// 	log.Fatalf("kafka init: %v", err)
+	// }
+
+	// var wg sync.WaitGroup
+
+	// wg.Go(func() {
+	// 	err := queueHandler.StartConsumer(ctx)
+	// 	if err != nil {
+	// 		log.Printf("consumer stopped with error: %v", err)
+	// 	}
+	// })
+
+	log.Println("service started")
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+
+	log.Println("shutdown signal received")
+	cancel()
+	// wg.Wait()
+
+	// log.Println("closing kafka")
+	// queueHandler.Close()
+
+	log.Println("service stopped")
+}
+
+=== ./migrations/0001_create_orders.sql ===
+-- +goose Up
+-- +goose StatementBegin
+CREATE DATABASE IF NOT EXISTS analytics;
+-- +goose StatementEnd
+
+-- +goose StatementBegin
+CREATE TABLE IF NOT EXISTS analytics.orders
+(
+    orderID UUID,
+    userID  UUID,
+    price   Float64,
+    ts      DateTime64(3) DEFAULT now()
+)
+ENGINE = MergeTree()
+ORDER BY (userID, ts);
+-- +goose StatementEnd
+
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE IF EXISTS analytics.orders;
+DROP DATABASE IF EXISTS analytics;
+-- +goose StatementEnd
+=== ./migrations/0002_user_spend.sql ===
+-- +goose Up
+-- +goose StatementBegin
+CREATE TABLE IF NOT EXISTS analytics.user_spend
+(
+    userID UUID,
+    total_spent AggregateFunction(sum, Float64)
+)
+ENGINE = AggregatingMergeTree()
+ORDER BY userID;
+-- +goose StatementEnd
+
+-- +goose StatementBegin
+CREATE MATERIALIZED VIEW IF NOT EXISTS analytics.user_spend_mv
+TO analytics.user_spend
+AS
+SELECT
+    userID,
+    sumState(price) AS total_spent
+FROM analytics.orders
+GROUP BY userID;
+-- +goose StatementEnd
+
+
+-- +goose Down
+-- +goose StatementBegin
+DROP VIEW IF EXISTS analytics.user_spend_mv;
+DROP TABLE IF EXISTS analytics.user_spend;
+-- +goose StatementEnd
+=== ./go.mod ===
+module analytics-service
+
+go 1.25.3
+
+require (
+	github.com/ClickHouse/clickhouse-go/v2 v2.43.0
+	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
+	github.com/pressly/goose/v3 v3.27.0
+	github.com/testcontainers/testcontainers-go v0.40.0
+)
+
+require (
+	dario.cat/mergo v1.0.2 // indirect
+	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
+	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
+	github.com/containerd/errdefs v1.0.0 // indirect
+	github.com/containerd/errdefs/pkg v0.3.0 // indirect
+	github.com/containerd/log v0.1.0 // indirect
+	github.com/containerd/platforms v0.2.1 // indirect
+	github.com/cpuguy83/dockercfg v0.3.2 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/distribution/reference v0.6.0 // indirect
+	github.com/docker/docker v28.5.2+incompatible // indirect
+	github.com/docker/go-connections v0.6.0 // indirect
+	github.com/docker/go-units v0.5.0 // indirect
+	github.com/eapache/go-resiliency v1.7.0 // indirect
+	github.com/eapache/queue v1.1.0 // indirect
+	github.com/ebitengine/purego v0.8.4 // indirect
+	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/hashicorp/go-uuid v1.0.3 // indirect
+	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
+	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
+	github.com/jcmturner/gofork v1.7.6 // indirect
+	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
+	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
+	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
+	github.com/magiconair/properties v1.8.10 // indirect
+	github.com/mfridman/interpolate v0.0.2 // indirect
+	github.com/moby/docker-image-spec v1.3.1 // indirect
+	github.com/moby/go-archive v0.1.0 // indirect
+	github.com/moby/patternmatcher v0.6.0 // indirect
+	github.com/moby/sys/sequential v0.6.0 // indirect
+	github.com/moby/sys/user v0.4.0 // indirect
+	github.com/moby/sys/userns v0.1.0 // indirect
+	github.com/moby/term v0.5.0 // indirect
+	github.com/morikuni/aec v1.0.0 // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/opencontainers/image-spec v1.1.1 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
+	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
+	github.com/sethvargo/go-retry v0.3.0 // indirect
+	github.com/shirou/gopsutil/v4 v4.25.6 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/tklauser/go-sysconf v0.3.12 // indirect
+	github.com/tklauser/numcpus v0.6.1 // indirect
+	github.com/yusufpapurcu/wmi v1.2.4 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.65.0 // indirect
+	go.opentelemetry.io/otel/metric v1.40.0 // indirect
+	go.uber.org/mock v0.6.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+)
+
+require (
+	github.com/ClickHouse/ch-go v0.71.0 // indirect
+	github.com/IBM/sarama v1.47.0
+	github.com/andybalholm/brotli v1.2.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/go-faster/city v1.0.1 // indirect
+	github.com/go-faster/errors v0.7.1 // indirect
+	github.com/klauspost/compress v1.18.4 // indirect
+	github.com/paulmach/orb v0.12.0 // indirect
+	github.com/pierrec/lz4/v4 v4.1.25 // indirect
+	github.com/segmentio/asm v1.2.1 // indirect
+	github.com/shopspring/decimal v1.4.0 // indirect
+	github.com/stretchr/testify v1.11.1
+	go.opentelemetry.io/otel v1.40.0 // indirect
+	go.opentelemetry.io/otel/trace v1.40.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+)
+
+=== ./config/config.go ===
+package config
+
+import (
+	"log"
+	"os"
+	"strconv"
+	"time"
+
+	"github.com/joho/godotenv"
+)
+
+type Config struct {
+	Clickhouse ClickhouseConfig
+	Server     ServerConfig
+	Kafka      KafkaConfig
+}
+
+type ClickhouseConfig struct {
+	Host string
+	Port string
+	DB   string
+	User string
+	Pass string
+
+	Attempts  int
+	BaseDelay time.Duration
+}
+
+type ServerConfig struct {
+	Port string
+}
+
+type KafkaConfig struct {
+	Host          string
+	Port          string
+	TopicPaid     string
+	TopicDiscount string
+	GroupID       string
+}
+
+func LoadConfig(envPath string) *Config {
+	if envPath != "" {
+		if err := godotenv.Load(envPath); err != nil {
+			log.Fatalf("Could not load env file %s: %v", envPath, err)
+		}
+	}
+
+	attempts, _ := strconv.Atoi(getEnv("DB_ATTEMPTS", "5"))
+	base, _ := strconv.Atoi(getEnv("DB_BASE_DELAY", "2"))
+
+	return &Config{
+		Clickhouse: ClickhouseConfig{
+			Host:      getEnv("CLICKHOUSE_HOST", "localhost"),
+			Port:      getEnv("CLICKHOUSE_TCP_PORT", "9000"),
+			DB:        getEnv("CLICKHOUSE_DB", "analytics"),
+			User:      getEnv("CLICKHOUSE_USER", "default"),
+			Pass:      getEnv("CLICKHOUSE_PASSWORD", ""),
+			Attempts:  attempts,
+			BaseDelay: time.Second * time.Duration(base),
+		},
+		Server: ServerConfig{
+			Port: getEnv("APP_PORT", "8080"),
+		},
+		Kafka: KafkaConfig{
+			Host:          getEnv("KAFKA_HOST", "kafka"),
+			Port:          getEnv("KAFKA_PORT", "9092"),
+			TopicPaid:     getEnv("KAFKA_TOPIC_PAID", "orders.paid"),
+			TopicDiscount: getEnv("KAFKA_TOPIC_DISCOUNT", "users.discount"),
+			GroupID:       getEnv("KAFKA_GROUP_ID", "analytics-service"),
+		},
+	}
+}
+
+func getEnv(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
+
+=== ./Dockerfile ===
+FROM golang:1.25 AS builder
+
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app ./cmd/service
+
+FROM gcr.io/distroless/static:nonroot
+COPY --from=builder /app /app
+EXPOSE 8080
+USER nonroot:nonroot
+ENTRYPOINT ["/app"]
+=== ./Makefile ===
+include .env
+export $(shell sed 's/=.*//' .env)
+
+GOOSE_DRIVER = clickhouse
+GOOSE_DBSTRING = clickhouse://$(CLICKHOUSE_USER):$(CLICKHOUSE_PASSWORD)@localhost:$(CLICKHOUSE_TCP_PORT)/$(CLICKHOUSE_DB)
+
+MIGRATIONS_DIR = $(MIGRATIONS_PATH)
+
+.PHONY: migrate-up migrate-down migrate-status
+
+migrate-up:
+	@echo "Applying migrations..."
+	GOOSE_DRIVER=$(GOOSE_DRIVER) GOOSE_DBSTRING="$(GOOSE_DBSTRING)" goose -dir $(MIGRATIONS_DIR) up
+
+migrate-down:
+	@echo "Rollback migration..."
+	GOOSE_DRIVER=$(GOOSE_DRIVER) GOOSE_DBSTRING="$(GOOSE_DBSTRING)" goose -dir $(MIGRATIONS_DIR) down
+
+migrate-status:
+	@echo "Migration status:"
+	GOOSE_DRIVER=$(GOOSE_DRIVER) GOOSE_DBSTRING="$(GOOSE_DBSTRING)" goose -dir $(MIGRATIONS_DIR) status
+=== ./internal/dto/discount.go ===
+package dto
+
+import "github.com/google/uuid"
+
+type DiscountMessage struct {
+	UserID   uuid.UUID `json:"user_id"`
+	Discount float64   `json:"discount"`
+}
+
+=== ./internal/dto/order_paid.go ===
+package dto
+
+import "github.com/google/uuid"
+
+type OrderPaidMessage struct {
+	OrderID uuid.UUID `json:"order_id"`
+	UserID  uuid.UUID `json:"user_id"`
+	Price   float64   `json:"price"`
+}
+
+=== ./internal/handler/queue/mocks/mocks.go ===
+// Code generated by MockGen. DO NOT EDIT.
+// Source: internal/handler/queue/contract.go
+//
+// Generated by this command:
+//
+//	mockgen -source=internal/handler/queue/contract.go -destination=internal/handler/queue/mocks/mocks.go -package queue_mocks
+//
+
+// Package queue_mocks is a generated GoMock package.
+package queue_mocks
+
+import (
+	order "analytics-service/internal/model/order"
+	context "context"
+	reflect "reflect"
+
+	sarama "github.com/IBM/sarama"
+	uuid "github.com/google/uuid"
+	gomock "go.uber.org/mock/gomock"
+)
+
+// MockOrderUsecase is a mock of OrderUsecase interface.
+type MockOrderUsecase struct {
+	ctrl     *gomock.Controller
+	recorder *MockOrderUsecaseMockRecorder
+	isgomock struct{}
+}
+
+// MockOrderUsecaseMockRecorder is the mock recorder for MockOrderUsecase.
+type MockOrderUsecaseMockRecorder struct {
+	mock *MockOrderUsecase
+}
+
+// NewMockOrderUsecase creates a new mock instance.
+func NewMockOrderUsecase(ctrl *gomock.Controller) *MockOrderUsecase {
+	mock := &MockOrderUsecase{ctrl: ctrl}
+	mock.recorder = &MockOrderUsecaseMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockOrderUsecase) EXPECT() *MockOrderUsecaseMockRecorder {
+	return m.recorder
+}
+
+// AddOrder mocks base method.
+func (m *MockOrderUsecase) AddOrder(ctx context.Context, o order.Order) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddOrder", ctx, o)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddOrder indicates an expected call of AddOrder.
+func (mr *MockOrderUsecaseMockRecorder) AddOrder(ctx, o any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrder", reflect.TypeOf((*MockOrderUsecase)(nil).AddOrder), ctx, o)
+}
+
+// MockDiscountUsecase is a mock of DiscountUsecase interface.
+type MockDiscountUsecase struct {
+	ctrl     *gomock.Controller
+	recorder *MockDiscountUsecaseMockRecorder
+	isgomock struct{}
+}
+
+// MockDiscountUsecaseMockRecorder is the mock recorder for MockDiscountUsecase.
+type MockDiscountUsecaseMockRecorder struct {
+	mock *MockDiscountUsecase
+}
+
+// NewMockDiscountUsecase creates a new mock instance.
+func NewMockDiscountUsecase(ctrl *gomock.Controller) *MockDiscountUsecase {
+	mock := &MockDiscountUsecase{ctrl: ctrl}
+	mock.recorder = &MockDiscountUsecaseMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockDiscountUsecase) EXPECT() *MockDiscountUsecaseMockRecorder {
+	return m.recorder
+}
+
+// GetDiscount mocks base method.
+func (m *MockDiscountUsecase) GetDiscount(ctx context.Context, userID uuid.UUID) (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDiscount", ctx, userID)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDiscount indicates an expected call of GetDiscount.
+func (mr *MockDiscountUsecaseMockRecorder) GetDiscount(ctx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDiscount", reflect.TypeOf((*MockDiscountUsecase)(nil).GetDiscount), ctx, userID)
+}
+
+// MockSyncProducer is a mock of SyncProducer interface.
+type MockSyncProducer struct {
+	ctrl     *gomock.Controller
+	recorder *MockSyncProducerMockRecorder
+	isgomock struct{}
+}
+
+// MockSyncProducerMockRecorder is the mock recorder for MockSyncProducer.
+type MockSyncProducerMockRecorder struct {
+	mock *MockSyncProducer
+}
+
+// NewMockSyncProducer creates a new mock instance.
+func NewMockSyncProducer(ctrl *gomock.Controller) *MockSyncProducer {
+	mock := &MockSyncProducer{ctrl: ctrl}
+	mock.recorder = &MockSyncProducerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockSyncProducer) EXPECT() *MockSyncProducerMockRecorder {
+	return m.recorder
+}
+
+// Close mocks base method.
+func (m *MockSyncProducer) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockSyncProducerMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockSyncProducer)(nil).Close))
+}
+
+// SendMessage mocks base method.
+func (m *MockSyncProducer) SendMessage(msg *sarama.ProducerMessage) (int32, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendMessage", msg)
+	ret0, _ := ret[0].(int32)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// SendMessage indicates an expected call of SendMessage.
+func (mr *MockSyncProducerMockRecorder) SendMessage(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockSyncProducer)(nil).SendMessage), msg)
+}
+
+=== ./internal/handler/queue/queue.go ===
+package queue
+
+import (
+	"context"
+	"encoding/json"
+	"log"
+
+	"analytics-service/config"
+	"analytics-service/internal/dto"
+	"analytics-service/internal/model/order"
+
+	"github.com/google/uuid"
+
+	sarama "github.com/IBM/sarama"
+)
+
+type Handler struct {
+	cfg *config.KafkaConfig
+
+	orderUC    OrderUsecase
+	discountUC DiscountUsecase
+
+	producer SyncProducer
+}
+
+func NewHandler(
+	cfg *config.KafkaConfig,
+	orderUC OrderUsecase,
+	discountUC DiscountUsecase,
+) (*Handler, error) {
+
+	brokers := []string{cfg.Host + ":" + cfg.Port}
+
+	saramaCfg := sarama.NewConfig()
+	saramaCfg.Producer.Return.Successes = true
+
+	producer, err := sarama.NewSyncProducer(brokers, saramaCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Handler{
+		cfg:        cfg,
+		orderUC:    orderUC,
+		discountUC: discountUC,
+		producer:   producer,
+	}, nil
+}
+
+func (h *Handler) Close() {
+	if h.producer != nil {
+		if err := h.producer.Close(); err != nil {
+			log.Printf("kafka producer close error: %v", err)
+		}
+	}
+}
+
+func (h *Handler) StartConsumer(ctx context.Context) error {
+
+	brokers := []string{h.cfg.Host + ":" + h.cfg.Port}
+
+	config := sarama.NewConfig()
+
+	group, err := sarama.NewConsumerGroup(
+		brokers,
+		h.cfg.GroupID,
+		config,
+	)
+	if err != nil {
+		return err
+	}
+
+	defer group.Close()
+
+	handler := &consumerGroupHandler{
+		queue: h,
+	}
+
+	for {
+		if ctx.Err() != nil {
+			return nil
+		}
+
+		err := group.Consume(
+			ctx,
+			[]string{h.cfg.TopicPaid},
+			handler,
+		)
+
+		if err != nil {
+			log.Println("consumer error:", err)
+		}
+	}
+}
+
+type consumerGroupHandler struct {
+	queue *Handler
+}
+
+func (consumerGroupHandler) Setup(sarama.ConsumerGroupSession) error   { return nil }
+func (consumerGroupHandler) Cleanup(sarama.ConsumerGroupSession) error { return nil }
+
+func (h *consumerGroupHandler) ConsumeClaim(
+	session sarama.ConsumerGroupSession,
+	claim sarama.ConsumerGroupClaim,
+) error {
+
+	for msg := range claim.Messages() {
+
+		var event dto.OrderPaidMessage
+
+		if err := json.Unmarshal(msg.Value, &event); err != nil {
+			log.Println("json error:", err)
+			continue
+		}
+
+		ctx := context.Background()
+
+		o := order.Order{
+			OrderID: event.OrderID,
+			UserID:  event.UserID,
+			Price:   event.Price,
+		}
+
+		if err := h.queue.orderUC.AddOrder(ctx, o); err != nil {
+			log.Println("insert error:", err)
+			continue
+		}
+
+		discount, err := h.queue.discountUC.GetDiscount(ctx, event.UserID)
+		if err != nil {
+			log.Println("discount error:", err)
+			continue
+		}
+
+		if err := h.queue.sendDiscount(event.UserID, discount); err != nil {
+			log.Println("kafka produce error:", err)
+		}
+
+		session.MarkMessage(msg, "")
+	}
+
+	return nil
+}
+
+func (h *Handler) sendDiscount(userID uuid.UUID, discount float64) error {
+
+	msg := dto.DiscountMessage{
+		UserID:   userID,
+		Discount: discount,
+	}
+
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	kmsg := &sarama.ProducerMessage{
+		Topic: h.cfg.TopicDiscount,
+		Value: sarama.ByteEncoder(data),
+	}
+
+	_, _, err = h.producer.SendMessage(kmsg)
+
+	return err
+}
+
+=== ./internal/handler/queue/queue_test.go ===
+package queue
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"testing"
+
+	"analytics-service/config"
+	"analytics-service/internal/dto"
+	queue_mocks "analytics-service/internal/handler/queue/mocks"
+
+	"github.com/IBM/sarama"
+	"github.com/google/uuid"
+	"go.uber.org/mock/gomock"
+)
+
+type mockSession struct {
+	marked bool
+}
+
+func (m *mockSession) MarkMessage(msg *sarama.ConsumerMessage, metadata string) {
+	m.marked = true
+}
+
+func (m *mockSession) Commit()                                  {}
+func (m *mockSession) Context() context.Context                 { return context.Background() }
+func (m *mockSession) Claims() map[string][]int32               { return nil }
+func (m *mockSession) MemberID() string                         { return "" }
+func (m *mockSession) GenerationID() int32                      { return 0 }
+func (m *mockSession) ResetOffset(string, int32, int64, string) {}
+func (m *mockSession) MarkOffset(string, int32, int64, string)  {}
+
+type mockClaim struct {
+	messages chan *sarama.ConsumerMessage
+}
+
+func (m *mockClaim) Topic() string              { return "" }
+func (m *mockClaim) Partition() int32           { return 0 }
+func (m *mockClaim) InitialOffset() int64       { return 0 }
+func (m *mockClaim) HighWaterMarkOffset() int64 { return 0 }
+func (m *mockClaim) Messages() <-chan *sarama.ConsumerMessage {
+	return m.messages
+}
+
+func Test_sendDiscount(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	userID := uuid.New()
+
+	tests := []struct {
+		name    string
+		err     error
+		wantErr bool
+	}{
+		{"success", nil, false},
+		{"producer error", errors.New("fail"), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			producer := queue_mocks.NewMockSyncProducer(ctrl)
+
+			producer.EXPECT().
+				SendMessage(gomock.Any()).
+				DoAndReturn(func(msg *sarama.ProducerMessage) (int32, int64, error) {
+
+					var decoded dto.DiscountMessage
+					bytes, _ := msg.Value.Encode()
+					_ = json.Unmarshal(bytes, &decoded)
+
+					if decoded.UserID != userID {
+						t.Errorf("wrong userID")
+					}
+
+					return 0, 0, tt.err
+				})
+
+			h := &Handler{
+				cfg:      &config.KafkaConfig{TopicDiscount: "test"},
+				producer: producer,
+			}
+
+			err := h.sendDiscount(userID, 10)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func Test_ConsumeClaim(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tests := []struct {
+		name         string
+		orderErr     error
+		discountErr  error
+		expectMarked bool
+	}{
+		{"success", nil, nil, true},
+		{"order error", errors.New("fail"), nil, false},
+		{"discount error", nil, errors.New("fail"), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			orderUC := queue_mocks.NewMockOrderUsecase(ctrl)
+			discountUC := queue_mocks.NewMockDiscountUsecase(ctrl)
+			producer := queue_mocks.NewMockSyncProducer(ctrl)
+
+			userID := uuid.New()
+
+			orderUC.EXPECT().
+				AddOrder(gomock.Any(), gomock.Any()).
+				Return(tt.orderErr)
+
+			if tt.orderErr == nil {
+				discountUC.EXPECT().
+					GetDiscount(gomock.Any(), gomock.Any()).
+					Return(10.0, tt.discountErr)
+			}
+
+			if tt.orderErr == nil && tt.discountErr == nil {
+				producer.EXPECT().
+					SendMessage(gomock.Any()).
+					Return(int32(0), int64(0), nil)
+			}
+
+			handler := &Handler{
+				cfg:        &config.KafkaConfig{TopicDiscount: "test"},
+				orderUC:    orderUC,
+				discountUC: discountUC,
+				producer:   producer,
+			}
+
+			consumer := &consumerGroupHandler{queue: handler}
+
+			event := dto.OrderPaidMessage{
+				OrderID: uuid.New(),
+				UserID:  userID,
+				Price:   100,
+			}
+
+			data, _ := json.Marshal(event)
+
+			msgChan := make(chan *sarama.ConsumerMessage, 1)
+			msgChan <- &sarama.ConsumerMessage{Value: data}
+			close(msgChan)
+
+			claim := &mockClaim{messages: msgChan}
+			session := &mockSession{}
+
+			_ = consumer.ConsumeClaim(session, claim)
+
+			if session.marked != tt.expectMarked {
+				t.Fatalf("mark mismatch")
+			}
+		})
+	}
+}
+
+=== ./internal/handler/queue/contract.go ===
+package queue
+
+import (
+	"analytics-service/internal/model/order"
+	"context"
+
+	"github.com/IBM/sarama"
+	"github.com/google/uuid"
+)
+
+type OrderUsecase interface {
+	AddOrder(ctx context.Context, o order.Order) error
+}
+
+type DiscountUsecase interface {
+	GetDiscount(ctx context.Context, userID uuid.UUID) (float64, error)
+}
+
+type SyncProducer interface {
+	SendMessage(msg *sarama.ProducerMessage) (partition int32, offset int64, err error)
+	Close() error
+}
+
+=== ./internal/database/database.go ===
+package database
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"analytics-service/config"
+
+	"github.com/ClickHouse/clickhouse-go/v2"
+)
+
+type DB struct {
+	Client clickhouse.Conn
+	Cfg    *config.ClickhouseConfig
+}
+
+func NewDB(ctx context.Context, cfg *config.ClickhouseConfig) (*DB, error) {
+	addr := fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
+
+	var lastErr error
+	var conn clickhouse.Conn
+
+	for i := 0; i < cfg.Attempts; i++ {
+		options := &clickhouse.Options{
+			Addr: []string{addr},
+			Auth: clickhouse.Auth{
+				Database: cfg.DB,
+				Username: cfg.User,
+				Password: cfg.Pass,
+			},
+			Compression: &clickhouse.Compression{
+				Method: clickhouse.CompressionLZ4,
+			},
+		}
+		c, err := clickhouse.Open(options)
+		if err == nil {
+			pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			if pingErr := c.Ping(pingCtx); pingErr == nil {
+				conn = c
+				log.Println("connected to ClickHouse")
+				return &DB{Client: conn, Cfg: cfg}, nil
+			} else {
+				lastErr = fmt.Errorf("clickhouse ping: %w", pingErr)
+				_ = c.Close()
+			}
+		} else {
+			lastErr = fmt.Errorf("clickhouse open: %w", err)
+		}
+
+		delay := time.Duration(i+1) * cfg.BaseDelay
+		log.Printf("DB connect attempt %d/%d failed: %v — retry %s", i+1, cfg.Attempts, lastErr, delay)
+		select {
+		case <-time.After(delay):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	return nil, fmt.Errorf("could not connect to ClickHouse: %w", lastErr)
+}
+
+func (db *DB) Close() error {
+	if db.Client != nil {
+		return db.Client.Close()
+	}
+	return nil
+}
+
+=== ./internal/repository/order/order.go ===
+package order
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"analytics-service/internal/database"
+	"analytics-service/internal/model/order"
+
+	"github.com/google/uuid"
+)
+
+type Repository struct {
+	db *database.DB
+}
+
+func NewRepository(db *database.DB) *Repository {
+	return &Repository{db: db}
+}
+
+func (r *Repository) CreateOrder(ctx context.Context, o order.Order) error {
+	q := `INSERT INTO analytics.orders (orderID, userID, price, ts) VALUES (?, ?, ?, ?)`
+	err := r.db.Client.Exec(ctx, q, o.OrderID, o.UserID, o.Price, time.Now())
+	if err != nil {
+		return fmt.Errorf("insert order: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) GetDiscountByUserID(ctx context.Context, userID uuid.UUID) (float64, error) {
+	var lessCount uint64
+	var totalCount uint64
+
+	query := `
+	WITH
+	(
+		SELECT sumMerge(total_spent)
+		FROM analytics.user_spend
+		WHERE userID = ?
+	) AS target_user_spend
+
+	SELECT
+		countIf(user_spend_value < target_user_spend) AS users_with_less_spend,
+		count() AS total_users
+	FROM
+	(
+		SELECT
+			userID,
+			sumMerge(total_spent) AS user_spend_value
+		FROM analytics.user_spend
+		GROUP BY userID
+	)
+	`
+
+	err := r.db.Client.QueryRow(ctx, query, userID).
+		Scan(&lessCount, &totalCount)
+
+	if err != nil {
+		return 0, fmt.Errorf("discount query: %w", err)
+	}
+
+	if totalCount == 0 {
+		return 0, nil
+	}
+
+	discount := float64(lessCount) / float64(totalCount) * 15
+
+	if discount > 15 {
+		discount = 15
+	}
+
+	return discount, nil
+}
+
+=== ./internal/integration/repository_test.go ===
+//go:build integration
+
+package integration_test
+
+import (
+	"context"
+	"fmt"
+	"testing"
+	"time"
+
+	"analytics-service/internal/database"
+	"analytics-service/internal/model/order"
+	orderRepo "analytics-service/internal/repository/order"
+
+	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
+	"github.com/testcontainers/testcontainers-go"
+)
+
+type RepositorySuite struct {
+	suite.Suite
+
+	ctx context.Context
+
+	container testcontainers.Container
+	db        *database.DB
+	repo      *orderRepo.Repository
+}
+
+func createTestDB(ctx context.Context, host, port string) (*database.DB, error) {
+	conn, err := clickhouse.Open(&clickhouse.Options{
+		Addr: []string{fmt.Sprintf("%s:%s", host, port)},
+		Auth: clickhouse.Auth{
+			Database: "analytics",
+			Username: "test",
+			Password: "test",
+		},
+		DialTimeout:  5 * time.Second,
+		MaxOpenConns: 5,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := conn.Ping(ctx); err != nil {
+		return nil, err
+	}
+
+	return &database.DB{Client: conn}, nil
+}
+
+func TestRepositorySuite(t *testing.T) {
+	suite.Run(t, new(RepositorySuite))
+}
+
+func (s *RepositorySuite) SetupSuite() {
+	s.ctx = context.Background()
+
+	container, host, port, err := StartClickhouse(s.ctx, "../../migrations")
+	s.Require().NoError(err)
+
+	s.container = container
+
+	db, err := createTestDB(s.ctx, host, port)
+	s.Require().NoError(err)
+
+	s.db = db
+	s.repo = orderRepo.NewRepository(db)
+}
+
+func (s *RepositorySuite) TearDownSuite() {
+	s.db.Client.Close()
+	s.container.Terminate(s.ctx)
+}
+
+func (s *RepositorySuite) SetupTest() {
+	err := s.db.Client.Exec(s.ctx, "TRUNCATE TABLE analytics.orders")
+	s.Require().NoError(err)
+
+	err = s.db.Client.Exec(s.ctx, "TRUNCATE TABLE analytics.user_spend")
+	s.Require().NoError(err)
+}
+
+func (s *RepositorySuite) TestCreateOrder() {
+	user := uuid.New()
+
+	err := s.repo.CreateOrder(s.ctx, order.Order{
+		OrderID: uuid.New(),
+		UserID:  user,
+		Price:   100,
+	})
+
+	s.Require().NoError(err)
+
+	var count uint64
+	err = s.db.Client.
+		QueryRow(s.ctx, "SELECT COUNT(*) FROM analytics.orders").
+		Scan(&count)
+
+	s.Require().NoError(err)
+	s.Equal(uint64(1), count)
+}
+
+func (s *RepositorySuite) TestGetDiscount() {
+	user1 := uuid.New()
+	user2 := uuid.New()
+
+	err := s.repo.CreateOrder(s.ctx, order.Order{
+		OrderID: uuid.New(),
+		UserID:  user1,
+		Price:   100,
+	})
+	s.Require().NoError(err)
+
+	err = s.repo.CreateOrder(s.ctx, order.Order{
+		OrderID: uuid.New(),
+		UserID:  user2,
+		Price:   50,
+	})
+	s.Require().NoError(err)
+
+	// time.Sleep(time.Second)
+
+	discount1, err := s.repo.GetDiscountByUserID(s.ctx, user1)
+	s.Require().NoError(err)
+
+	discount2, err := s.repo.GetDiscountByUserID(s.ctx, user2)
+	s.Require().NoError(err)
+
+	s.Greater(discount1, float64(0))
+	s.Equal(float64(0), discount2)
+}
+
+=== ./internal/integration/helpers_test.go ===
+//go:build integration
+
+package integration_test
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"time"
+
+	_ "github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/pressly/goose/v3"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
+)
+
+func StartClickhouse(ctx context.Context, migrationsPath string) (testcontainers.Container, string, string, error) {
+	req := testcontainers.ContainerRequest{
+		Image:        "clickhouse/clickhouse-server:23.8",
+		ExposedPorts: []string{"9000/tcp"},
+		Env: map[string]string{
+			"CLICKHOUSE_DB":       "analytics",
+			"CLICKHOUSE_USER":     "test",
+			"CLICKHOUSE_PASSWORD": "test",
+		},
+		WaitingFor: wait.ForListeningPort("9000/tcp").WithStartupTimeout(60 * time.Second),
+	}
+
+	container, err := testcontainers.GenericContainer(ctx,
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		})
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	host, err := container.Host(ctx)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	port, err := container.MappedPort(ctx, "9000")
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	dsn := fmt.Sprintf("clickhouse://test:test@%s:%s/default", host, port.Port())
+
+	sqlDB, err := sql.Open("clickhouse", dsn)
+	if err != nil {
+		return nil, "", "", err
+	}
+	defer sqlDB.Close()
+
+	for i := 0; i < 20; i++ {
+		if err := sqlDB.Ping(); err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+
+	if err := goose.SetDialect("clickhouse"); err != nil {
+		return nil, "", "", err
+	}
+
+	if err := goose.Up(sqlDB, migrationsPath); err != nil {
+		return nil, "", "", err
+	}
+
+	return container, host, port.Port(), nil
+}
+
+=== ./internal/model/order/order.go ===
+package order
+
+import "github.com/google/uuid"
+
+type Order struct {
+	OrderID uuid.UUID
+	UserID  uuid.UUID
+	Price   float64
+}
+
+=== ./internal/usecase/order/order.go ===
+package order
+
+import (
+	"analytics-service/internal/model/order"
+	"context"
+)
+
+type usecase struct {
+	repo OrderRepository
+}
+
+func NewOrderUsecase(r OrderRepository) OrderUsecase {
+	return &usecase{repo: r}
+}
+
+func (u *usecase) AddOrder(ctx context.Context, o order.Order) error {
+	return u.repo.CreateOrder(ctx, o)
+}
+
+=== ./internal/usecase/order/contract.go ===
+package order
+
+import (
+	"context"
+
+	"analytics-service/internal/model/order"
+)
+
+type OrderRepository interface {
+	CreateOrder(ctx context.Context, o order.Order) error
+}
+
+type OrderUsecase interface {
+	AddOrder(ctx context.Context, o order.Order) error
+}
+
+=== ./internal/usecase/discount/discount.go ===
+package discount
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
+
+type usecase struct {
+	repo DiscountRepository
+}
+
+func NewDiscountUsecase(r DiscountRepository) DiscountUsecase {
+	return &usecase{repo: r}
+}
+
+func (u *usecase) GetDiscount(ctx context.Context, userID uuid.UUID) (float64, error) {
+	return u.repo.GetDiscountByUserID(ctx, userID)
+}
+
+=== ./internal/usecase/discount/contract.go ===
+package discount
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
+
+type DiscountRepository interface {
+	GetDiscountByUserID(ctx context.Context, userID uuid.UUID) (float64, error)
+}
+
+type DiscountUsecase interface {
+	GetDiscount(ctx context.Context, userID uuid.UUID) (float64, error)
+}
+
+=== ./.gitignore ===
+.env
+=== ./.env ===
+CLICKHOUSE_HOST=clickhouse
+CLICKHOUSE_TCP_PORT=9000
+CLICKHOUSE_HTTP_PORT=8123
+
+CLICKHOUSE_DB=analytics
+CLICKHOUSE_USER=senia
+CLICKHOUSE_PASSWORD=devpass
+
+KAFKA_HOST=kafka
+KAFKA_PORT=9092
+KAFKA_TOPIC_ORDER_COMPLETED=order-completed-analytics
+KAFKA_TOPIC_DISCOUNT=users-discounts
+KAFKA_GROUP_ID=analytics-service
+
+APP_PORT=8080
+LOG_LEVEL=info
+
+MIGRATIONS_PATH=./migrations
+=== ./docker-compose.yml ===
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    env_file:
+      - .env
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    ports:
+      - "${CLICKHOUSE_HTTP_PORT}:8123"
+      - "${CLICKHOUSE_TCP_PORT}:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --query 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  app:
+    build: .
+    env_file:
+      - .env
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8080}:8080"
+
+volumes:
+  clickhouse_data:

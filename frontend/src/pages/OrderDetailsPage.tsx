@@ -67,6 +67,11 @@ export function OrderDetailsPage() {
 
   const items = useMemo<OrderItem[]>(() => (order?.items ?? []) as OrderItem[], [order]);
 
+  const itemsSum = useMemo(
+    () => items.reduce((sum, it) => sum + (it.price ?? 0), 0),
+    [items]
+  );
+
   const isEditable = order?.status === "CREATED";
 
   function setField(key: FieldKey, value: string) {
@@ -386,7 +391,16 @@ export function OrderDetailsPage() {
         {order?.totalPrice != null && (
           <div className="px-4 sm:px-6 py-4 border-b dark:border-slate-800 flex items-center justify-between">
             <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("order.totalPrice")}</span>
-            <span className="text-2xl font-bold text-slate-900 dark:text-slate-50">{order.totalPrice} ₽</span>
+            <div className="flex items-baseline gap-3">
+              {itemsSum > 0 && Math.abs(itemsSum - order.totalPrice) > 0.001 && (
+                <span className="text-base line-through text-slate-400 dark:text-slate-500">
+                  {itemsSum.toFixed(2)} ₽
+                </span>
+              )}
+              <span className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+                {order.totalPrice} ₽
+              </span>
+            </div>
           </div>
         )}
 
