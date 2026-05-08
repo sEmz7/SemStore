@@ -30,7 +30,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("db connect: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("db close: %v", err)
+		}
+	}()
 
 	repo := orderRepo.NewRepository(db)
 	orderUsecase := orderUC.NewOrderUsecase(repo)

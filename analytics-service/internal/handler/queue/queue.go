@@ -70,7 +70,11 @@ func (h *Handler) StartConsumer(ctx context.Context) error {
 		return err
 	}
 
-	defer group.Close()
+	defer func() {
+		if err := group.Close(); err != nil {
+			log.Printf("consumer group close: %v", err)
+		}
+	}()
 
 	handler := &consumerGroupHandler{
 		queue: h,
