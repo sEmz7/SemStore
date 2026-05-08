@@ -2,22 +2,23 @@ version: "2"
 
 linters:
   enable:
-    - errcheck       # проверяет, что ошибки не игнорируются молча
-    - govet          # анализирует подозрительные конструкции (shadow, printf и т.д.)
-    - staticcheck    # мощный статический анализатор (SA*, S1*, ST1* и т.д.)
-    - unused         # находит неиспользуемый экспортируемый и локальный код
-    - goimports      # проверяет корректность и порядок импортов
-    - misspell       # ищет опечатки в комментариях и строках
-    - noctx          # предупреждает об http-запросах без context
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - misspell
+    - noctx
+formatters:
+  enable:
+    - goimports
 
 linters-settings:
   govet:
     enable:
-      - shadow        # обнаруживает затенение переменных
+      - shadow
 
 issues:
   exclude-rules:
-    # В тестах допустимо не проверять ошибки (например, t.Cleanup)
     - path: "_test\\.go"
       linters:
         - errcheck
