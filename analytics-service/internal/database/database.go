@@ -37,8 +37,9 @@ func NewDB(ctx context.Context, cfg *config.ClickhouseConfig) (*DB, error) {
 		c, err := clickhouse.Open(options)
 		if err == nil {
 			pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			defer cancel()
-			if pingErr := c.Ping(pingCtx); pingErr == nil {
+			pingErr := c.Ping(pingCtx)
+			cancel()
+			if pingErr == nil {
 				conn = c
 				log.Println("connected to ClickHouse")
 				return &DB{Client: conn, Cfg: cfg}, nil

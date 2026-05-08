@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
-	sarama "github.com/IBM/sarama"
+	"github.com/IBM/sarama"
 )
 
 type Handler struct {
@@ -59,12 +59,12 @@ func (h *Handler) StartConsumer(ctx context.Context) error {
 
 	brokers := []string{h.cfg.Host + ":" + h.cfg.Port}
 
-	config := sarama.NewConfig()
+	saramaCfg := sarama.NewConfig()
 
 	group, err := sarama.NewConsumerGroup(
 		brokers,
 		h.cfg.GroupID,
-		config,
+		saramaCfg,
 	)
 	if err != nil {
 		return err
